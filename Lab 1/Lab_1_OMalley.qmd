@@ -1,0 +1,267 @@
+---
+title: "Lab 1"
+author: "Conie O'Malley"
+date: "`r Sys.Date()`"
+format: 
+#  html:
+#    self-contained: true
+#    code-fold: true
+#    code-tools: true
+  pdf: 
+    titlepage: true
+    tod: true
+    toc-depth: 2
+execute:
+  echo: false
+  freeze: false
+editor: visual
+python:
+  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
+---
+
+```{r setup code chunk}
+# libraries
+library(reticulate)
+library(tidyverse)
+library(ggplot2)
+#use_condaenv("datascience", required = FALSE) # set my environment
+```
+
+## Part 1: Hello World and Beyond
+
+### Issuing Interactive Commands & Adding Comments
+
+```{r}
+print("Hello World!") # first line r of code
+```
+
+```{r}
+print("Hello Stats!") # second line r of code
+```
+
+```{python}
+print("Hello World!") # frist line of python code
+print("Hello Stats!") # second line of python code
+```
+
+### Doing Simple Math Calculations
+
+```{r}
+1 + 2 + 3 + 4 + 5 
+sum(1:5) # alternate way to write the code
+```
+
+### Creating and Using Vectors and Operations
+
+```{r}
+c(1, 2, 3, 4, 5) # concatenate 
+1:5 # sequence operator
+sum(1:5) # addition using the sequence operator
+```
+
+### Storing and Calculating Values
+
+```{r}
+x <- 1:5 # vector assignment
+y <- 10 # vector assignment
+x+y # vector addition
+z <- x+y # vector assignment
+z
+h <- "Hello" # vector assignment
+h
+hw <- c("Hello", "World!") # vector concatenation 
+print(hw) # print view
+paste(hw) # paste view
+```
+
+### Navigating the RStudio Workspace
+
+```{r}
+ls() # view created objects
+rm("z") # remove "z" object
+ls() # confirm removal
+```
+
+### More Practice Vectorizing & Vectors of Unequal Length
+
+```{r}
+baskets.of.granny <- c(12, 4, 4, 6, 9, 3)
+sum(baskets.of.granny)
+
+firstnames <- c("John", "Jacqueline", "Robert") # create vector list
+lastname <- "Kennedy" # create vector
+paste(firstnames, lastname) # paste vectors
+
+lastnames <- c("Kennedy", "Kennedy-Onnasis") # create vector list
+paste(firstnames, lastnames) # paste vectors
+```
+
+## Part 2: Statistical Analysis with R
+
+### Scatter Plot
+
+```{r}
+ggplot(mpg, aes(displ, hwy)) + # create a scatter plot
+  geom_point() +
+  labs(title = "Displacement vs. Highway MPG Scatterplot", x = "Displacement (litres)", y = "Highway MPG") + # apply labels
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+#### Analysis
+
+There is a inverse relationship between the volume of engine displacement and highway miles per gallon. The relationship appears to be slightly curvilinear, but cannot be confirmed without a residuals plot.
+
+### Box Plot
+
+```{r}
+ggplot(mpg, aes(class, hwy)) + # create a box plot
+  geom_boxplot() +
+  labs(title = "Class vs. Highway MPG Box Plot", x = "Class", y = "Highway MPG") + # apply labels
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+#### Analysis
+
+There seems to be some commonality among the types *2seater*, *compact*, *midsize*, and *subcompact*, because they all have overlapping box plot ranges. *pickup* and *suv* also fall into their own common area because of overlapping ranges, while the *minivan* class has no overlaps. There are a considerable amount of outliers in the *suv* class - meaning that, at first glance, this is the most varied class of vehicles, where as *2seater* has no outliers and a very tight range - meaning that, at first glance, this is likely the most homogeneous class of vehicles.
+
+### Computing Basic Statistics
+
+```{r}
+mean(economics$unemploy) # calculate mean
+var(economics$unemploy) # calculate variance
+sd(economics$unemploy) # calculate standard deviation
+min(economics$unemploy) # calculate min
+max(economics$unemploy) # calculate max
+median(economics$unemploy) # calculate median
+cor(economics$pce, economics$psavert) # calculate correlation
+pce_psavert_cor <- round(cor(economics$pce, economics$psavert),4) # assign correlation to vector variable
+```
+
+#### Analysis
+
+There is a strong, negative correlation between *pce* and *psavert* (`r pce_psavert_cor`).
+
+
+### Conducting a t-test
+```{r}
+data(tips, package = 'reshape2') # attach data
+t.test(tips$tip, alternative = 'two.sided', mu=2.50) # conduct two tail t-test
+```
+#### Analysis
+*t* is our t-value, which is the standardized test statistic for this data set. Our t-value should be greater than our t statistic we are testing against, so we can reject $H0: mu = 2.50$. <br>
+*df* are the degrees of freedom in this data set. <br>
+*p-value* is the probability that we will get an sample mean under the $H0$. Our p-value (5.08e-08) < 0.05, meaning we can reject $H0$. <br>
+*confidence interval* is 95% - meaning that if we sampled the data randomly, our sample mean would be within the range 95% of the time.<br>
+*sample mean of x* is the mean of our current sample from the data.<br>
+We can reject $H0: mu = 2.50$ because our p-value < 0.05.
+
+### Building a Linear Regression Model
+```{r}
+head(mpg) # view first 6 rows of data
+tail(mpg) # view last 6 rows of data
+lm(hwy ~ displ, mpg) # build a basic linear regression model
+ggplot(mpg, aes(displ, hwy)) + # build a linear regression model scatter plot
+  geom_point() +
+  labs(title = "Displacement vs. Highway MPG Regression Model", x = "Engine Size", y = "Highway Fuel Efficiency") +
+  geom_smooth(method = "lm", color = "red") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+fuelILM <- lm(displ ~ hwy, mpg) # assign new model to vector variable
+fuelILM
+summary(fuelILM) # review summary statistics
+```
+
+## Part 3: Basic Importing and Wrangling of Data
+### Inspecting and Cleaning the Data
+```{r}
+housing <- read.table("http://www.jaredlander.com/data/housing.csv", sep = ",", header = TRUE, stringsAsFactors = FALSE) # read in outside data
+names(housing) <- c("Neighborhood", "Class", "Units", "YearsBuilt", "SqFt", "Income", "IncomePer-SqFt", "Expense",
+                    "ExpensePerSqFt", "NetIncome", "Value", "ValuePerSqFt", "Boro") # rename columns
+head(housing)
+```
+
+### Building a Linear Regression Model
+```{r}
+house1 <- lm(ValuePerSqFt ~ Units + SqFt + Boro, housing) # build a linear regression model
+summary(house1) # view summary statistics
+```
+## Part 4: Hello World, Data, Statistics and Beyond in Python
+### Hello World in Python
+```{python}
+print("Hello World!") # print function practice
+print("Hello Stats!") # print function practice
+print("Hello", "World!") # print function practice
+```
+
+### Doing Simple Math Calculations
+```{python}
+1+2
+1+2+3+4+5
+```
+
+### Installing and importing packages
+```{python}
+from matplotlib import pyplot as plt # import libraries
+from statsmodels.formula.api import ols
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn import datasets 
+from sklearn.datasets import fetch_california_housing
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import pandas as pd
+import seaborn as sns
+```
+
+### Accessing a Built-In Dataset with Python
+
+```{python}
+housing = fetch_california_housing() # assign data to matrix vector
+X,y = housing.data, housing.target # assign data subsets to variable vectors
+print("The size of the dataset is {}".format(X.shape))
+print("The names of the data columns are {}", housing.feature_names)
+print(housing.keys())
+```
+
+
+```{python}
+hypothesis = LinearRegression() # set hypothesis model type
+hypothesis.fit(X,y) # fit the model
+print(hypothesis.coef_) # print coefficients
+```
+
+### Accessing and Exploring Another Built-in Dataset in Python
+```{python}
+iris = datasets.load_iris() # assign data set to matrix vector
+iris.keys() # view keys
+iris['data'] # view data
+iris_df = pd.DataFrame(iris.data, columns = iris.feature_names) # create a dataframe
+iris_df['species'] = pd.Categorical.from_codes(iris.target, iris.target_names) # create species column
+print(iris_df.head()) 
+print(iris_df.describe())
+```
+
+```{python}
+iris_df.hist(edgecolor = 'black', linewidth = 1.2, figsize=(12,8)) # histograms
+plt.show()
+```
+
+```{python}
+sns.scatterplot(x='sepal length (cm)', y = 'sepal width (cm)', hue = 'species', data = iris_df)
+plt.savefig('iris_scatter.png')
+plt.show()
+```
+```{python}
+scaler = StandardScaler()
+iris_scaled = scaler.fit_transform(iris_df.iloc[:, :-1]) # scale data frame
+```
+
+```{python}
+X_train, X_test, y_train, y_test = train_test_split(iris_scaled, iris.target, test_size = 0.3, random_state = 42)
+model = LogisticRegression()
+model.fit(X_train, y_train) # fit the model
+y_pred = model.predict(X_test) # test the model
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Accuracy: {accuracy:.2f}')
+```
+
