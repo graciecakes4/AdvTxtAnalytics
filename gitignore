@@ -1,0 +1,46 @@
+# --- R-related files ---
+.Rhistory
+.RData
+.Rproj.user/
+.Rproj
+*.Rproj
+
+# Packages and builds
+.Rbuildignore
+
+# Temporary files
+*.Rapp.history
+*.Rout
+*.Rout.save
+*.RDataTmp
+
+# --- Python-related files ---
+# Byte-compiled files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Virtual environments
+.env/
+.venv/
+ENV/
+env/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Python egg files
+*.egg
+*.egg-info/
+dist/
+build/
+
+# --- General ---
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
