@@ -12,7 +12,7 @@ format:
     tod: true
     toc-depth: 2
 execute:
-  echo: false
+  echo: true
   freeze: false
 editor: visual
 python:
@@ -103,7 +103,8 @@ paste(firstnames, lastnames) # paste vectors
 ```{r}
 ggplot(mpg, aes(displ, hwy)) + # create a scatter plot
   geom_point() +
-  labs(title = "Displacement vs. Highway MPG Scatterplot", x = "Displacement (litres)", y = "Highway MPG") + # apply labels
+  labs(title = "Displacement vs. Highway MPG Scatterplot", x = "Displacement (litres)", 
+       y = "Highway MPG") + # apply labels
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
@@ -134,35 +135,35 @@ min(economics$unemploy) # calculate min
 max(economics$unemploy) # calculate max
 median(economics$unemploy) # calculate median
 cor(economics$pce, economics$psavert) # calculate correlation
-pce_psavert_cor <- round(cor(economics$pce, economics$psavert),4) # assign correlation to vector variable
+pce_psavert_cor <- round(cor(economics$pce, economics$psavert),4) 
+# assign correlation to vector variable
 ```
 
 #### Analysis
 
 There is a strong, negative correlation between *pce* and *psavert* (`r pce_psavert_cor`).
 
-
 ### Conducting a t-test
+
 ```{r}
 data(tips, package = 'reshape2') # attach data
 t.test(tips$tip, alternative = 'two.sided', mu=2.50) # conduct two tail t-test
 ```
+
 #### Analysis
-*t* is our t-value, which is the standardized test statistic for this data set. Our t-value should be greater than our t statistic we are testing against, so we can reject $H0: mu = 2.50$. <br>
-*df* are the degrees of freedom in this data set. <br>
-*p-value* is the probability that we will get an sample mean under the $H0$. Our p-value (5.08e-08) < 0.05, meaning we can reject $H0$. <br>
-*confidence interval* is 95% - meaning that if we sampled the data randomly, our sample mean would be within the range 95% of the time.<br>
-*sample mean of x* is the mean of our current sample from the data.<br>
-We can reject $H0: mu = 2.50$ because our p-value < 0.05.
+
+*t* is our t-value, which is the standardized test statistic for this data set. Our t-value should be greater than our t statistic we are testing against, so we can reject $H0: mu = 2.50$. <br> *df* are the degrees of freedom in this data set. <br> *p-value* is the probability that we will get an sample mean under the $H0$. Our p-value (5.08e-08) \< 0.05, meaning we can reject $H0$. <br> *confidence interval* is 95% - meaning that if we sampled the data randomly, our sample mean would be within the range 95% of the time.<br> *sample mean of x* is the mean of our current sample from the data.<br> We can reject $H0: mu = 2.50$ because our p-value \< 0.05.
 
 ### Building a Linear Regression Model
+
 ```{r}
 head(mpg) # view first 6 rows of data
 tail(mpg) # view last 6 rows of data
 lm(hwy ~ displ, mpg) # build a basic linear regression model
 ggplot(mpg, aes(displ, hwy)) + # build a linear regression model scatter plot
   geom_point() +
-  labs(title = "Displacement vs. Highway MPG Regression Model", x = "Engine Size", y = "Highway Fuel Efficiency") +
+  labs(title = "Displacement vs. Highway MPG Regression Model", x = "Engine Size", 
+       y = "Highway Fuel Efficiency") +
   geom_smooth(method = "lm", color = "red") +
   theme(plot.title = element_text(hjust = 0.5))
 
@@ -172,21 +173,29 @@ summary(fuelILM) # review summary statistics
 ```
 
 ## Part 3: Basic Importing and Wrangling of Data
+
 ### Inspecting and Cleaning the Data
+
 ```{r}
-housing <- read.table("http://www.jaredlander.com/data/housing.csv", sep = ",", header = TRUE, stringsAsFactors = FALSE) # read in outside data
-names(housing) <- c("Neighborhood", "Class", "Units", "YearsBuilt", "SqFt", "Income", "IncomePer-SqFt", "Expense",
-                    "ExpensePerSqFt", "NetIncome", "Value", "ValuePerSqFt", "Boro") # rename columns
+housing <- read.table("http://www.jaredlander.com/data/housing.csv", sep = ",", 
+                      header = TRUE, stringsAsFactors = FALSE) # read in outside data
+names(housing) <- c("Neighborhood", "Class", "Units", "YearsBuilt", "SqFt", "Income",
+                    "IncomePer-SqFt", "Expense", "ExpensePerSqFt", "NetIncome", "Value",
+                    "ValuePerSqFt", "Boro") # rename columns
 head(housing)
 ```
 
 ### Building a Linear Regression Model
+
 ```{r}
 house1 <- lm(ValuePerSqFt ~ Units + SqFt + Boro, housing) # build a linear regression model
 summary(house1) # view summary statistics
 ```
+
 ## Part 4: Hello World, Data, Statistics and Beyond in Python
+
 ### Hello World in Python
+
 ```{python}
 print("Hello World!") # print function practice
 print("Hello Stats!") # print function practice
@@ -194,12 +203,14 @@ print("Hello", "World!") # print function practice
 ```
 
 ### Doing Simple Math Calculations
+
 ```{python}
 1+2
 1+2+3+4+5
 ```
 
 ### Installing and importing packages
+
 ```{python}
 from matplotlib import pyplot as plt # import libraries
 from statsmodels.formula.api import ols
@@ -223,7 +234,6 @@ print("The names of the data columns are {}", housing.feature_names)
 print(housing.keys())
 ```
 
-
 ```{python}
 hypothesis = LinearRegression() # set hypothesis model type
 hypothesis.fit(X,y) # fit the model
@@ -231,12 +241,14 @@ print(hypothesis.coef_) # print coefficients
 ```
 
 ### Accessing and Exploring Another Built-in Dataset in Python
+
 ```{python}
 iris = datasets.load_iris() # assign data set to matrix vector
 iris.keys() # view keys
 iris['data'] # view data
-iris_df = pd.DataFrame(iris.data, columns = iris.feature_names) # create a dataframe
-iris_df['species'] = pd.Categorical.from_codes(iris.target, iris.target_names) # create species column
+iris_df = pd.DataFrame(iris.data, columns = iris.feature_names) # create a df
+iris_df['species'] = pd.Categorical.from_codes(iris.target, # add species column
+                                              iris.target_names) 
 print(iris_df.head()) 
 print(iris_df.describe())
 ```
@@ -247,21 +259,24 @@ plt.show()
 ```
 
 ```{python}
-sns.scatterplot(x='sepal length (cm)', y = 'sepal width (cm)', hue = 'species', data = iris_df)
+sns.scatterplot(x='sepal length (cm)', y = 'sepal width (cm)', hue = 'species', 
+                data = iris_df)
 plt.savefig('iris_scatter.png')
 plt.show()
 ```
+
 ```{python}
 scaler = StandardScaler()
 iris_scaled = scaler.fit_transform(iris_df.iloc[:, :-1]) # scale data frame
 ```
 
 ```{python}
-X_train, X_test, y_train, y_test = train_test_split(iris_scaled, iris.target, test_size = 0.3, random_state = 42)
+X_train, X_test, y_train, y_test = train_test_split(iris_scaled, iris.target, 
+                                                   test_size = 0.3, 
+                                                   random_state = 42)
 model = LogisticRegression()
 model.fit(X_train, y_train) # fit the model
 y_pred = model.predict(X_test) # test the model
 accuracy = accuracy_score(y_test, y_pred)
 print(f'Accuracy: {accuracy:.2f}')
 ```
-
