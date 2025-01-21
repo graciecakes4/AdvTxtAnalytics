@@ -103,7 +103,8 @@ paste(firstnames, lastnames) # paste vectors
 ```{r}
 ggplot(mpg, aes(displ, hwy)) + # create a scatter plot
   geom_point() +
-  labs(title = "Displacement vs. Highway MPG Scatterplot", x = "Displacement (litres)", 
+  labs(title = "Displacement vs. Highway MPG Scatterplot", 
+       x = "Displacement (litres)", 
        y = "Highway MPG") + # apply labels
   theme(plot.title = element_text(hjust = 0.5))
 ```
@@ -117,7 +118,9 @@ There is a inverse relationship between the volume of engine displacement and hi
 ```{r}
 ggplot(mpg, aes(class, hwy)) + # create a box plot
   geom_boxplot() +
-  labs(title = "Class vs. Highway MPG Box Plot", x = "Class", y = "Highway MPG") + # apply labels
+  labs(title = "Class vs. Highway MPG Box Plot", 
+       x = "Class", 
+       y = "Highway MPG") + # apply labels
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
@@ -162,7 +165,8 @@ tail(mpg) # view last 6 rows of data
 lm(hwy ~ displ, mpg) # build a basic linear regression model
 ggplot(mpg, aes(displ, hwy)) + # build a linear regression model scatter plot
   geom_point() +
-  labs(title = "Displacement vs. Highway MPG Regression Model", x = "Engine Size", 
+  labs(title = "Displacement vs. Highway MPG Regression Model", 
+       x = "Engine Size", 
        y = "Highway Fuel Efficiency") +
   geom_smooth(method = "lm", color = "red") +
   theme(plot.title = element_text(hjust = 0.5))
@@ -178,17 +182,18 @@ summary(fuelILM) # review summary statistics
 
 ```{r}
 housing <- read.table("http://www.jaredlander.com/data/housing.csv", sep = ",", 
-                      header = TRUE, stringsAsFactors = FALSE) # read in outside data
-names(housing) <- c("Neighborhood", "Class", "Units", "YearsBuilt", "SqFt", "Income",
-                    "IncomePer-SqFt", "Expense", "ExpensePerSqFt", "NetIncome", "Value",
-                    "ValuePerSqFt", "Boro") # rename columns
+                      header = TRUE, stringsAsFactors = FALSE) # read data
+names(housing) <- c("Neighborhood", "Class", "Units", "YearsBuilt", "SqFt", 
+                    "Income", "IncomePer-SqFt", "Expense", "ExpensePerSqFt", 
+                    "NetIncome", "Value", "ValuePerSqFt", "Boro") # rename columns
 head(housing)
 ```
 
 ### Building a Linear Regression Model
 
 ```{r}
-house1 <- lm(ValuePerSqFt ~ Units + SqFt + Boro, housing) # build a linear regression model
+house1 <- lm(ValuePerSqFt ~ Units + SqFt + Boro, 
+             housing) # build a linear regression model
 summary(house1) # view summary statistics
 ```
 
@@ -228,7 +233,7 @@ import seaborn as sns
 
 ```{python}
 housing = fetch_california_housing() # assign data to matrix vector
-X,y = housing.data, housing.target # assign data subsets to variable vectors
+X,y = housing.data, housing.target # assign subsets to variable vector
 print("The size of the dataset is {}".format(X.shape))
 print("The names of the data columns are {}", housing.feature_names)
 print(housing.keys())
