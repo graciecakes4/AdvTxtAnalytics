@@ -1,0 +1,26 @@
+---
+title: "Lab 2"
+author: "Conie O'Malley"
+date: "`r Sys.Date()`"
+format: 
+  pdf: 
+    titlepage: true
+    tod: true
+    toc-depth: 2
+execute:
+  echo: true
+  freeze: false
+editor: visual
+python:
+  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
+---
+
+```{r setup code chunk}
+# libraries
+packs <- c("reticulate", "tidyverse", "ggplot2", "stringi", "stringr","ggthemes","gutenbergr",
+"janeaustenr","tm","tidyr","ggplot2","scales","tidytext")
+for (i in packs){
+    library(i, character.only = TRUE)
+}
+#use_condaenv("datascience", required = FALSE) # set my environment
+```
