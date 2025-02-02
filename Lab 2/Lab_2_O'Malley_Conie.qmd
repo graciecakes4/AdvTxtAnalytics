@@ -17,10 +17,123 @@ python:
 
 ```{r setup code chunk}
 # libraries
-packs <- c("reticulate", "tidyverse", "ggplot2", "stringi", "stringr","ggthemes","gutenbergr",
-"janeaustenr","tm","tidyr","ggplot2","scales","tidytext")
+packs <- c("reticulate", "tidyverse", "ggplot2", "stringi", "stringr","ggthemes",
+          "gutenbergr", "janeaustenr","tm","tidyr","ggplot2","scales","tidytext")
 for (i in packs){
     library(i, character.only = TRUE)
 }
 #use_condaenv("datascience", required = FALSE) # set my environment
 ```
+
+## Importing and Exploring Text Data in BaseR
+
+```{r}
+options(stringsAsFactors = FALSE) # set options
+Sys.setlocale("LC_ALL", "C") # set locale
+```
+
+### Deliverable 1 & 2: Read and store the Delta Tweets Data into R
+
+```{r}
+# Note - I use the pkg::function syntax because that is how we code at work. I know it's not standard and it takes up a little bit extra space, but I'm trying to build the muscle memory
+
+readr::read_csv('Lab 2/Data/oct_delta.csv') -> text.df
+```
+
+### Deliverable 4: List the variable names in the Delta Tweets dataset.
+
+```{r}
+dplyr::glimpse(text.df) # get information about the variables
+```
+
+| Variable | Type      | Description                       |
+|----------|-----------|-----------------------------------|
+| weekday  | character | name day of the week of the tweet |
+| month    | character | month of the tweet                |
+| date     | double    | number day of the tweet           |
+| year     | double    | year of the tweet                 |
+| text     | character | content of the tweet              |
+
+: Description of Variables
+
+### Deliverable 5: Examine the Delta Tweets Dataframe
+```{r}
+# explore the data set
+head(text.df)
+tail(text.df)
+class(text.df)
+summary(text.df)
+
+nrow(text.df) # confirm the last row of the data frame
+```
+
+### Deliverable 6: Examine the Text of all the Tweets
+```{r}
+nchar(head(text.df$text)) # character count of the first 6 tweets
+
+nchar(tail(text.df$text)) # character count of the last 6 tweets
+```
+
+### Deliverable 7: Interpret the Results of the nchar analysis
+#### Analysis:
+
+The last 6 tweets have character counts of: 108, 63, 50, 121, 27, and 36, respectively. We do not know the contents of the tweets from this, but this count will include numbers, spaces, and punctuation in its character count.
+
+### Deliverable 8: Create an Index Example
+```{r}
+index_example <- 1:50 # index example
+index_example
+```
+
+### Deliverable 9:Identify the Number of Characters in a Single Specified Tweet
+```{r}
+nchar(text.df[4,5]) # identify a specific tweet
+```
+
+## Part 2: Extract Features from Data with the tm Package
+### Deliverable 10: Extract Mean Characters in Tweet Text
+```{r}
+mean(nchar(text.df$text)) # calculate average tweet length
+```
+
+#### Analysis
+
+The average length is 92 characters. This means that responses from customer service are concise.
+
+### Deliverable 11: Create a Dataframe of Just the Tweet Text
+```{r}
+tweets <- data.frame(ID=seq(1:nrow(text.df)),text=text.df$text) # create a df
+tweets 
+```
+
+### Deliverable 12: Create and Inspect Corpus for Your Analysis
+```{r}
+corpus <- tm::VCorpus(tm::VectorSource(tweets), # create a corpus of tweets
+          readerControl = tm::readDataframe(tweets, "en", id = ID))
+
+tm::inspect(corpus[1:2]) # view the first 2 documents of corpus
+tm::inspect(corpus[[2]]) # view the second document in the corpus
+length(corpus) # confirm the size of the corpus
+```
+
+### Deliverable 13: Create a Document Term Matrix (DTM)
+```{r}
+dtm <- tm::DocumentTermMatrix(corpus, control = list(tm::weightTf)) # create dtm
+# data wrangling
+dtm.tweets.m <- as.matrix(dtm)
+term.freq <- rowSums(dtm.tweets.m)
+freq.df <- data.frame(word=names(term.freq),frequency=term.freq)
+freq.df <- freq.df[order(freq.df[,2],decreasing = T),]
+freq.df
+```
+
+### Deliverable 14 & 15: Create an Object to Represent Frequency Using ggplot
+```{r}
+freq.df$word <- factor(freq.df$word,levels = unique(as.character(freq.df$word)))
+
+ggplot2::ggplot(freq.df[1:20,], aes(x=word, y=frequency)) + # create a bar plot
+  ggplot2::geom_bar(stat="identity", fill="darkred") + 
+  ggplot2::coord_flip() +
+  ggthemes::theme_gdocs() +
+  ggplot2::geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
+````
