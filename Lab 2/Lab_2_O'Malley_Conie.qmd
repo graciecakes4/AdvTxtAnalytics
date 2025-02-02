@@ -37,7 +37,9 @@ Sys.setlocale("LC_ALL", "C") # set locale
 ```{r}
 # Note - I use the pkg::function syntax because that is how we code at work. I know it's not standard and it takes up a little bit extra space, but I'm trying to build the muscle memory
 
-readr::read_csv('Lab 2/Data/oct_delta.csv') -> text.df
+library(readr)
+
+text.df <- read_csv("~/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 2/Data/oct_delta.csv")
 ```
 
 ### Deliverable 4: List the variable names in the Delta Tweets dataset.
@@ -57,6 +59,7 @@ dplyr::glimpse(text.df) # get information about the variables
 : Description of Variables
 
 ### Deliverable 5: Examine the Delta Tweets Dataframe
+
 ```{r}
 # explore the data set
 head(text.df)
@@ -68,6 +71,7 @@ nrow(text.df) # confirm the last row of the data frame
 ```
 
 ### Deliverable 6: Examine the Text of all the Tweets
+
 ```{r}
 nchar(head(text.df$text)) # character count of the first 6 tweets
 
@@ -75,23 +79,28 @@ nchar(tail(text.df$text)) # character count of the last 6 tweets
 ```
 
 ### Deliverable 7: Interpret the Results of the nchar analysis
+
 #### Analysis:
 
 The last 6 tweets have character counts of: 108, 63, 50, 121, 27, and 36, respectively. We do not know the contents of the tweets from this, but this count will include numbers, spaces, and punctuation in its character count.
 
 ### Deliverable 8: Create an Index Example
+
 ```{r}
 index_example <- 1:50 # index example
 index_example
 ```
 
 ### Deliverable 9:Identify the Number of Characters in a Single Specified Tweet
+
 ```{r}
 nchar(text.df[4,5]) # identify a specific tweet
 ```
 
 ## Part 2: Extract Features from Data with the tm Package
+
 ### Deliverable 10: Extract Mean Characters in Tweet Text
+
 ```{r}
 mean(nchar(text.df$text)) # calculate average tweet length
 ```
@@ -101,12 +110,13 @@ mean(nchar(text.df$text)) # calculate average tweet length
 The average length is 92 characters. This means that responses from customer service are concise.
 
 ### Deliverable 11: Create a Dataframe of Just the Tweet Text
+
 ```{r}
 tweets <- data.frame(ID=seq(1:nrow(text.df)),text=text.df$text) # create a df
-tweets 
 ```
 
 ### Deliverable 12: Create and Inspect Corpus for Your Analysis
+
 ```{r}
 corpus <- tm::VCorpus(tm::VectorSource(tweets), # create a corpus of tweets
           readerControl = tm::readDataframe(tweets, "en", id = ID))
@@ -117,6 +127,7 @@ length(corpus) # confirm the size of the corpus
 ```
 
 ### Deliverable 13: Create a Document Term Matrix (DTM)
+
 ```{r}
 dtm <- tm::DocumentTermMatrix(corpus, control = list(tm::weightTf)) # create dtm
 # data wrangling
@@ -128,6 +139,7 @@ freq.df
 ```
 
 ### Deliverable 14 & 15: Create an Object to Represent Frequency Using ggplot
+
 ```{r}
 freq.df$word <- factor(freq.df$word,levels = unique(as.character(freq.df$word)))
 
@@ -139,6 +151,7 @@ ggplot2::ggplot(freq.df[1:20,], aes(x=word, y=frequency)) + # create a bar plot
 ```
 
 ## Part 3: Introduction to the Tidyverse and Tidytext
+
 ### Deliverable 16: Create an Object Consisting of Jane Austen Books
 
 ```{r}
@@ -153,6 +166,7 @@ class(original_books)
 ```
 
 ### Deliverable 17: Create a Tidy Version of “original_books”
+
 ```{r}
 tidy_books <- original_books %>%  # create a tibble
   tidytext::unnest_tokens(word, text)
@@ -162,6 +176,7 @@ class(tidy_books) #
 ```
 
 ### Deliverable 18: Apply Stopword Dictionary to tidy_books
+
 ```{r}
 data(stop_words) # load stop_words into environment
 stop_words
@@ -171,12 +186,14 @@ tidy_books <- tidy_books %>% # remove stop words with anti join
 ```
 
 ### Deliverable 19: Count Words in tidy_books
+
 ```{r}
 tidy_books %>% # obtain word count
   dplyr::count(word, sort = TRUE)
 ```
 
 ### Deliverable 19: Visualize Words in tidy_books
+
 ```{r}
 tidy_books %>% # create a bar chart of most occurring words excluding stop words
   count(word, sort = TRUE) %>%
@@ -189,12 +206,14 @@ tidy_books %>% # create a bar chart of most occurring words excluding stop words
 ```
 
 ### Deliverable 20: Create hgwells Object Using Project Gutenberg
+
 ```{r}
 hgwells <- gutenbergr::gutenberg_download(c(35, 36, 5230, 159)) # download hgwells texts
 hgwells
 ```
 
 ### Deliverable 21: Create Tidy Version of hgwells
+
 ```{r}
 tidy_hgwells <- hgwells %>% # create tidy version of hgwells data object
   tidytext::unnest_tokens(word, text) %>% 
@@ -203,18 +222,21 @@ tidy_hgwells
 ```
 
 ### Deliverable 23: Count Words in tidy_hgwells
+
 ```{r}
 tidy_hgwells %>% # obtain word count
   dplyr::count(word, sort = TRUE)
 ```
 
 ### Deliverable 24: Create bronte Object
+
 ```{r}
 bronte <- gutenbergr::gutenberg_download(c(1260, 768, 969, 9182, 767)) # download bronte texts
 bronte
 ```
 
 ### Deliverable 25: Tidy the bronte Object
+
 ```{r}
 tidy_bronte <- bronte %>% # tidy the bronte data object
   tidytext::unnest_tokens(word, text) %>% 
@@ -223,12 +245,14 @@ tidy_bronte
 ```
 
 ### Deliverable 26: Identify Frequent Words in tidy_bronte
+
 ```{r}
 tidy_bronte %>% # obtain word count
   dplyr::count(word, sort = TRUE)
 ```
 
 ### Deliverable 28: Visualize Word Frequency Amongst Three Objects
+
 ```{r}
 frequency <- bind_rows(mutate(tidy_bronte, author="Bronte Sisters"),
                       mutate(tidy_hgwells, author="H.G. Wells"),
@@ -243,6 +267,7 @@ frequency <- bind_rows(mutate(tidy_bronte, author="Bronte Sisters"),
 ```
 
 ### Deliverable 28: Visualize Word Frequency Amongst Three Objects
+
 ```{r}
 ggplot(frequency, aes(x = proportion, y = `Jane Austen`, color = abs(`Jane Austen` - proportion))) +
   ggplot2::geom_abline(color = "gray40", lty = 2) +
@@ -257,6 +282,7 @@ ggplot(frequency, aes(x = proportion, y = `Jane Austen`, color = abs(`Jane Auste
 ```
 
 ## Part 4: Word and N-Gram Frequencies using Python
+
 ```{python}
 # import libraries
 import nltk, sklearn
@@ -271,7 +297,7 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 ### Step 2. Analyzing Twitter Data
 
 ```{python}
-tweets_df = pd.read_csv('Lab 2/Data/oct_delta.csv') # read in twitter data
+tweets_df = pd.read_csv("~/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 2/Data/oct_delta.csv") # read in twitter data
 
 tweets_df['char_count'] = tweets_df['text'].apply(len) # create new column variable
 
@@ -280,6 +306,7 @@ plt.show()
 ```
 
 #### 3. Word Count (Term Frequency) in Each Tweet
+
 ```{python}
 cv = CountVectorizer() # begin instance of count vectorizer
 tf = cv.fit_transform(tweets_df['text']) 
@@ -292,6 +319,7 @@ plt.show()
 ```
 
 #### 4. Word Count (TF-IDF) in Each Tweet
+
 ```{python}
 tfidf = TfidfVectorizer() # create an instance of class
 tfidf_matrix = tfidf.fit_transform(tweets_df['text'])
@@ -305,6 +333,7 @@ plt.show()
 ```
 
 #### 5. Most Common Words
+
 ```{python}
 tf_df.sum().sort_values(ascending=False).head(20) # see most common 20 words
 ```
@@ -315,12 +344,14 @@ plt.show()
 ```
 
 #### 6. Most Common Phrases (Bigrams and Trigrams)
+
 ```{python}
 bigram_vectorizer = CountVectorizer(ngram_range=(2, 2)) # create an instance of class
 bigram_matrix = bigram_vectorizer.fit_transform(tweets_df['text'])
 ```
 
 #### 7. Plotting Most Common Terms
+
 ```{python}
 # create a function to create a plot of most common words
 def plot_most_common_words(count_data, count_vectorizer, top_n=20):
@@ -338,7 +369,9 @@ plot_most_common_words(tf, cv)
 ```
 
 ### Step 3: Analyzing Jane Austen’s Novels
+
 #### 1. Creating Dataset
+
 ```{python}
 nltk.download('gutenberg') # download gutenberg package
 from nltk.corpus import gutenberg # import gutenberg
@@ -347,6 +380,7 @@ austen_texts = gutenberg.raw(fileids=[f for f in gutenberg.fileids() if 'austen'
 ```
 
 #### 2. Preprocessing the Data
+
 ```{python}
 nltk.download('stopwords') # download stopwords package
 stop_words = set(stopwords.words('english')) # select english stopwords
@@ -356,6 +390,7 @@ filtered_words = [word for word in austen_words if word.lower() not in stop_word
 ```
 
 #### 3. Analyze TF and TF-IDF
+
 ```{python}
 cv = CountVectorizer() # initiate class instance
 tf = cv.fit_transform(filtered_words) # count words
@@ -367,6 +402,7 @@ tfidf_feature_names = tfidf.get_feature_names_out()
 ```
 
 #### 4. Visualization
+
 ```{python}
 plot_most_common_words(tf, cv) # create a plot of most common words
 plot_most_common_words(tfidf_matrix, tfidf)
