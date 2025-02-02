@@ -22,7 +22,7 @@ packs <- c("reticulate", "tidyverse", "ggplot2", "stringi", "stringr","ggthemes"
 for (i in packs){
     library(i, character.only = TRUE)
 }
-#use_condaenv("datascience", required = FALSE) # set my environment
+use_condaenv("datascience", required = FALSE) # set my environment
 ```
 
 ## Importing and Exploring Text Data in BaseR
@@ -136,4 +136,238 @@ ggplot2::ggplot(freq.df[1:20,], aes(x=word, y=frequency)) + # create a bar plot
   ggplot2::coord_flip() +
   ggthemes::theme_gdocs() +
   ggplot2::geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
-````
+```
+
+## Part 3: Introduction to the Tidyverse and Tidytext
+### Deliverable 16: Create an Object Consisting of Jane Austen Books
+
+```{r}
+original_books <- janeaustenr::austen_books() %>% # assign austen_books to a new object
+  dplyr::group_by(book) %>% 
+  dplyr::mutate(linenumber = dplyr::row_number(), 
+  chapter = cumsum(stringr::str_detect(text, stringr::regex("^chatper [//divxlc]", ignore_case = TRUE)))) %>% 
+  dplyr::ungroup()
+
+original_books # view object
+class(original_books)
+```
+
+### Deliverable 17: Create a Tidy Version of “original_books”
+```{r}
+tidy_books <- original_books %>%  # create a tibble
+  tidytext::unnest_tokens(word, text)
+
+tidy_books # view tibble
+class(tidy_books) #
+```
+
+### Deliverable 18: Apply Stopword Dictionary to tidy_books
+```{r}
+data(stop_words) # load stop_words into environment
+stop_words
+
+tidy_books <- tidy_books %>% # remove stop words with anti join
+  dplyr::anti_join(stop_words, by = dplyr::join_by(word))
+```
+
+### Deliverable 19: Count Words in tidy_books
+```{r}
+tidy_books %>% # obtain word count
+  dplyr::count(word, sort = TRUE)
+```
+
+### Deliverable 19: Visualize Words in tidy_books
+```{r}
+tidy_books %>% # create a bar chart of most occurring words excluding stop words
+  count(word, sort = TRUE) %>%
+  filter(n > 600) %>% 
+  mutate(word=reorder(word, n)) %>%
+  ggplot(aes(word,n)) +
+    geom_col() +
+    xlab(NULL) +
+    coord_flip()
+```
+
+### Deliverable 20: Create hgwells Object Using Project Gutenberg
+```{r}
+hgwells <- gutenbergr::gutenberg_download(c(35, 36, 5230, 159)) # download hgwells texts
+hgwells
+```
+
+### Deliverable 21: Create Tidy Version of hgwells
+```{r}
+tidy_hgwells <- hgwells %>% # create tidy version of hgwells data object
+  tidytext::unnest_tokens(word, text) %>% 
+  dplyr::anti_join(stop_words, by = dplyr::join_by(word))
+tidy_hgwells
+```
+
+### Deliverable 23: Count Words in tidy_hgwells
+```{r}
+tidy_hgwells %>% # obtain word count
+  dplyr::count(word, sort = TRUE)
+```
+
+### Deliverable 24: Create bronte Object
+```{r}
+bronte <- gutenbergr::gutenberg_download(c(1260, 768, 969, 9182, 767)) # download bronte texts
+bronte
+```
+
+### Deliverable 25: Tidy the bronte Object
+```{r}
+tidy_bronte <- bronte %>% # tidy the bronte data object
+  tidytext::unnest_tokens(word, text) %>% 
+  dplyr::anti_join(stop_words, by = dplyr::join_by(word))
+tidy_bronte
+```
+
+### Deliverable 26: Identify Frequent Words in tidy_bronte
+```{r}
+tidy_bronte %>% # obtain word count
+  dplyr::count(word, sort = TRUE)
+```
+
+### Deliverable 28: Visualize Word Frequency Amongst Three Objects
+```{r}
+frequency <- bind_rows(mutate(tidy_bronte, author="Bronte Sisters"),
+                      mutate(tidy_hgwells, author="H.G. Wells"),
+                      mutate(tidy_books, author="Jane Austen")) %>%
+                      mutate(word = str_extract(word, "[a-z'] +")) %>%
+                      count(author, word) %>%
+                      group_by(author) %>%
+                      mutate(proportion = n / sum(n)) %>%
+                      select(-n) %>%
+                      spread(author, proportion) %>%
+                      gather(author, proportion, "Bronte Sisters":"H.G. Wells")
+```
+
+### Deliverable 28: Visualize Word Frequency Amongst Three Objects
+```{r}
+ggplot(frequency, aes(x = proportion, y = `Jane Austen`, color = abs(`Jane Austen` - proportion))) +
+  ggplot2::geom_abline(color = "gray40", lty = 2) +
+  ggplot2::geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  ggplot2::geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  ggplot2::scale_x_log10(labels = percent_format()) +
+  ggplot2::scale_y_log10(labels = percent_format()) +
+  ggplot2::scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+  ggplot2::facet_wrap(~author, ncol = 2) +
+  ggplot2::theme(legend.position="none") +
+  ggplot2::labs(y = "Jane Austen", x = NULL)
+```
+
+## Part 4: Word and N-Gram Frequencies using Python
+```{python}
+# import libraries
+import nltk, sklearn
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+```
+
+### Step 2. Analyzing Twitter Data
+
+```{python}
+tweets_df = pd.read_csv('Lab 2/Data/oct_delta.csv') # read in twitter data
+
+tweets_df['char_count'] = tweets_df['text'].apply(len) # create new column variable
+
+tweets_df['char_count'].plot.hist(bins = 20)
+plt.show()
+```
+
+#### 3. Word Count (Term Frequency) in Each Tweet
+```{python}
+cv = CountVectorizer() # begin instance of count vectorizer
+tf = cv.fit_transform(tweets_df['text']) 
+tf_feature_names = cv.get_feature_names_out()
+
+tf_df = pd.DataFrame(tf.toarray(), columns = tf_feature_names) # create df
+
+tf_df.sum().sort_values(ascending = False).head(20).plot.bar() # create a bar plot
+plt.show()
+```
+
+#### 4. Word Count (TF-IDF) in Each Tweet
+```{python}
+tfidf = TfidfVectorizer() # create an instance of class
+tfidf_matrix = tfidf.fit_transform(tweets_df['text'])
+tfidf_feature_names = tfidf.get_feature_names_out()
+
+tfidf_df = pd.DataFrame(tfidf_matrix.toarray(), # convert to df
+                        columns=tfidf_feature_names) 
+
+tfidf_df.sum().sort_values(ascending=False).head(20).plot.bar() # create bar plot
+plt.show()
+```
+
+#### 5. Most Common Words
+```{python}
+tf_df.sum().sort_values(ascending=False).head(20) # see most common 20 words
+```
+
+```{python}
+tf_df.sum().sort_values(ascending=False).head(20).plot.bar() # create a bar plot
+plt.show()
+```
+
+#### 6. Most Common Phrases (Bigrams and Trigrams)
+```{python}
+bigram_vectorizer = CountVectorizer(ngram_range=(2, 2)) # create an instance of class
+bigram_matrix = bigram_vectorizer.fit_transform(tweets_df['text'])
+```
+
+#### 7. Plotting Most Common Terms
+```{python}
+# create a function to create a plot of most common words
+def plot_most_common_words(count_data, count_vectorizer, top_n=20):
+  words = count_vectorizer.get_feature_names_out()
+  total_counts = count_data.sum(axis=0).tolist()[0]
+  count_dict = (zip(words, total_counts))
+  count_dict = sorted(count_dict, key=lambda x:x[1], reverse=True)[0:top_n]
+  words, counts = zip(*count_dict)
+  plt.figure(figsize=(10, 5))
+  plt.bar(words, counts)
+  plt.xticks(rotation=45)
+  plt.show()
+
+plot_most_common_words(tf, cv)
+```
+
+### Step 3: Analyzing Jane Austen’s Novels
+#### 1. Creating Dataset
+```{python}
+nltk.download('gutenberg') # download gutenberg package
+from nltk.corpus import gutenberg # import gutenberg
+# compile austen texts with list comprehension
+austen_texts = gutenberg.raw(fileids=[f for f in gutenberg.fileids() if 'austen' in f])
+```
+
+#### 2. Preprocessing the Data
+```{python}
+nltk.download('stopwords') # download stopwords package
+stop_words = set(stopwords.words('english')) # select english stopwords
+austen_words = nltk.word_tokenize(austen_texts) # tokenize austen texts
+# filter words with list comprehension
+filtered_words = [word for word in austen_words if word.lower() not in stop_words]
+```
+
+#### 3. Analyze TF and TF-IDF
+```{python}
+cv = CountVectorizer() # initiate class instance
+tf = cv.fit_transform(filtered_words) # count words
+cv_feature_names = cv.get_feature_names_out()
+
+tfidf = TfidfVectorizer() # initiate class instance
+tfidf_matrix = tfidf.fit_transform(filtered_words) # create tfidf matrix
+tfidf_feature_names = tfidf.get_feature_names_out()
+```
+
+#### 4. Visualization
+```{python}
+plot_most_common_words(tf, cv) # create a plot of most common words
+plot_most_common_words(tfidf_matrix, tfidf)
+```
