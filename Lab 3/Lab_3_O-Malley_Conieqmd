@@ -1,0 +1,26 @@
+---
+title: "Lab 3"
+author: "Conie O'Malley"
+date: "`r Sys.Date()`"
+format: 
+  pdf: 
+    titlepage: true
+    toc: true
+    toc-depth: 2
+    code-block-wrap: true
+    number-sections: true
+execute:
+  echo: true
+  freeze: false
+  error: false
+editor: source
+python:
+  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
+---
+
+```{r}
+packages <- c("rvest", "tm.plugin.mail", "Rcrawler", "RSelenium", "RedditExtractoR", "bskyr", "rtoot")
+for (i in packages) {
+    renv::install(i)
+}
+```
