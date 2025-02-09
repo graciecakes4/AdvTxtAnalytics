@@ -17,11 +17,15 @@ python:
 
 ```{r setup code chunk}
 # libraries
-packs <- c("reticulate", "tidyverse", "ggplot2", "stringi", "stringr","ggthemes",
+packs <- c("reticulate", "ggplot2", "stringi", "stringr","ggthemes",
           "gutenbergr", "janeaustenr","tm","tidyr","ggplot2","scales","tidytext")
-for (i in packs){
-    library(i, character.only = TRUE)
+for (i in packs) {
+    if (!requireNamespace(i, quietly = TRUE)) install.packages(i)
 }
+
+# Load all libraries
+lapply(packs, library, character.only = TRUE)
+
 use_condaenv("datascience", required = FALSE) # set my environment
 ```
 
@@ -37,9 +41,7 @@ Sys.setlocale("LC_ALL", "C") # set locale
 ```{r}
 # Note - I use the pkg::function syntax because that is how we code at work. I know it's not standard and it takes up a little bit extra space, but I'm trying to build the muscle memory
 
-library(readr)
-
-text.df <- read_csv("~/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 2/Data/oct_delta.csv")
+readr::read_csv('Lab 2/Data/oct_delta.csv') -> text.df
 ```
 
 ### Deliverable 4: List the variable names in the Delta Tweets dataset.
@@ -113,6 +115,7 @@ The average length is 92 characters. This means that responses from customer ser
 
 ```{r}
 tweets <- data.frame(ID=seq(1:nrow(text.df)),text=text.df$text) # create a df
+tweets 
 ```
 
 ### Deliverable 12: Create and Inspect Corpus for Your Analysis
@@ -297,7 +300,7 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 ### Step 2. Analyzing Twitter Data
 
 ```{python}
-tweets_df = pd.read_csv("~/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 2/Data/oct_delta.csv") # read in twitter data
+tweets_df = pd.read_csv('Lab 2/Data/oct_delta.csv') # read in twitter data
 
 tweets_df['char_count'] = tweets_df['text'].apply(len) # create new column variable
 
