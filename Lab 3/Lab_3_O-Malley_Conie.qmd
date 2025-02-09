@@ -163,5 +163,21 @@ stringr::str_detect(folder_names, "^data$") # check if any element is exactly "d
 ### Deliverable 8: Reading html files into R and Manipulating with readr
 
 ```{r}
-weatherlink <- readr::read_html(“https://forecast.weather.gov/MapClick.php?lat=38.95604000000003&lon=-77.11782999999997#.XFozMs9KjUI”)
+weatherlink <- "https://forecast.weather.gov/MapClick.php?lat=38.95604000000003&lon=-77.11782999999997#.XFozMs9KjUI"
+weatherlink <- rvest::read_html(weatherlink) # read html file into R
+
+forecasthtml <- rvest::html_nodes(weatherlink, 
+                "detailed-forecast-body b, .forecast-text") # select nodes with class "forecast-text" and "b"
+forecasttext <- rvest::html_text(forecasthtml)
+forecasttext
+```
+
+```{r}
+paste(forecasttext, collapse = " ") # combine all text into one string
+```
+
+### Deliverable 9: Webscraping with Given CSS Fields
+
+```{r}
+starwars <- rvest::read_html("https://rvest.tidyverse.org/articles/starwars")
 ```
