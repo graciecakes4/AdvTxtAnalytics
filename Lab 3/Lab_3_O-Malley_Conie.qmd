@@ -86,4 +86,82 @@ The function identified any element that contained the letter "j" and returned a
 
 ```{r}
 stringr::str_extract(animals, "j") # extract all instances of the character "j" from each element
+
+stringr::str_locate(animals, "j") # locate position of first instance of "j" in each element
+```
+
+The function tells us the location of the first instance of "j" in each element.
+
+```{r}
+stringr::str_detect(animals, "jag") # check if any element contains the string "jag"
+```
+
+```{r}
+wows <- c("wow", "WoW", "WOW") # assign list vector
+
+stringr::str_detect(wows, "WOW") # check if any elementcontains the string "WOW"
+```
+
+### Deliverable 6: Understanding and Using the Regex Meta Characters
+
+```{r}
+math <- c("1=2", "14+5", "3-5") # assign list vector
+#stringr::str_detect(math, "+") # produces an error
+stringr::str_detect(math, "\\+") # check if any element contains the "+" character
+```
+
+```{r}
+strings <- c("cat", "cut", "cue") # assign list vector
+stringr::str_extract(strings, "c.") # detect letter c and next character
+stringr::str_extract(strings, "c.t") # detect letter c, any number of characters, then t
+```
+
+```{r}
+strings2 <- c("a", "b", "c") # assign list vector
+stringr::str_detect(strings2, "[ac]") # identify anything with a or c
+```
+
+```{r}
+numbers <- c("1","2","3","4","5","6","7","8","9") # assign list vector
+stringr::str_detect(numbers, "[2-7]") # identify numbers between 2 and 7
+```
+
+```{r}
+sentence <- "This is a long sentence with 2 numbers with 1 digits." # assign string vector
+stringr::str_locate_all(sentence, "[1-2a-b]") # locate any numbers from 1-2 and letter from a-b
+```
+
+This output means that there is a character from our search criteria `1-2a-b` at the positions listed in the sentence. `Start` and `End` signify the starting position of the located character and the ending position respectively. So `Start - 9` and `End - 9` means there is a character from our search criteria at the 9th index of the sentence.
+
+```{r}
+col <- c("colour", "color", "farver") # assign list vector
+stringr::str_detect(col, "colou?r") # check if any element contains the string "colour" or "color"
+```
+
+```{r}
+sentences <- c("The year was 1776.", "Alexander Hamilton died at 47.") # assign string vector
+stringr::str_extract(sentences, "\\d{4}") # extract all instances of a four-digit number 
+```
+
+### Deliverable 7: Understanding and Using the Regex Anchors
+
+```{r}
+seasons <- c("The summer is hot this year","The spring is a lovely time", # assign string vector
+"Winter is my favorite time of the year","Fall is a time of peace") 
+stringr::str_detect(seasons, "^The") # check if any element starts with "The"
+stringr::str_extract(seasons, "^The") # extract all instances that start with "The"
+stringr::str_detect(seasons, "year$") # check if any element ends with "year"
+```
+
+```{r}
+folder_names <- c("analysis","data-raw","data","R") # assing string vector
+stringr::str_detect(folder_names, "^data$") # check if any element is exactly "data"
+```
+
+## Part 3: Web Scraping
+
+### Deliverable 8: Reading html files into R and Manipulating with readr
+
+```{r}
+weatherlink <- readr::read_html(“https://forecast.weather.gov/MapClick.php?lat=38.95604000000003&lon=-77.11782999999997#.XFozMs9KjUI”)
 ```
