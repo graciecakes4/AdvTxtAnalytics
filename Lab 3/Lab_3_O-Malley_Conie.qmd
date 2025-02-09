@@ -60,7 +60,7 @@ class(trump2)
 class(trump3)
 ```
 
-### Deliverable 4: Import and Inspect a Folder of .txt files Using TM: IGF Bali Transcripts
+## Deliverable 4: Import and Inspect a Folder of .txt files Using TM: IGF Bali Transcripts
 ```{r}
 igfbali <- tm::Corpus(tm::DirSource("Lab 3/data/txt_data"), # read igfbali data into corpus vector
                       readerControl=list(reader=tm::readPlain))
@@ -73,9 +73,9 @@ We use readPlain in order to read the plain text data files from the `txt_data` 
 
 `igfbali` is a `r igfbali_class` object.
 
-## Part 2: Regular Expressions (REGEX)
+# Part 2: Regular Expressions (REGEX)
 
-### Deliverable 5: Create Objects Containing a Vector of Characters and Explore using Regex
+## Deliverable 5: Create Objects Containing a Vector of Characters and Explore using Regex
 ```{r}
 animals <- c("jaguar", "jay", "bat") # create a list vector
 
@@ -102,7 +102,7 @@ wows <- c("wow", "WoW", "WOW") # assign list vector
 stringr::str_detect(wows, "WOW") # check if any elementcontains the string "WOW"
 ```
 
-### Deliverable 6: Understanding and Using the Regex Meta Characters
+## Deliverable 6: Understanding and Using the Regex Meta Characters
 
 ```{r}
 math <- c("1=2", "14+5", "3-5") # assign list vector
@@ -143,7 +143,7 @@ sentences <- c("The year was 1776.", "Alexander Hamilton died at 47.") # assign 
 stringr::str_extract(sentences, "\\d{4}") # extract all instances of a four-digit number 
 ```
 
-### Deliverable 7: Understanding and Using the Regex Anchors
+## Deliverable 7: Understanding and Using the Regex Anchors
 
 ```{r}
 seasons <- c("The summer is hot this year","The spring is a lovely time", # assign string vector
@@ -158,9 +158,9 @@ folder_names <- c("analysis","data-raw","data","R") # assing string vector
 stringr::str_detect(folder_names, "^data$") # check if any element is exactly "data"
 ```
 
-## Part 3: Web Scraping
+# Part 3: Web Scraping
 
-### Deliverable 8: Reading html files into R and Manipulating with readr
+## Deliverable 8: Reading html files into R and Manipulating with readr
 
 ```{r}
 weatherlink <- "https://forecast.weather.gov/MapClick.php?lat=38.95604000000003&lon=-77.11782999999997#.XFozMs9KjUI"
@@ -176,8 +176,58 @@ forecasttext
 paste(forecasttext, collapse = " ") # combine all text into one string
 ```
 
-### Deliverable 9: Webscraping with Given CSS Fields
+## Deliverable 9: Webscraping with Given CSS Fields
 
 ```{r}
-starwars <- rvest::read_html("https://rvest.tidyverse.org/articles/starwars")
+starwars <- rvest::read_html("https://rvest.tidyverse.org/articles/starwars") # read in data
+
+films <- starwars %>% 
+  rvest::html_elements("section") # select all elements with class "section"
+films
+```
+
+```{r}
+title <- films %>%
+  rvest::html_element("h2") %>% # select all elements with the h2 element
+  rvest::html_text2() # extract text from h2 elements
+title
+```
+
+```{r}
+episode <- films %>% 
+  rvest::html_element("h2") %>% # select all elements with the h2 element
+  rvest::html_attr("data-id") %>% # select attributes from data-id
+  readr::parse_integer() # parse integers
+episode
+```
+
+## Deliverable 10: Webscraping Tabular Data
+
+```{r}
+html <- rvest::read_html("https://en.wikipedia.org/w/index.php?title=The_Lego_Movie&oldid=998422565")
+
+html %>%
+  rvest::html_element(".tracklist") %>%
+  rvest::html_table()
+```
+
+# Part 4: Collecting Primary Social Media Data
+
+## Deliverable 11: Prepare the RedditExtractoR Package
+
+```{r}
+library(RedditExtractoR) # library package
+```
+
+## Deliverable 12: Extract Data by Exploring Reddit and Specific Subreddits
+
+```{r}
+pelosubred <- RedditExtractoR::find_subreddits("peloton") # extract subreddits
+```
+
+```{r}
+#RedditExtractoR::find_subreddits("python") #by keyword
+#RedditExtractoR::find_thread_urls('https://www.reddit.com/subreddits/search.json?limit=100&q=python&after=t5_37sand') #by known url
+#RedditExtractoR::get_thread_content('https://www.reddit.com/subreddits/search.json?limit=100&q=python&after=t5_37sand') #content of urls
+#RedditExtractoR::get_user_content('coniecakes') #data related to users
 ```
