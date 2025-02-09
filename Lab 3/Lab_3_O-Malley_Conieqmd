@@ -24,3 +24,38 @@ for (i in packages) {
     renv::install(i)
 }
 ```
+
+# Part 1: Importing Data Using the tm Package
+
+## Deliverable 1: Review File Types
+
+```{r}
+tm::getReaders() # obtain available readers from tm package
+```
+
+Word: "readDOC"
+PDF: "readPDF"
+Plaintext: "readPlain"
+HTML: "readHTML"
+Email: "readMail"
+
+## Deliverable 2: Getting and Setting a Working Directory
+```{r}
+getwd() # get working directory
+```
+
+## Deliverable 3: Importing Tab Delimited Files: Prepare Trump Impeachment Object
+```{r}
+trump1 <- read.delim("Lab 3/data/impeach.tab", stringsAsFactors = FALSE) # read tab delimited file
+str(trump1) # structure of the data frame
+
+trump2 <- read.delim("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 3/data/impeach.tab", stringsAsFactors = FALSE) # read using absolute path
+str(trump2)
+
+trump3 <- readr::read_tsv("Lab 3/data/impeach.tab") # import using read_tsv
+str(trump3)
+
+class(trump1)
+class(trump2)
+class(trump3)
+```
