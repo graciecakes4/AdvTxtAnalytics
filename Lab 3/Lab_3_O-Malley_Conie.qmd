@@ -82,4 +82,8 @@ animals <- c("jaguar", "jay", "bat") # create a list vector
 stringr::str_detect(animals, "j") # check if any element in the vector contains the character "j"
 ```
 
+The function identified any element that contained the letter "j" and returned a boolean.
 
+```{r}
+stringr::str_extract(animals, "j") # extract all instances of the character "j" from each element
+```
