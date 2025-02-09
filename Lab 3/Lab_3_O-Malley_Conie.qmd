@@ -59,3 +59,27 @@ class(trump1)
 class(trump2)
 class(trump3)
 ```
+
+### Deliverable 4: Import and Inspect a Folder of .txt files Using TM: IGF Bali Transcripts
+```{r}
+igfbali <- tm::Corpus(tm::DirSource("Lab 3/data/txt_data"), # read igfbali data into corpus vector
+                      readerControl=list(reader=tm::readPlain))
+tm::inspect(igfbali[1]) # inspect igfbali
+class(igfbali) -> igfbali_class # identify the class of igfbali
+```
+
+We use readPlain in order to read the plain text data files from the `txt_data` into a corpus.
+
+
+`igfbali` is a `r igfbali_class` object.
+
+## Part 2: Regular Expressions (REGEX)
+
+### Deliverable 5: Create Objects Containing a Vector of Characters and Explore using Regex
+```{r}
+animals <- c("jaguar", "jay", "bat") # create a list vector
+
+stringr::str_detect(animals, "j") # check if any element in the vector contains the character "j"
+```
+
+
