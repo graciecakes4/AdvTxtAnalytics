@@ -19,6 +19,8 @@ python:
 ---
 
 ```{r}
+library(reticulate)
+library(dplyr)
 packages <- c("rvest", "tm.plugin.mail", "Rcrawler", "RSelenium", "RedditExtractoR", "bskyr", "rtoot")
 for (i in packages) {
     renv::install(i)
@@ -46,13 +48,13 @@ getwd() # get working directory
 
 ## Deliverable 3: Importing Tab Delimited Files: Prepare Trump Impeachment Object
 ```{r}
-trump1 <- read.delim("Lab 3/data/impeach.tab", stringsAsFactors = FALSE) # read tab delimited file
+trump1 <- read.delim("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 3/data/impeach.tab", stringsAsFactors = FALSE) # read tab delimited file
 str(trump1) # structure of the data frame
 
 trump2 <- read.delim("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 3/data/impeach.tab", stringsAsFactors = FALSE) # read using absolute path
 str(trump2)
 
-trump3 <- readr::read_tsv("Lab 3/data/impeach.tab") # import using read_tsv
+trump3 <- readr::read_tsv("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 3/data/impeach.tab") # import using read_tsv
 str(trump3)
 
 class(trump1)
@@ -62,7 +64,7 @@ class(trump3)
 
 ## Deliverable 4: Import and Inspect a Folder of .txt files Using TM: IGF Bali Transcripts
 ```{r}
-igfbali <- tm::Corpus(tm::DirSource("Lab 3/data/txt_data"), # read igfbali data into corpus vector
+igfbali <- tm::Corpus(tm::DirSource("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 3/data/txt_data"), # read igfbali data into corpus vector
                       readerControl=list(reader=tm::readPlain))
 tm::inspect(igfbali[1]) # inspect igfbali
 class(igfbali) -> igfbali_class # identify the class of igfbali
@@ -230,4 +232,188 @@ pelosubred <- RedditExtractoR::find_subreddits("peloton") # extract subreddits
 #RedditExtractoR::find_thread_urls('https://www.reddit.com/subreddits/search.json?limit=100&q=python&after=t5_37sand') #by known url
 #RedditExtractoR::get_thread_content('https://www.reddit.com/subreddits/search.json?limit=100&q=python&after=t5_37sand') #content of urls
 #RedditExtractoR::get_user_content('coniecakes') #data related to users
+```
+
+### Deliverable 13: Prepare the rtoot Package and Authenticate with the Public API
+```{r}
+library(rtoot) # library rtoot
+
+#rtoot::auth_setup(instance = "mastodon.social", # obtain public api key from mastadon social
+#          type = NULL,
+#          name = NULL,
+#          path = NULL,
+#          clipboard = FALSE,
+#          verbose = TRUE,
+#          browser = TRUE
+#)
+```
+
+#### Collect toots using Various Endpoints
+```{r}
+rtoot::get_instance_general(instance = "mastodon.social", token = "public") # create an instance of Mastodon API
+
+mastoactivity <- rtoot::get_instance_activity(instance = "mastodon.social") # get activity from Mastodon API
+mastoactivity
+
+mastotrends <- rtoot::get_instance_trends(instance = "mastodon.social") # get trends from Mastodon API
+mastotrends[25,]
+```
+
+```{r}
+id <- "211346"
+#rtoot::get_account_followers(id)
+#rtoot::get_account_following(id)
+#rtoot::get_account_statuses(id)
+
+# keeps returning an error 404 code
+```
+
+# Part 5: Analyzing Secondary Social Media Data
+
+## Deliverable 14: Create the IRA Data Object
+
+```{r}
+library(tidyverse) # library tidyverse
+
+ira_tweets <- readr::read_csv("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 3/data/IRAhandle_tweets_1.csv") # read data into dataframe vector
+utils::head(ira_tweets) # view the first few rows of the data frame
+utils::tail(ira_tweets) # view the last few rows of the data frame
+class(ira_tweets) # check the class of the data frame
+```
+
+## Deliverable 15: Using the count() function, determine how many tweets are from each region in the dataset?
+
+```{r}
+ira_tweets %>% 
+  dplyr::count(region) # count number of tweets per region
+```
+
+## Deliverable 16: How many tweets are from each language in the dataset?
+
+```{r}
+ira_tweets %>%
+  dplyr::count(language) # count number of tweets per language
+```
+
+## Deliverable 17: What are the account types in the dataset, and how many tweets are from each account type in the dataset?
+
+```{r}
+ira_tweets %>%
+  dplyr::count(account_type) # count number of tweets per account type
+```
+
+## Deliverable 18: What are the account categories in the dataset, and how many tweets are from each account category in the dataset?
+
+```{r}
+ira_tweets %>%
+  dplyr::count(account_category) # count number of tweets per account category
+```
+
+# Part 6: Webscraping and REGEX in Python
+
+## Deliverable 19: Using Regex in Python
+
+```{python}
+import re
+```
+
+```{python}
+text = "The rain in Spain"
+
+if re.search("rain", text): # search for text in string
+  print("Yes, there is at least one match!")
+else:
+  print("No match")
+```
+
+```{python}
+text = "The rain in Spain falls mainly in the plain!"
+matches = re.findall("ain", text) # search for string in text string
+print(matches)
+```
+
+```{python}
+text = "The rain in Spain" 
+split_text = re.split("", text) # split string into list of substrings based on pattern
+print(split_text)
+```
+
+```{python}
+text = "The rain in Spain"
+replaced_text = re.sub("Spain", "France", text) # substitute string with another string
+print(replaced_text)
+```
+
+## Deliverable 20: Webscraping with BeautifulSoup
+
+```{python}
+import requests
+from bs4 import BeautifulSoup
+```
+
+```{python}
+url = "http://quotes.toscrape.com/"
+response = requests.get(url) # get response from website
+soup = BeautifulSoup(response.text, 'html.parser') # parse text
+print(soup)
+```
+
+```{python}
+quotes = soup.find_all("span", class_="text") # find all span elements with class "text"
+for quote in quotes:
+  print(quote.text) # print the text of each quote
+```
+
+```{python}
+authors = soup.find_all("small", class_="author") # find all small elements with class "author"
+for author in authors: 
+  print(author.text)
+```
+
+## Deliverable 21: Combining Regex with BeautifulSoup
+
+```{python}
+from bs4 import BeautifulSoup
+
+html_doc = """
+<html><head><title>The Dormouse's story</title></head>
+<body>
+<p class="title"><b>The Dormouse's story</b></p>
+46
+<p class="story">Once upon a time there were three little sisters; and their names were
+<a href="http://example.com/elsie" class="sister" id="link1">Elsie</a>,
+<a href="http://example.com/lacie" class="sister" id="link2">Lacie</a> and
+<a href="http://example.com/tillie" class="sister" id="link3">Tillie</a>;
+and they lived at the bottom of a well.</p>
+"""
+
+soup = BeautifulSoup(html_doc, 'html.parser')
+
+# Find all 'a' tags with 'class' attribute containing 'sister'
+for tag in soup.find_all('a', class_=re.compile("sister")):
+  print(tag)
+```
+
+```{python}
+text = "Contact us at info@example.com or support@example.com"
+emails = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', text)
+print(emails)
+```
+
+## Deliverable 22: Webscraping with Selenium
+
+```{python}
+from selenium import webdriver
+from selenium.webdriver.common.by import By  # Import By module
+
+browser=webdriver.Chrome() # Launch Chrome Browser
+
+browser.get("http://quotes.toscrape.com/") # Open the website
+
+quotes = browser.find_elements(By.CSS_SELECTOR, ".text") # Find all elements with class "text"
+
+for quote in quotes:
+  print(quote.text)
+
+browser.quit()
 ```
