@@ -1,0 +1,446 @@
+---
+title: "Lab 4"
+author: "Conie O'Malley"
+date: "`r Sys.Date()`"
+format: 
+  pdf: 
+    titlepage: true
+    toc: true
+    toc-depth: 2
+    code-block-wrap: true
+    number-sections: true
+execute:
+  echo: true
+  freeze: false
+  error: false
+editor: source
+python:
+  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
+---
+
+```{r}
+packages <- c("rvest", "tm", "readr", "tm.plugin.mail", "Rcrawler", "RSelenium", "xml2", "tidyverse", 
+              "tidytext", "nycflights13")
+for (i in packages){
+  if (!require(i, character.only = TRUE)) {
+    renv::install(i)
+  }
+  library(i, character.only = TRUE)
+}
+
+library(dplyr)
+library(ggplot2)
+```
+
+# Part 1: Primary Data Wrangling Verbs in dplyr and tidyr
+
+```{r}
+dplyr::as_tibble(iris) # Convert data frame to tibble
+dplyr::glimpse(iris) # view data description
+```
+
+## Deliverable 1: Call the iris dataset, and then use the group_by() function to group the iris data by the variable Species, and then use the summarize() function using (avg = mean(Sepal.Width)) in the argument, and then, arrange by average by using the arrange() function with avg in the argument.
+
+```{r}
+iris %>%
+  dplyr::group_by(Species) %>% # group by species
+  dplyr::summarise(avg = mean(Sepal.Width)) %>% # calculate mean by sepal width
+  dplyr::arrange(avg) # arrange by average
+```
+
+```{r}
+dplyr::filter(iris, Sepal.Length >7) # filter rows where sepal length is greater than 7
+```
+
+```{r}
+dplyr::distinct(iris) # view distinct values in iris
+```
+
+## Deliverable 2: Randomly select a fraction of 0.5 rows from the iris dataset
+
+```{r}
+dplyr::sample_frac(iris, 0.5, replace = TRUE) # sample half of the data with replacement
+```
+
+```{r}
+dplyr::sample_n(iris, 20, replace = TRUE) # sample 20 random rows of data
+```
+
+```{r}
+dplyr::slice(iris, 20:25) # slice rows from index 20 to 25
+```
+
+```{r}
+dplyr::top_n(storms, 20, wind) # get top 20 storms with highest wind speed
+```
+
+## Deliverable 3: Summarize the Data in the iris dataset
+
+```{r} 
+dplyr::summarize(iris, avg = mean(Petal.Length)) # calculate average petal length
+dplyr::mutate_each(iris, funs = mean) # 
+dplyr::count(iris, Species, wt = Sepal.Length) # count species based on sepal length
+```
+
+```{r}
+nycflights13::flights
+
+dplyr::filter(flights, month == 6, day == 19) # filter flights from June 19
+
+jan1 <- dplyr::filter(flights, month == 1, day ==1) # filter flights for January 1st
+```
+
+## Deliverable 3: Identify Christmas Flights
+
+```{r}
+(dec25 <- dplyr::filter(flights, month == 12, day == 25)) # filter for Christmas flights
+dplyr::count(dec25) -> dec25_flights # count number of Christmas flights
+```
+
+There were `r dec25_flights` flights that departed on December 25th.
+
+```{r}
+#dplyr::filter(flights, month = 1) 
+dplyr::filter(flights, month == 1) 
+```
+
+The error occurs with the use of a single '=' sign, which tells R that you want to assign month the value of 1, which cannot be done in this case with the filter function where you are trying to identify month values of 1 (January). The correct operator for equality is '=='.
+
+```{r}
+dplyr::filter(flights, month == 11 | month == 12) # filter for flights in November or December
+count(dplyr::filter(flights, month == 11 | month == 12)) -> nov_dec_flights # count number of flights in November and December
+```
+
+There were `r nov_dec_flights` flights that departed in November or December.
+
+```{r}
+nov_dec <- dplyr::filter(flights, month %in% c(11,12)) # filter for flights in November or December
+if (nov_dec_flights == count(nov_dec)){ # use if statement to check if the outputs are equivalent
+  print("These flights are the same!")
+}
+```
+
+```{r}
+dplyr::arrange(flights, year, month, day) # sort by year, month, and day
+```
+
+```{r}
+dplyr::arrange(flights, desc(arr_delay)) # sort by arrival delay in descending order
+```
+
+```{r}
+dplyr::select(flights, year, month, day) # select only the year, month, and day columns
+```
+
+```{r}
+dplyr::select(flights, year:day) # select from the year column to the day column
+```
+
+```{r}
+dplyr::select(flights, -(year:day)) # remove the year, month, and day columns
+```
+
+```{r}
+dplyr::rename(flights, tail_num = tailnum) # rename tail_num column to tailnum
+```
+
+## Deliverable 4: Use the mutate()
+```{r}
+flights_sml <- dplyr::select(flights, year:day, tidyselect::ends_with("delay"),distance, air_time)
+
+dplyr::mutate(flights_sml, gain = arr_delay - dep_delay, speed = distance/air_time*60) # add new columns for gain and speed
+```
+
+```{r}
+dplyr::mutate(flights_sml, gain = arr_delay - dep_delay, hours = air_time/60, gain_per_hour = gain/hours)
+```
+
+```{r}
+dplyr::transmute(flights, gain = arr_delay - dep_delay, hours = air_time/60, gain_per_hour = gain/hours)
+```
+
+```{r}
+dplyr::summarize(flights, delay = mean(dep_delay, na.rm=TRUE)) # calculate the average departure delay
+```
+
+```{r}
+by_day <- dplyr::group_by(flights, year, month, day) # assign flights to days
+dplyr::summarize(by_day, delay = mean(dep_delay, na.rm=TRUE)) # calculate delay by day
+```
+
+``` {r}
+by_dest <- dplyr::group_by(flights, dest)
+
+delay <- dplyr::summarize(by_dest, count=n(), dist=mean(distance, na.rm=TRUE),
+         delay=mean(arr_delay, na.rm=TRUE)) # calculate average distance and delay by destination
+delay <- filter(delay, count >20, dest != "HNL") # remove Honolulu and flights with less than 20 counts
+ggplot2::ggplot(data = delay, mapping = aes(x=dist, y=delay))+
+  geom_point(aes(size=count), alpha = 1/3)+
+  geom_smooth(se=FALSE) +
+  theme_minimal() + 
+  labs(title="Average Delay by Distance", x="Distance (miles)", 
+  y="Delay (minutes)") # plot average delay by distance
+```
+
+## Deliverable 5: Use the pipe operator to create an object called delays which 1. Groups flights by destination; 2. Summarizes and computes distance, average delay, and number of flights; and 3. Filter to remove noisy points and Honolulu airport.
+
+```{r}
+delays <- flights %>%  # create delays object
+  dplyr::group_by(dest) %>%
+  dplyr::summarize(count=n(), dist=mean(distance, na.rm=TRUE), delay=mean(arr_delay, na.rm=TRUE)) %>%
+  dplyr::filter(count > 20, dest != "HNL")
+
+daily <- dplyr::group_by(flights, year, month, day)
+(per_day <- dplyr::summarize(daily, flights=n()))
+``` 
+
+```{r}
+daily %>%
+  dplyr::ungroup() %>%
+  dplyr::summarize(flights=n()) # count the number of total flights
+```
+
+# Part 2: Handling Missing Values with dplyr
+
+## Deliverable 6: Practicing group_by
+
+```{r}
+flights %>%
+  dplyr::group_by(year, month, day) %>% # group by date
+  dplyr::summarize(mean=mean(dep_delay)) # calculate mean departure delay
+```
+
+```{r}
+flights %>%
+  dplyr::group_by(year, month, day) %>% 
+  dplyr::summarize(mean=mean(dep_delay, na.rm=TRUE)) # calculate departure delay after removing NA values
+```
+
+# Part 3: Practicing Data Wrangling on Real Text Mining Projects
+
+```{r}
+impeachtidy <- readr::read_tsv("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 4/data/impeach.tab") # read data
+```
+
+## Deliverable 7: Tokenize the impeachtidy dataset using the unnest_tokens() function on the “TEXT” variable/column to separate the text, so that it has one token per row and store that output in a new object called impeach_words.
+
+```{r}
+impeach_words <- impeachtidy %>% 
+  tidytext::unnest_tokens(word,TEXT) # tokenize the "TEXT" column into individual words
+impeach_words
+```
+
+```{r}
+data(stop_words) # load stop words data
+head(stop_words) # view first and last few rows of stop words data
+tail(stop_words) 
+```
+
+## Deliverable 8: Apply the built-in stopwords dictionary to our impeach_words dataset using the anti_join() function. Use the pipe capabilities %>% of the tidyverse.
+```{r}
+impeach_clean <- impeach_words %>% 
+  dplyr::anti_join(stop_words) # remove stop words from the "word" column
+impeach_clean
+```
+
+## Deliverable 9: Count the most frequently occurring words in the dataset.
+
+```{r}
+impeach_clean %>%
+  dplyr::count(word, sort = TRUE) # count occurrences of each word and sort by frequency
+top_10 <- head(impeach_clean, 10)
+```
+
+
+The top 10 words in order are: `r top_10`.
+
+
+## Deliverable 10: Visualize this count using the ggplot2 package. Create a barchart of all the words occurring more than 600 times in the dataset (you could adjust that by changing the filter() parameter).
+
+```{r}
+impeach_clean %>%
+  dplyr::count(word, sort = TRUE) %>%
+  dplyr::filter(n>600) %>%
+  dplyr::mutate(word=reorder(word,n)) %>%
+  ggplot2::ggplot(aes(word,n)) +
+  ggplot2::geom_col() +
+  ggplot2::xlab(NULL) +
+  ggplot2::coord_flip() +
+  ggplot2::theme_minimal()
+```
+
+## Deliverable 11: Combinining all the steps using the pipe capabilities of dplyr.
+
+```{r}
+impeachtidy <- readr::read_tsv("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 4/data/impeach.tab")
+
+impeach_words <- impeachtidy %>%
+  tidytext::unnest_tokens(word,TEXT) %>%
+  dplyr::anti_join(stop_words) # tokenize words and remove stop words
+
+impeach_clean <- impeach_words %>% 
+  dplyr::anti_join(stop_words) # remove stop words again
+
+impeach_clean %>%  # visualize the words used in the impeachment
+  dplyr::count(word, sort = TRUE) %>%
+  dplyr::filter(n>600) %>%
+  dplyr::mutate(word=reorder(word,n)) %>%
+  ggplot2::ggplot(aes(word,n)) +
+  ggplot2::geom_col() +
+  ggplot2::xlab(NULL) +
+  ggplot2::coord_flip() +
+  ggplot2::theme_minimal()
+```
+
+```{r}
+impeach_words <- impeachtidy %>%
+  tidytext::unnest_tokens(word,TEXT) %>%
+  dplyr::count(SPEAKER, word, sort=TRUE) %>%
+  dplyr::ungroup()
+impeach_words # count the impeach words by speaker and word
+```
+
+## Deliverable 12: Group by speaker then explore the object and visualize the results.
+```{r}
+total_impeach <- impeach_words %>% 
+  dplyr::group_by(SPEAKER) %>%
+  dplyr::summarize(total=sum(n)) %>%
+  dplyr::arrange(desc(total)) # count words by speaker
+total_impeach
+```
+
+```{r}
+total_impeach %>% 
+  ggplot2::ggplot(aes(SPEAKER,total)) +
+  ggplot2::geom_col() +
+  ggplot2::xlab(NULL) +
+  ggplot2::ylab(NULL) +
+  ggplot2::coord_flip() # visualize word count by speaker totals
+```
+
+```{r}
+total_impeach %>%
+  ggplot2::ggplot(aes(SPEAKER,total)) +
+  ggplot2::geom_col() +
+  ggplot2::xlab(NULL) +
+  ggplot2::ylab(NULL) # view without flipping the coordinates
+```
+
+## Deliverable 13: Exploring .txt files using tm package
+
+```{r}
+igfbali <- tm::Corpus(tm::DirSource("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 3/data/txt_data"), 
+                      readerControl=list(reader=tm::readPlain)) # read igfbali data into corpus vector
+class(igfbali) # review the class
+igfbali
+```
+
+## Deliverable 14: Pre-processing the igfbali corpus
+
+``` {r}
+igfbali <- tm::tm_map(igfbali, removeWords, stopwords("english")) # remove stopwords
+
+more.stop.words <- c("transcript", "transcripts") # add more stop words
+
+igfbali <- tm::tm_map(igfbali, removeWords, more.stop.words) # remove more stop words
+
+tm::tm_map(igfbali, stemDocument) # stem document
+```
+
+## Deliverable 15: Create a Document Term Matrix (DTM) of the igfbali corpus.
+
+```{r}
+dtm <- tm::DocumentTermMatrix(igfbali) # create a document term matrix
+```
+
+## Deliverable 16: Exploring the Document Term Matrix (DTM)
+
+```{r}
+tm::findFreqTerms(dtm, 500) # find terms with frequency greater than or equal to 500
+```
+
+```{r}
+tm::inspect(tm::removeSparseTerms(dtm, sparse=0.4)) # remove sparse terms and inspect the DTM
+```
+
+## Deliverable 17: Finding Word Associations in the DTM
+
+```{r}
+tm::findAssocs(dtm, "activists", 0.8) # find words associated with "activists" with a min tdf of 0.8
+tm::findAssocs(dtm, "cybersecurity", 0.8) # find words associated with "cybersecurity" with a min tdf of 0.8
+```
+
+```{r}
+tm::inspect(tm::DocumentTermMatrix(igfbali, 
+            list(dictionary = c("multistakeholder", "freedom", "development")))) # create a DTM for specific terms and inspect it
+```
+
+# Part 4: Introduction to Data Wrangling in Python
+
+```{python}
+import nltk # import nltk
+nltk.download('reuters') # download reuters corpus
+```
+
+```{python}
+from nltk.corpus import reuters # import reuters corpus
+print("Categories:", reuters.categories()) # print categories in reuters corpus
+print("Number of documents:", len(reuters.fileids())) # print number of documents in reuters corpus
+```
+
+```{python}
+import string
+
+doc_id = reuters.fileids(categories="crude")[0] # get a document id from the crude category
+doc_text = reuters.raw(doc_id) # get raw text from document
+
+cleaned_text = doc_text.translate(str.maketrans('', '', string.punctuation)) # clean text of punction
+cleaned_text = ' '.join(cleaned_text.split()) # join text
+print(cleaned_text)
+```
+
+## Deliverable 19: Tokenization, Stemming, and Lemmatization of the Reuters Corpus
+```{python}
+from nltk.tokenize import word_tokenize # import word_tokenize function from nltk.tokenize module
+from nltk.corpus import stopwords # import stopwords corpus from nltk.corpus module
+nltk.download('punkt_tab')
+tokens = word_tokenize(cleaned_text) # tokenize words from above
+tokens = [word for word in tokens if word not in stopwords.words('english')] # remove stop words
+print(tokens)
+```
+
+```{python}
+from nltk.stem import PorterStemmer, WordNetLemmatizer # import functions from nltk.stem
+stemmer = PorterStemmer() # initiate instance of stemmer
+lemmatizer = WordNetLemmatizer() # initiate instance of lemmatizer
+stemmed = [stemmer.stem(word) for word in tokens] # stem tokens
+lemmatized = [lemmatizer.lemmatize(word) for word in tokens] # lemmatize tokens
+print("Stemmed:", stemmed)
+print("Lemmatized:", lemmatized)
+```
+
+## Deliverable 20: Conducting a Basic Parts of Speech Tagging of the Reuters Corpus
+
+```{python}
+from nltk import pos_tag # import function
+nltk.download('averaged_perceptron_tagger_eng')
+tagged_tokens = pos_tag(tokens) # tag parts of speech
+print(tagged_tokens) # print pos tagged tokens
+```
+
+## Deliverable 21: Full Text Processing Pipeline for the Reuters Corpus
+```{python} 
+def preprocess_pipeline(text): # create a data processing pipeline function
+  text = text.lower().translate(str.maketrans('', '', string.punctuation))
+  text = ' '.join(text.split())
+  tokens = word_tokenize(text)
+  tokens = [word for word in tokens if word not in stopwords.words('english')]
+  lemmatized = [lemmatizer.lemmatize(word) for word in tokens]
+  tagged = pos_tag(lemmatized)
+  return tagged
+
+doc_text = reuters.raw(reuters.fileids(categories='crude')[0]) # pre process data from reuters
+processed = preprocess_pipeline(doc_text) 
+print(processed)
+```
+
