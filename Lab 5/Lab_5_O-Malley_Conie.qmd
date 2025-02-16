@@ -42,7 +42,7 @@ library(reshape2)
 library(janeaustenr)
 library(reticulate)
 
-use_condaenv("datascience", required = FALSE) # set my environment
+#use_condaenv("datascience", required = FALSE) # set my environment
 ```
 
 # Part 1: Data Preparation, Text Mining and Dictionary Development in tm
@@ -407,6 +407,13 @@ nltk.download('punkt')
 nltk.download('punkt_tab')
 ```
 
+
+```{python}
+def preprocess_and_token(text):
+    text = text.lower()
+    tokens = text.split()
+    return tokens
+```
 ```{python}
 def preprocess_and_tokenize(text):
     text = text.lower()
