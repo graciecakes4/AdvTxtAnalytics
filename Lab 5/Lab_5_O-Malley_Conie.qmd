@@ -13,7 +13,7 @@ execute:
   echo: true
   freeze: false
   error: false
-editor: source
+  jupyter: python3
 python:
   version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
 ---
@@ -41,6 +41,8 @@ library(tidytext)
 library(reshape2)
 library(janeaustenr)
 library(reticulate)
+
+use_condaenv("datascience", required = FALSE) # set my environment
 ```
 
 # Part 1: Data Preparation, Text Mining and Dictionary Development in tm
@@ -423,6 +425,16 @@ def categorize_text(text, lexicon):
     return categories
 ```
 
+```{python}
+def categorize_text(text, lexicon):
+    tokens = preprocess_and_tokenize(text)
+    categories = {category: 0 for category in lexicon}
+    for token in tokens:
+        for category, words in lexicon.items():
+            if token in words:
+                categories[category] += 1
+    return categories
+```
 ```{python}
 sample_texts = [
     'The movie was good and the acting was great.',
