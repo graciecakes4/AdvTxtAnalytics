@@ -40,6 +40,7 @@ library(tidyverse)
 library(tidytext)
 library(reshape2)
 library(janeaustenr)
+library(reticulate)
 ```
 
 # Part 1: Data Preparation, Text Mining and Dictionary Development in tm
@@ -313,6 +314,77 @@ token_ungd <- tokens_select(token, c("[\\d-]", "[[:punct:]]", "^.{1,2}$"),
 
 ## Deliverable 23: Tokenize the Dataset by N-Grams
 
-
+```{r}
+toks_ngram <- tokens_ngrams(token, n = 2:4)
+head(toks_ngram[[1]], 30)
+tail(toks_ngram[[1]], 30)
+```
 
 ## Deliverable 24: Create a Document Feature Matrix
+
+```{r}
+mydfm <- dfm(token_ungd, tolower = TRUE,)
+mydfm <- dfm_remove(mydfm, pattern = stopwords("english"))
+mydfm <- dfm_wordstem(mydfm)
+```
+
+## Deliverable 25: Trim the DFM
+
+```{r}
+mydfm.trim <- dfm_trim(mydfm, min_docfreq = 0.075,
+                    max_docfreq = 0.90,
+                    docfreq_type = "prop"
+)
+
+head(dfm_sort(mydfm.trim, decreasing = TRUE, margin = "both"), n = 10, nf = 10)
+```
+
+#### Which country refers most to the economy in this snapshot of the data?
+
+Cuba.
+
+## Deliverable 26: Text Classification Using a Dictionary
+
+```{r}
+dict <- dictionary(file = "/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 5/data/policy_agendas_english.lcd")
+```
+
+## Deliverable 27: Apply Dictionary
+
+```{r}
+mydfm.un <- dfm(mydfm.trim) # create DFM w/o grouping or applying dictionary
+mydfm.un <- dfm_lookup(mydfm.un, dictionary = dict) # apply dictionary 
+mydfm.un <- dfm_group(mydfm.un, groups = docvars(mydfm.un, "country")) # group the DFM by "country"
+```
+
+## Deliverable 28: Convert the DFM to a Data Frame
+
+```{r}
+un.topics.pa <- convert(mydfm.un, "data.frame") %>%
+    dplyr::rename(country = doc_id) %>%
+    select(country, immigration, intl_affairs, defence) %>%
+    tidyr::gather(immigration:defence, key = "Topic", value = "Share") %>%
+    group_by(country) %>%
+    mutate(Share = Share/ sum(Share)) %>%
+    mutate(Topic = haven::as_factor(Topic))
+```
+
+## Deliverable 29: Visualize the Results
+
+```{r}
+un.topics.pa %>%
+    ggplot(aes(country, Share, colour = Topic, fill = Topic))+
+    geom_bar(stat = "identity")+
+    ggthemes::theme_economist_white() +
+    scale_color_brewer(palette = "Set1")+
+    scale_fill_brewer(palette = "Pastel1")+
+    ggtitle("Distribution of PA topics in the UN General Debate corpus")+
+    xlab("")+
+    ylab("Topic share (%)")+
+    theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+```
+
+# Part 4: Using nltk and TextBlob to conduct sentiment analysis in Python
+
+## Deliverable 30: Creating a Custom Lexicon and Applying it to a Sample Dataset
