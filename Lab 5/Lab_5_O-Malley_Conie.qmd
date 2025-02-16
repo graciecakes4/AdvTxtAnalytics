@@ -388,3 +388,54 @@ un.topics.pa %>%
 # Part 4: Using nltk and TextBlob to conduct sentiment analysis in Python
 
 ## Deliverable 30: Creating a Custom Lexicon and Applying it to a Sample Dataset
+
+```{python}
+custom_lexicon = {
+'positive': ['good', 'great', 'awesome', 'fantastic', 'terrific'],
+'negative': ['bad', 'terrible', 'awful', 'dreadful', 'horrible'],
+'neutral': ['okay', 'alright', 'fine', 'decent', 'satisfactory'],
+'uncertain': ['maybe', 'perhaps', 'possibly', 'probably', 'likely'],
+'conjunctions': ['and', 'but', 'or', 'so', 'yet']
+}
+```
+
+```{python}
+import nltk
+nltk.download('punkt')
+nltk.download('punkt_tab')
+```
+
+```{python}
+def preprocess_and_tokenize(text):
+    text = text.lower()
+    tokens = text.split()
+    return tokens
+```
+
+```{python}
+def categorize_text(text, lexicon):
+    tokens = preprocess_and_tokenize(text)
+    categories = {category: 0 for category in lexicon}
+    for token in tokens:
+        for category, words in lexicon.items():
+            if token in words:
+                categories[category] += 1
+    return categories
+```
+
+```{python}
+sample_texts = [
+    'The movie was good and the acting was great.',
+    'The movie was terrible and the acting was dreadful.',
+    'The movie was okay and the acting was satisfactory.',
+    'The movie was perhaps good and the acting was probably great.',
+    'The movie was fine and the acting was decent.',
+    'The movie was good but the acting was terrible.',
+    'The movie was good or the acting was bad.',
+    'The movie was good so the acting was bad.',
+    'The movie was good yet the acting was bad.'
+]
+for text in sample_texts:
+    categorize = categorize_text(text, custom_lexicon)
+    print(categorize_text(text, custom_lexicon))
+```
