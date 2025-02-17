@@ -20,6 +20,8 @@ python:
 
 ```{r library chunk}
 library(dplyr)
+library(jsonlite)
+library(httr)
 ```
 
 ```{r data import}
@@ -42,4 +44,102 @@ head(banned_books_cleaned,10) # sanity check
 
 banned_books_cleaned %>% 
     dplyr::summarise(dplyr::across(dplyr::everything(), ~ sum(is.na(.)), .names = "NA_count_{.col}")) # check for NA values in the date column
+```
+
+```{r data sampling}
+seed <- 245 # select random seed
+set.seed(seed) # set seed for reproducibility
+
+# sample books from Florida & New York
+fl_books_sample <- banned_books_cleaned %>% 
+    dplyr::filter(State == "Florida") %>% 
+    dplyr::sample_n(10) 
+
+md_books_sample <- banned_books_cleaned %>% 
+    dplyr::filter(State == "Maryland") %>% 
+    dplyr::sample_n(10)
+
+# print sampled books
+print(fl_books_sample)
+print(md_books_sample)
+```
+
+``` {r data collection}
+# search for titles in gutenberg library
+fl_books_titles_cleaned <- fl_books_sample %>% 
+    dplyr::select(Title) %>% 
+    dplyr::pull() %>% 
+    tolower() %>% 
+    stringr::str_trim()
+
+gutenberg_titles_cleaned <- gutenbergr::gutenberg_works() %>% 
+    dplyr::select(title) %>% 
+    dplyr::pull() %>% 
+    tolower() %>% 
+    stringr::str_trim()
+
+in_gutenberg <- c()
+
+for(i in fl_books_titles) {
+  if (i %in% gutenberg_titles) {
+    in_gutenberg <- c(in_gutenberg, i)
+  }
+}
+
+in_gutenberg
+```
+
+```{r isbn search function}
+# create isbn search function
+get_isbn_google <- function(title) {
+    search_url <- paste0("https://www.googleapis.com/books/v1/volumes?q=intitle:", gsub(" ", "+", title))
+    response <- httr::GET(search_url)
+    if (httr::status_code(response) != 200){
+        return("Search unsuccessful")
+    }
+    book_data <- tryCatch({
+        httr::content(response, "text", encoding = "UTF-8") %>% jsonlite::fromJSON()
+    }, error = function(e) return(NA))
+    if (!"items" %in% names(book_data) || length(book_data$items) == 0) {
+        return("No Results Found")
+    }
+    if (!"items" %in% names(book_data) || !is.list(book_data$items) || length(book_data$items) == 0) {
+        return("No Item Exists")
+    }
+    first_item <- book_data$items[[1]]
+
+    if (!"volumeInfo" %in% names(first_item) || !is.list(first_item$volumeInfo)) {
+        return("No Volume Exists")
+    }
+    volume_info <- first_item$volumeInfo
+    if (!"industryIdentifiers" %in% names(volume_info) || !is.list(volume_info$industryIdentifiers)) {
+        return("No ISBN Available")  # No ISBN available
+    }
+    identifiers <- volume_info$industryIdentifiers
+
+    isbn <- NA
+    for (id in identifiers) {
+        if (id$type == "ISBN_13") {
+            isbn <- id$identifier
+            break
+        } else if (id$type == "ISBN_10") {
+            isbn <- id$identifier
+        }
+    }
+    return(isbn)
+}
+
+# function test
+isbn_example <- get_isbn_google("Slaughterhouse-Five")
+print(isbn_example)
+```
+
+```{r isbn search}
+fl_books_titles <- fl_books_sample %>% 
+    dplyr::select(Title) %>% 
+    dplyr::pull()
+
+md_book_titles <- md_books_sample %>% 
+    dplyr::select(Title) %>% 
+    dplyr::pull()
 ```
