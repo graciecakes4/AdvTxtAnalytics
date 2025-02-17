@@ -407,7 +407,6 @@ nltk.download('punkt')
 nltk.download('punkt_tab')
 ```
 
-
 ```{python}
 def preprocess_and_token(text):
     text = text.lower()
@@ -433,16 +432,6 @@ def categorize_text(text, lexicon):
 ```
 
 ```{python}
-def categorize_text(text, lexicon):
-    tokens = preprocess_and_tokenize(text)
-    categories = {category: 0 for category in lexicon}
-    for token in tokens:
-        for category, words in lexicon.items():
-            if token in words:
-                categories[category] += 1
-    return categories
-```
-```{python}
 sample_texts = [
     'The movie was good and the acting was great.',
     'The movie was terrible and the acting was dreadful.',
@@ -457,4 +446,160 @@ sample_texts = [
 for text in sample_texts:
     categorize = categorize_text(text, custom_lexicon)
     print(categorize_text(text, custom_lexicon))
+```
+
+## Deliverable 31: Adding N-Grams to the Custom Lexicon
+
+```{python}
+custom_lexicon = {
+    'positive': ['good', 'great', 'awesome', 'fantastic', 'terrific', 'good and', 'great and'],
+    'negative': ['bad', 'terrible', 'awful', 'dreadful', 'horrible', 'bad and', 'terrible and'],
+    'neutral': ['okay', 'alright', 'fine', 'decent', 'satisfactory', 'okay and', 'alright and'],
+    'uncertain': ['maybe', 'perhaps', 'possibly', 'probably', 'likely', 'maybe and', 'perhaps and'],
+    'conjunctions': ['and', 'but', 'or', 'so', 'yet', 'but and', 'or and', 'so and', 'yet and']
+}
+```
+
+## Deliverable 32: Applying the Custom Lexicon with N-Grams to the Sample Sentences
+
+
+```{python}
+from nltk.util import ngrams
+```
+
+
+```{python}
+def generate_ngrams(tokens, n):
+   return [' '.join(gram) for gram in ngrams(tokens, n)]
+```
+
+
+```{python 3}
+def preprocess_and_tokenize(text):
+    text = text.lower()
+    tokens = text.split()
+    bigrams = generate_ngrams(tokens, 2)
+    trigrams = generate_ngrams(tokens, 3)
+    all_tokens = tokens + bigrams + trigrams
+    return all_tokens
+```
+
+
+```{python 4}
+def categorize_text(text, lexicon):
+    tokens = preprocess_and_tokenize(text)
+    categories = {category: 0 for category in lexicon}
+    for token in tokens:  
+        for category, phrases in lexicon.items():
+            if token in phrases:
+                categories[category] += 1
+    return categories
+```
+
+
+## Deliverable 33: Downloading NLTK Data and Preparing the Dataset
+
+```{python}
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+nltk.download('vader_lexicon') # Download VADER lexicon
+```
+
+```{python}
+# Initialize VADER sentiment analyzer
+sia = SentimentIntensityAnalyzer()
+# Sample text
+text = "I love this product! It's absolutely amazing :)"
+# Get sentiment scores
+sentiment = sia.polarity_scores(text)
+print(sentiment)
+```
+
+```{python}
+import nltk
+from nltk.corpus import movie_reviews
+from nltk.sentiment import SentimentIntensityAnalyzer
+import pandas as pd
+nltk.download('movie_reviews')
+nltk.download('vader_lexicon')
+```
+
+```{python}
+documents = [(list(movie_reviews.words(fileid)), category)
+            for category in movie_reviews.categories()
+            for fileid in movie_reviews.fileids(category)]
+```
+
+```{python}
+reviews = pd.DataFrame(documents, columns = ['text', 'sentiment'])
+reviews['text'] = reviews['text'].apply(lambda x: ' '.join(x))
+```
+
+## Deliverable 34: Display the first Five Rows of the Reviews Dataframe
+```{python}
+print(reviews.head())
+print(reviews.tail())
+```
+
+## Deliverable 35: Sentiment Analysis with VADER
+
+```{python}
+sid = SentimentIntensityAnalyzer()
+reviews['scores'] = reviews['text'].apply(lambda review: sid.polarity_scores(review))
+reviews['compound'] = reviews['scores'].apply(lambda score_dict: score_dict['compound'])
+reviews['comp_score'] = reviews['compound'].apply(lambda c: 'pos' if c >=0 else 'neg')
+
+print(reviews[['text', 'sentiment', 'compound', 'comp_score']].head())
+```
+
+## Deliverable 36: Quick Exploration of Sentiment Analysis in TextBlob
+
+```{python}
+import nltk
+from textblob import TextBlob
+nltk.download('gutenberg')
+from nltk.corpus import gutenberg
+```
+
+```{python}
+text = gutenberg.raw('austen-emma.txt') # import text
+
+sentences = nltk.sent_tokenize(text) # split into sentences
+
+for sentence in sentences[:25]:
+    blob = TextBlob(sentence)
+    print(f"Sentence: {sentence}\nPolarity: {blob.sentiment.polarity}\n")
+```
+
+## Deliverable 37: Sentiment Analysis on the UN Data with TextBlob
+
+```{python}
+import os
+from textblob import TextBlob
+```
+
+```{python}
+folder_path = "/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab 5/UN-data"
+results = [] # List to store the results
+# Walk through all subdirectories and files
+for root, dirs, files in os.walk(folder_path):
+    for filename in files:
+        if filename.endswith('.txt'):
+            file_path = os.path.join(root, filename)
+            with open(file_path, 'r', encoding='utf-8') as file:
+                text = file.read()
+                blob = TextBlob(text)
+                polarity = blob.sentiment.polarity
+                subjectivity = blob.sentiment.subjectivity
+                results.append({
+                    'file_path': file_path,
+                    'polarity': polarity,
+                    'subjectivity': subjectivity
+                    })
+
+for result in results[:5]:
+    print(f"File: {result['file_path']}")
+    print(f"Polarity: {result['polarity']}")
+    print(f"Subjectivity: {result['subjectivity']}")
+    print('---')
 ```
