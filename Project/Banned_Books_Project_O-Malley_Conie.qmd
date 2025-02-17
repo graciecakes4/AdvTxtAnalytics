@@ -1,0 +1,45 @@
+---
+title: "Final Project"
+author: "Conie O'Malley"
+date: "`r Sys.Date()`"
+format: 
+  pdf: 
+    titlepage: true
+    toc: true
+    toc-depth: 2
+    code-block-wrap: true
+    number-sections: true
+execute:
+  echo: true
+  freeze: false
+  error: false
+  jupyter: python3
+python:
+  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
+---
+
+```{r library chunk}
+library(dplyr)
+```
+
+```{r data import}
+banned_books_file_path <- "/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Project/data/PEN America's Index of School Book Bans (July 1, 2023 - June 30, 2024).xlsx" # assign file path to variable
+
+banned_books_list <- readxl::read_excel(banned_books_file_path, sheet = "Sorted by Author & Title", skip = 2) # import banned books list
+
+utils::head(banned_books_list, 10) # sanity check to make sure data was read in properly
+```
+
+```{r data preparation}
+colnames(banned_books_list) <- c("Title", "Author", "Secondary_Author", "Illustrator", "Translator", 
+                                "Series_Name", "State", "District", "Date_Removed", "Ban_Status", "Initiating_Action") # assign new column titles
+
+banned_books_cleaned <- banned_books_list %>% 
+    dplyr::select(Title, Author, State, District, Date_Removed, Ban_Status, Initiating_Action) %>% # select only relevant columns
+    dplyr::mutate(Date_Removed = as.Date(lubridate::my(Date_Removed))) # convert date column to Date class
+
+head(banned_books_cleaned,10) # sanity check
+
+banned_books_cleaned %>% 
+    dplyr::summarise(dplyr::across(dplyr::everything(), ~ sum(is.na(.)), .names = "NA_count_{.col}")) # check for NA values in the date column
+```
