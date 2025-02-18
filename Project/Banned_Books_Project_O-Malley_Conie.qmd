@@ -19,9 +19,11 @@ python:
 ---
 
 ```{r library chunk}
-library(dplyr)
 library(jsonlite)
 library(httr)
+library(stringdist)
+library(quanteda)
+data("gutenberg_metadata", package = "gutenbergr")
 ```
 
 ```{r data import}
@@ -44,19 +46,33 @@ head(banned_books_cleaned,10) # sanity check
 
 banned_books_cleaned %>% 
     dplyr::summarise(dplyr::across(dplyr::everything(), ~ sum(is.na(.)), .names = "NA_count_{.col}")) # check for NA values in the date column
+
+fl_banned_books_list <- banned_books_cleaned %>% 
+    dplyr::filter(State == "Florida") %>% 
+    dplyr::distinct(Title, .keep_all = TRUE)
+
+md_banned_books_list <- banned_books_cleaned %>% 
+    dplyr::filter(State == "Maryland") %>% 
+    dplyr::distinct(Title, .keep_all = TRUE)
+
+ia_banned_books_list <- banned_books_cleaned %>% 
+    dplyr::filter(State == "Iowa") %>% 
+    dplyr::distinct(Title, .keep_all = TRUE)
 ```
+
+## Data Sampling
+
+I sampled 10 book titles from the state of Florida's banned books list. I originally wanted to use New York for comparison, but they only had 6 titles, so I selected Maryland as my subgroup comparison.
 
 ```{r data sampling}
 seed <- 245 # select random seed
 set.seed(seed) # set seed for reproducibility
 
 # sample books from Florida & New York
-fl_books_sample <- banned_books_cleaned %>% 
-    dplyr::filter(State == "Florida") %>% 
+fl_books_sample <- fl_banned_books_list %>% 
     dplyr::sample_n(10) 
 
-md_books_sample <- banned_books_cleaned %>% 
-    dplyr::filter(State == "Maryland") %>% 
+md_books_sample <- md_banned_books_list %>% 
     dplyr::sample_n(10)
 
 # print sampled books
@@ -64,9 +80,14 @@ print(fl_books_sample)
 print(md_books_sample)
 ```
 
-``` {r data collection}
+## Data Collection
+
+### Gutenberg Search
+
+I began to search for data online. I cleaned the book titles from the Florida sample and cleaned the titles from the Gutenberg library (`gutenbergr`) to ensure they matched. I then compared the two lists and found that none of the Florida titles were also in the Gutenberg library. This caused me to pivot to search for any ISBNs from the Florida banned books list sample to attempt to search them in other libraries.
+```{r data collection}
 # search for titles in gutenberg library
-fl_books_titles_cleaned <- fl_books_sample %>% 
+fl_sample_books_titles_cleaned <- fl_books_sample %>% 
     dplyr::select(Title) %>% 
     dplyr::pull() %>% 
     tolower() %>% 
@@ -80,7 +101,7 @@ gutenberg_titles_cleaned <- gutenbergr::gutenberg_works() %>%
 
 in_gutenberg <- c()
 
-for(i in fl_books_titles) {
+for(i in fl_sample_books_titles_cleaned) {
   if (i %in% gutenberg_titles) {
     in_gutenberg <- c(in_gutenberg, i)
   }
@@ -88,6 +109,10 @@ for(i in fl_books_titles) {
 
 in_gutenberg
 ```
+
+### ISBN Search
+
+I could not obtain any ISBNs from the below function I wrote. I spent a few hours on this, then decided to move on to another method of searching.
 
 ```{r isbn search function}
 # create isbn search function
@@ -134,12 +159,191 @@ isbn_example <- get_isbn_google("Slaughterhouse-Five")
 print(isbn_example)
 ```
 
-```{r isbn search}
-fl_books_titles <- fl_books_sample %>% 
-    dplyr::select(Title) %>% 
-    dplyr::pull()
 
-md_book_titles <- md_books_sample %>% 
+### Gutenberg Search - Pt. 2
+
+I cleaned all book titles from the Florida banned books list and compared them to the Gutenberg library. My goal is to find a suitable sample of texts here that I can use before reverting to my original plan of using themes and descriptions from the Google Books API.
+```{r full gutenberg search}
+# create a function to search for titles in a library
+full_gutenberg_search <- function(banned_books, gutenberg_titles) {
+    matched_books <- banned_books[banned_books %in% gutenberg_titles]
+    return(matched_books)
+}
+```
+
+I have identified titles that I can pull from the Gutenberg library for my project. I am going to take a sample of 10 texts from each, Florida and Iowa, and use them as my sample texts. I ended up getting matches for 16 books from the Iowa banned books list and 53 from Florida. After matching the titles, I will see how many I can downloand and I may need to revise my sample numbers. 
+```{r full title search}
+fl_books_titles_cleaned <- fl_banned_books_list %>% 
     dplyr::select(Title) %>% 
-    dplyr::pull()
+    dplyr::pull() %>% 
+    tolower() %>% 
+    stringr::str_trim()
+
+md_books_titles_cleaned <- md_banned_books_list %>% 
+    dplyr::select(Title) %>% 
+    dplyr::pull() %>% 
+    tolower() %>% 
+    stringr::str_trim()
+
+ia_books_titles_cleaned <- ia_banned_books_list %>% 
+    dplyr::select(Title) %>% 
+    dplyr::pull() %>% 
+    tolower() %>% 
+    stringr::str_trim()
+
+fl_match_list <- full_gutenberg_search(fl_books_titles_cleaned, gutenberg_titles_cleaned)
+fl_match_list
+
+md_match_list <- full_gutenberg_search(md_books_titles_cleaned, gutenberg_titles_cleaned)
+md_match_list
+
+ia_match_list <- full_gutenberg_search(ia_books_titles_cleaned, gutenberg_titles_cleaned)
+ia_match_list
+```
+
+```{r title search function}
+fuzzy_title_search <- function(book_list) {
+    gutenberg_metadata <- gutenbergr::gutenberg_works()
+    matched_books <- book_list %>% 
+        sapply(function(book) {
+            distances <- stringdist::stringdist(book, gutenberg_metadata$title, method = "jw")
+            closest_match <- gutenberg_metadata$title[which.min(distances)]
+            return(closest_match)   
+        })
+        return(matched_books)
+}
+```
+
+```{r data re-sampling}
+ia_sample <- sample(ia_match_list, 10)
+fl_sample <- sample(fl_match_list, 10)
+
+cat("IA Sample:\n",{ia_sample}, sep="\n")
+cat("\nFL Sample:\n",{fl_sample}, sep="\n")
+```
+
+```{r fuzzy matching}
+# Iowa fuzzy matching
+ia_fuzzy_matches <- fuzzy_title_search(ia_sample) # incorrectly selected 1 title
+ia_fuzzy_matches
+
+ia_fuzzy_matches_full <- fuzzy_title_search(ia_match_list)
+
+# Florida fuzzy matching
+fl_fuzzy_matches <- fuzzy_title_search(fl_sample)
+fl_fuzzy_matches
+
+fl_fuzzy_matches_full <- fuzzy_title_search(fl_match_list)
+```
+
+I ran into a lot of problems downloading books. After my first pass, I was only able to get 6 / 20, and on my second pass I was only able to get 10/26. I am going to try and download directly from gutenberg's website, but I may need to adjust my sample sizes for subgroup comparison.
+```{r download texts}
+# retrieve Iowa text ids
+ia_gutenberg_ids <- gutenbergr::gutenberg_works() %>%
+  dplyr::filter(title %in% ia_fuzzy_matches) %>%
+  dplyr::select(gutenberg_id, title)
+# correct "Dead End" entry
+correct_entry <- gutenbergr::gutenberg_works() %>% 
+    dplyr::filter(tolower(title) == "dead end") %>% 
+    dplyr::select(gutenberg_id, title)
+correct_entry
+ia_gutenberg_ids$gutenberg_id[10] <- correct_entry$gutenberg_id
+ia_gutenberg_ids$title[10] <- correct_entry$title
+
+ia_gutenberg_ids_full <- gutenbergr::gutenberg_works() %>%
+  dplyr::filter(title %in% ia_fuzzy_matches_full) %>%
+  dplyr::select(gutenberg_id, title)
+
+# retrieve Florida text ids
+fl_gutenberg_ids <- gutenbergr::gutenberg_works() %>%
+  dplyr::filter(title %in% fl_fuzzy_matches) %>%
+  dplyr::select(gutenberg_id, title)
+
+fl_gutenberg_ids_full <- gutenbergr::gutenberg_works() %>%
+  dplyr::filter(title %in% fl_fuzzy_matches_full) %>%
+  dplyr::select(gutenberg_id, title)
+
+# download texts and set up corpus
+ia_book_texts <- gutenbergr::gutenberg_download(ia_gutenberg_ids$gutenberg_id)
+fl_book_texts <- gutenbergr::gutenberg_download(fl_gutenberg_ids$gutenberg_id)
+fl_book_texts <- fl_book_texts %>% 
+    dplyr::group_by(gutenberg_id) %>% 
+    dplyr::summarise(text = paste0(text, collapse = " "))
+```
+
+```{r building corpus}
+book_texts_combined <- book_texts %>% 
+    dplyr::group_by(gutenberg_id) %>% 
+    dplyr::summarise(text = paste0(text, collapse = " "))
+book_texts_combined
+# re-downloaded books that are having issues
+downloaded_books <- unique(book_texts_combined$gutenberg_id)
+missing_books <- dplyr::setdiff(valid_books$gutenberg_id, downloaded_books)
+downloaded_books_list = list()
+for (i in downloaded_books) {
+    if (i %in% combined_ids$gutenberg_id) {
+        downloaded_books_list[[as.character(i)]] <- combined_ids %>% 
+            dplyr::filter(gutenberg_id == i) %>% 
+            dplyr::select(gutenberg_id, title)
+    }
+}
+downloaded_books_df <- bind_rows(downloaded_books_list)
+options(gutenbergr.mirror = "http://www.gutenberg.lib.md.us")
+book_text_retry <- gutenbergr::gutenberg_download(valid_books$gutenberg_id)
+
+book_corpus <- quanteda::corpus(book_texts, text_field = "text")
+summary(book_corpus)
+```
+
+Now I am attempting to download directly from the gutenberg website. I was able to download a sample of 10 texts from Iowa's banned books list for the subgroup comparison.
+```{r gutenberg web search function}
+load_gutenberg_text <- function(book_id) {
+    url <- paste0("https://www.gutenberg.org/files/", book_id, "/", book_id, "-0.txt")
+    response <- httr::GET(url)
+    if (status_code(response) == 200) {
+        text <- content(response, "text", encoding = "UTF-8")
+        return(text)
+    } else {
+        message(paste("Book ID", book_id, "could not be loaded."))
+        return(NULL)
+    }
+}
+```
+
+```{r iowa books data download}
+ia_books_text_list <- list()
+for (i in seq_along(ia_gutenberg_ids$gutenberg_id)) {
+    book_id <- ia_gutenberg_ids$gutenberg_id[i]
+    book_title <- ia_gutenberg_ids$title[i]
+    book_text <- load_gutenberg_text(book_id)
+    if (!is.null(book_text)) {
+        ia_books_text_list[[as.character(book_id)]] <- data.frame(
+            gutenberg_id = book_id,
+            title = book_title,
+            text = book_text,
+            stringsAsFactors = FALSE
+        )
+    }
+}
+
+ia_book_texts_df <- dplyr::bind_rows(ia_books_text_list)
+
+# replace 1 book that could not be downloaded
+missing_books <- ia_gutenberg_ids_full %>%
+  dplyr::filter(!(title %in% ia_book_texts_df$title))
+
+if (nrow(missing_books) > 0) {
+    ia_additional_sample <- missing_books %>%
+        dplyr::slice_sample(n = 1)  
+    print(ia_additional_sample) 
+} else {
+    print("No additional books available for sampling.")
+}
+
+ia_additional_sample_text <- load_gutenberg_text(ia_additional_sample$gutenberg_id)
+ia_additional_sample_text_df <- data.frame(gutenberg_id = book_id,
+            title = book_title,
+            text = book_text,
+            stringsAsFactors = FALSE)
+ia_book_texts_df <- dplyr::bind_rows(ia_book_texts_df, ia_additional_sample_text_df)
 ```
