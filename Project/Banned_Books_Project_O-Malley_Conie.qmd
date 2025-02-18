@@ -262,40 +262,9 @@ fl_gutenberg_ids <- gutenbergr::gutenberg_works() %>%
 fl_gutenberg_ids_full <- gutenbergr::gutenberg_works() %>%
   dplyr::filter(title %in% fl_fuzzy_matches_full) %>%
   dplyr::select(gutenberg_id, title)
-
-# download texts and set up corpus
-ia_book_texts <- gutenbergr::gutenberg_download(ia_gutenberg_ids$gutenberg_id)
-fl_book_texts <- gutenbergr::gutenberg_download(fl_gutenberg_ids$gutenberg_id)
-fl_book_texts <- fl_book_texts %>% 
-    dplyr::group_by(gutenberg_id) %>% 
-    dplyr::summarise(text = paste0(text, collapse = " "))
 ```
 
-```{r building corpus}
-book_texts_combined <- book_texts %>% 
-    dplyr::group_by(gutenberg_id) %>% 
-    dplyr::summarise(text = paste0(text, collapse = " "))
-book_texts_combined
-# re-downloaded books that are having issues
-downloaded_books <- unique(book_texts_combined$gutenberg_id)
-missing_books <- dplyr::setdiff(valid_books$gutenberg_id, downloaded_books)
-downloaded_books_list = list()
-for (i in downloaded_books) {
-    if (i %in% combined_ids$gutenberg_id) {
-        downloaded_books_list[[as.character(i)]] <- combined_ids %>% 
-            dplyr::filter(gutenberg_id == i) %>% 
-            dplyr::select(gutenberg_id, title)
-    }
-}
-downloaded_books_df <- bind_rows(downloaded_books_list)
-options(gutenbergr.mirror = "http://www.gutenberg.lib.md.us")
-book_text_retry <- gutenbergr::gutenberg_download(valid_books$gutenberg_id)
-
-book_corpus <- quanteda::corpus(book_texts, text_field = "text")
-summary(book_corpus)
-```
-
-Now I am attempting to download directly from the gutenberg website. I was able to download a sample of 10 texts from Iowa's banned books list for the subgroup comparison.
+Now I am attempting to download the balance of books from the gutenberg website directly.
 ```{r gutenberg web search function}
 load_gutenberg_text <- function(book_id) {
     url <- paste0("https://www.gutenberg.org/files/", book_id, "/", book_id, "-0.txt")
@@ -309,6 +278,35 @@ load_gutenberg_text <- function(book_id) {
     }
 }
 ```
+
+```{r Florida texts}
+# download Florida texts and set up corpus
+fl_book_texts <- gutenbergr::gutenberg_download(fl_gutenberg_ids$gutenberg_id)
+fl_book_texts <- fl_book_texts %>% 
+    dplyr::group_by(gutenberg_id) %>% 
+    dplyr::summarise(text = paste0(text, collapse = " "))
+# identify missing texts
+fl_missing_books <- fl_gutenberg_ids %>%
+  dplyr::filter(!(gutenberg_id %in% fl_book_texts$gutenberg_id))
+
+fl_missing_book_texts_list <- list()
+for (i in seq_along(fl_missing_books$gutenberg_id)) {
+    book_id <- fl_missing_books$gutenberg_id[i]
+    book_title <- fl_missing_books$title[i]
+    book_text <- load_gutenberg_text(book_id)
+    if (!is.null(book_text)) {
+        fl_missing_book_texts_list[[as.character(book_id)]] <- data.frame(
+            gutenberg_id = book_id,
+            text = book_text,
+            stringsAsFactors = FALSE
+        )
+    }
+}
+fl_missing_book_texts_df <- dplyr::bind_rows(fl_missing_book_texts_list)
+fl_book_texts_df <- dplyr::bind_rows(fl_book_texts, fl_missing_book_texts_df) # florida books data frame
+```
+
+
 
 ```{r iowa books data download}
 ia_books_text_list <- list()
@@ -345,5 +343,12 @@ ia_additional_sample_text_df <- data.frame(gutenberg_id = book_id,
             title = book_title,
             text = book_text,
             stringsAsFactors = FALSE)
-ia_book_texts_df <- dplyr::bind_rows(ia_book_texts_df, ia_additional_sample_text_df)
+ia_book_texts_df <- dplyr::bind_rows(ia_book_texts_df, ia_additional_sample_text_df) 
+
+ia_book_texts_df <- ia_book_texts_df %>% 
+    dplyr::select(-title) # Iowa banned books list
+```
+
+```{r building corpus}
+# will complete at a later date
 ```
