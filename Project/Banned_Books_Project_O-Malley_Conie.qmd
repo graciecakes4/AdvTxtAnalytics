@@ -85,6 +85,7 @@ print(md_books_sample)
 ### Gutenberg Search
 
 I began to search for data online. I cleaned the book titles from the Florida sample and cleaned the titles from the Gutenberg library (`gutenbergr`) to ensure they matched. I then compared the two lists and found that none of the Florida titles were also in the Gutenberg library. This caused me to pivot to search for any ISBNs from the Florida banned books list sample to attempt to search them in other libraries.
+
 ```{r data collection}
 # search for titles in gutenberg library
 fl_sample_books_titles_cleaned <- fl_books_sample %>% 
@@ -159,10 +160,10 @@ isbn_example <- get_isbn_google("Slaughterhouse-Five")
 print(isbn_example)
 ```
 
-
 ### Gutenberg Search - Pt. 2
 
 I cleaned all book titles from the Florida banned books list and compared them to the Gutenberg library. My goal is to find a suitable sample of texts here that I can use before reverting to my original plan of using themes and descriptions from the Google Books API.
+
 ```{r full gutenberg search}
 # create a function to search for titles in a library
 full_gutenberg_search <- function(banned_books, gutenberg_titles) {
@@ -171,7 +172,8 @@ full_gutenberg_search <- function(banned_books, gutenberg_titles) {
 }
 ```
 
-I have identified titles that I can pull from the Gutenberg library for my project. I am going to take a sample of 10 texts from each, Florida and Iowa, and use them as my sample texts. I ended up getting matches for 16 books from the Iowa banned books list and 53 from Florida. After matching the titles, I will see how many I can downloand and I may need to revise my sample numbers. 
+I have identified titles that I can pull from the Gutenberg library for my project. I am going to take a sample of 10 texts from each, Florida and Iowa, and use them as my sample texts. I ended up getting matches for 16 books from the Iowa banned books list and 53 from Florida. After matching the titles, I will see how many I can downloand and I may need to revise my sample numbers.
+
 ```{r full title search}
 fl_books_titles_cleaned <- fl_banned_books_list %>% 
     dplyr::select(Title) %>% 
@@ -237,6 +239,7 @@ fl_fuzzy_matches_full <- fuzzy_title_search(fl_match_list)
 ```
 
 I ran into a lot of problems downloading books. After my first pass, I was only able to get 6 / 20, and on my second pass I was only able to get 10/26. I am going to try and download directly from gutenberg's website, but I may need to adjust my sample sizes for subgroup comparison.
+
 ```{r download texts}
 # retrieve Iowa text ids
 ia_gutenberg_ids <- gutenbergr::gutenberg_works() %>%
@@ -265,6 +268,7 @@ fl_gutenberg_ids_full <- gutenbergr::gutenberg_works() %>%
 ```
 
 Now I am attempting to download the balance of books from the gutenberg website directly.
+
 ```{r gutenberg web search function}
 load_gutenberg_text <- function(book_id) {
     url <- paste0("https://www.gutenberg.org/files/", book_id, "/", book_id, "-0.txt")
@@ -305,8 +309,6 @@ for (i in seq_along(fl_missing_books$gutenberg_id)) {
 fl_missing_book_texts_df <- dplyr::bind_rows(fl_missing_book_texts_list)
 fl_book_texts_df <- dplyr::bind_rows(fl_book_texts, fl_missing_book_texts_df) # florida books data frame
 ```
-
-
 
 ```{r iowa books data download}
 ia_books_text_list <- list()
@@ -350,5 +352,5 @@ ia_book_texts_df <- ia_book_texts_df %>%
 ```
 
 ```{r building corpus}
-# will complete at a later date
+# will complete at a later
 ```
