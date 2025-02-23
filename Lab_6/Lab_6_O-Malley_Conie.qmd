@@ -1,0 +1,181 @@
+---
+title: "Lab 6"
+author: "Conie O'Malley"
+date: "`r Sys.Date()`"
+format: 
+  pdf: 
+    titlepage: true
+    toc: true
+    toc-depth: 2
+    code-block-wrap: true
+    number-sections: true
+execute:
+  echo: true
+  freeze: false
+  error: false
+  jupyter: python3
+python:
+  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
+---
+
+```{r library chunk}
+# install packages
+packages <- c("word2vec", "text2vec", "keras", "magrittr")
+
+
+for (i in packages) {
+    if (!requireNamespace(i, quietly = TRUE)) {
+        renv::install(i) 
+    }
+    library(i, character.only = TRUE)  # Load the package
+}
+```
+
+## Deliverable 1: Get your working directory and paste below
+
+```{r workingdirectory}
+getwd()
+```
+
+# Part 1: Building and Using Word Embeddings
+
+## Deliverable 1: Load the data and inspect the first few rows
+
+```{r deliverable 1}
+data("movie_review")
+head(movie_review)
+```
+
+## Deliverable 2: Preprocess the data
+```{r deliverable 2}
+tokens <- movie_review$review %>% 
+    tolower() %>% 
+    text2vec::word_tokenizer()
+```
+
+## Deliverable 3: Create a Vocabulary and Term Co-Occurrence Matrix
+```{r deliverable 3}
+it <- text2vec::itoken(tokens, progressbar = FALSE)
+vocab <- text2vec::create_vocabulary(it)
+vectorizer <- text2vec::vocab_vectorizer(vocab)
+
+tcm <- text2vec::create_tcm(it, vectorizer, skip_grams_window = 5L)
+```
+
+## Deliverable 4: Fit the GloVe Model to the TCM
+```{r deliverable 4}
+glove_model <- text2vec::GlobalVectors$new(rank = 50, x_max = 10)
+word_vectors <- glove_model$fit_transform(tcm, n_iter = 20)
+```
+
+## Deliverable 5: Explore the word embeddings.
+```{r deliverable 5}
+king_vector <- word_vectors["king", , drop = FALSE]
+print(king_vector)
+```
+
+## Deliverable 6: Find Words Similiar to “king”
+```{r deliverable 6}
+cos_sim <- text2vec::sim2(x = word_vectors, y = king_vector, method = "cosine", norm = "l2")
+head(sort(cos_sim[,1], decreasing = TRUE), 5)
+```
+
+# Part 2: Building Simple Bi-Gram Language Models
+
+## Deliverable 7: Collect and Prepare Your Data
+```{r deliverable 7}
+book <- gutenbergr::gutenberg_download(158)
+
+bigrams <- book %>% 
+    tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 2)
+```
+
+## Deliverable 8: Calculate the Frequency of Bigrams
+```{r deliverable 8}
+bigrams_separated <- bigrams %>% 
+    tidyr::separate(bigram, c("word1", "word2"), sep = " ")
+bigram_counts <- bigrams_separated %>%
+    dplyr::count(word1, word2, sort = TRUE)
+```
+
+## Deliverable 9: Calculate the Probability of Bigrams
+```{r deliverable 9}
+word1_counts <- bigrams_separated %>% 
+    dplyr::count(word1, sort = TRUE) %>% 
+    dplyr::rename(total = n)
+
+bigram_probabilities <- bigram_counts %>% 
+    dplyr::left_join(word1_counts, by = "word1") %>% 
+    dplyr::mutate(probability = n/total)
+```
+
+## Deliverable 10: Use the Bigram Model to Predict the Next Word
+```{r deliverable 10 function}
+predict_next_word <- function(current_word) {
+    bigram_probabilities %>% 
+        dplyr::filter(word1 == current_word) %>% 
+        dplyr::arrange(desc(probability)) %>% 
+        utils::head(5)
+}
+```
+
+```{r deliverable 10}
+predict_next_word("mr")
+```
+
+# Part 3: Word Embeddings in Python
+```{python imports}
+import nltk
+from nltk.corpus import movie_reviews
+from gensim.models import Word2Vec
+nltk.download("movie_reviews")
+```
+
+## Deliverable 11: Load and Prepare the Data in Python
+```{python deliverable 11}
+documents = [list(movie_reviews.words(fileid)) for fileid in movie_reviews.fileids()]
+```
+
+## Deliverable 12: Train a Word2Vec model using gensim
+```{python deliverable 12}
+model = Word2Vec(sentences=documents, vector_size=50, window=5, min_count=2, workers=4)
+```
+
+## Deliverable 13: Explore the word embeddings
+```{python deliverable 13}
+king_vector = model.wv["king"]
+print(king_vector)
+```
+
+## Deliverable 14: Find similar words to a "king"
+```{python deliverable 14}
+similar_words = model.wv.most_similar("king", topn=5)
+print(similar_words)
+```
+
+## Deliverable 15: Perform Analogies
+```{python deliverable 15}
+result = model.wv.most_similar(positive=["woman", "king"], negative=["man"], topn=1)
+print(result)
+```
+
+# Part 4: Take a Brief Look at Using Large Pre-trained Language Models
+
+## Deliverable 16: Prepare Your Environment
+```{python deliverable 16}
+import tensorflow as tf
+import torch
+from transformers import pipeline
+
+generator = pipeline('text-generation', model='gpt2')
+
+generator.tokenizer.pad_token_id = generator.model.config.eos_token_id
+
+text = generator(
+    "Once upon a time",
+    max_new_tokens=100,
+    num_return_sequences=5
+)
+
+print(text)
+```
