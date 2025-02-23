@@ -20,7 +20,7 @@ python:
 
 ```{r library chunk}
 # install packages
-packages <- c("word2vec", "text2vec", "keras", "magrittr")
+packages <- c("word2vec", "text2vec", "magrittr")
 
 
 for (i in packages) {
@@ -237,6 +237,7 @@ print(result)
 ```{python deliverable 16}
 import tensorflow as tf
 import torch
+import keras
 from transformers import pipeline
 
 generator = pipeline('text-generation', model='gpt2')

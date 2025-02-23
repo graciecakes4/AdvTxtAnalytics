@@ -125,7 +125,11 @@ predict_next_word("mr")
 
 # Part 3: Word Embeddings in Python
 ```{python imports}
+#import tensorflow as tf
+#import torch
+#import keras
 import nltk
+#from transformers import pipeline
 from nltk.corpus import movie_reviews
 from gensim.models import Word2Vec
 nltk.download("movie_reviews")
@@ -159,24 +163,5 @@ result = model.wv.most_similar(positive=["woman", "king"], negative=["man"], top
 print(result)
 ```
 
-# Part 4: Take a Brief Look at Using Large Pre-trained Language Models
+**Transferred Part 4 to a separate ipynb file**
 
-## Deliverable 16: Prepare Your Environment
-```{python deliverable 16}
-import tensorflow as tf
-import torch
-import keras
-from transformers import pipeline
-
-generator = pipeline('text-generation', model='gpt2')
-
-generator.tokenizer.pad_token_id = generator.model.config.eos_token_id
-
-text = generator(
-    "Once upon a time",
-    max_new_tokens=100,
-    num_return_sequences=5
-)
-
-print(text)
-```
