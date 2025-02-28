@@ -1,0 +1,20 @@
+---
+title: "Lab 7"
+author: "Conie O'Malley"
+date: "`r Sys.Date()`"
+format: 
+  pdf: 
+    titlepage: true
+    toc: true
+    toc-depth: 2
+    code-block-wrap: true
+    number-sections: true
+execute:
+  echo: true
+  freeze: false
+  error: false
+  jupyter: python3
+python:
+  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
+---
+
