@@ -909,6 +909,6 @@ print('Ran shiny app through console with `shiny::runApp("Lab_7/app.R")`')
 
 ## Deliverable 46: Creating a Basic PyShiny App from Template
 
-```{r deliverable 45}
+```{r deliverable 46}
 print('Ran shiny app through terminal with `shiny run --reload --port 8501 Lab_7/app.py`')
 ```
