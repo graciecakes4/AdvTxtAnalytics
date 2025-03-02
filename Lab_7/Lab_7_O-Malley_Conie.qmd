@@ -361,3 +361,164 @@ ggplot(data = college) +
 
 ## Deliverable 28: Add Annotations to Your Bar Graphs
 
+```{r deliverable 28}
+ggplot(data = college) +
+  geom_point(mapping=aes(x=tuition, y=sat_avg, color=control, size=undergrads), alpha=1/2) +
+  ggplot2::annotate("text", label="Elite Privates", x=45000, y=1450) +
+  geom_hline(yintercept = mean(college$sat_avg)) +
+  ggplot2::annotate("text", label="Mean SAT", x=47500, y=mean(college$sat_avg)-15) +
+  geom_vline(xintercept = mean(college$tuition)) +
+  ggplot2::annotate("text", label="Mean Tuition", y=700, x=mean(college$tuition)+7500) + 
+  labs(title = "College Data: SAT Scores and Tuition by Control Type",
+       subtitle = "Size of circle represents number of undergraduates",
+       x = "Tution",
+       y = "SAT Score") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r deliverable 28a}
+ggplot(data = college) +
+  geom_point(mapping=aes(x=tuition, y=sat_avg, color=control, size=undergrads), alpha=1/2) +
+  ggplot2::annotate("text", label="Elite Privates", x=45000, y=1450) +
+  geom_hline(yintercept = mean(college$sat_avg)) +
+  ggplot2::annotate("text", label="Mean SAT", x=47500, y=mean(college$sat_avg)-15) +
+  geom_vline(xintercept = mean(college$tuition)) +
+  ggplot2::annotate("text", label="Mean Tuition", y=700, x=mean(college$tuition)+7500) + 
+  labs(title = "College Data: SAT Scores and Tuition by Control Type",
+       subtitle = "Size of circle represents number of undergraduates",
+       x = "Tution",
+       y = "SAT Score") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        panel.background = element_blank(), 
+        legend.key = element_blank())
+```
+
+```{r deliverable 28b}
+ggplot(data = college) +
+  geom_point(mapping=aes(x=tuition, y=sat_avg, color=control, size=undergrads), alpha=1/2) +
+  ggplot2::annotate("text", label="Elite Privates", x=45000, y=1450) +
+  geom_hline(yintercept = mean(college$sat_avg)) +
+  ggplot2::annotate("text", label="Mean SAT", x=47500, y=mean(college$sat_avg)-15) +
+  geom_vline(xintercept = mean(college$tuition)) +
+  ggplot2::annotate("text", label="Mean Tuition", y=700, x=mean(college$tuition)+7500) + 
+  labs(title = "College Data: SAT Scores and Tuition by Control Type",
+       subtitle = "Size of circle represents number of undergraduates",
+       x = "Tution",
+       y = "SAT Score") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        panel.background = element_blank(), 
+        legend.key = element_blank()) +
+  scale_color_discrete(name="Institution Type") +
+  scale_size_continuous(name="Undergraduate") 
+```
+
+```{r deliverable 28c}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme(panel.background = element_blank(),
+        plot.background = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)) +
+  scale_x_discrete(name="Region") +
+  scale_y_continuous(name = "Number of Schools", limits = c(0,500)) +
+  scale_fill_manual(values = c("orange","blue"), 
+                    guide=guide_legend(title ="Institution Type"), 
+                          theme(legend.position = "bottom")) +
+  ggtitle("More college are in the Southern USA than any other region.", subtitle = "Source: Collegeboard")
+```
+
+## Deliverable 29: Explore Pre-Defined Themes for Your Bar Graphs
+
+```{r deliverable 29}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  labs(title = "College Type by Region", x = "Region", y = "Count") + 
+  scale_fill_manual(values = c("pink","light blue"), 
+                    guide=guide_legend(title ="Institution Type"))
+```
+
+```{r deliverable 29a}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme_bw() +
+  labs(title = "College Type by Region", x = "Region", y = "Count", fill = "Institution Type") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r deliverable 29b}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme_minimal() +
+  labs(title = "College Type by Region", x = "Region", y = "Count", fill = "Institution Type") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r deliverable 29c}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme_void() +
+  labs(title = "College Type by Region", x = "Region", y = "Count", fill = "Institution Type") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r deliverable 29c}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme_dark() +
+  labs(title = "College Type by Region", x = "Region", y = "Count", fill = "Institution Type") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r deliverable 29d}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme_solarized() +
+  labs(title = "College Type by Region", x = "Region", y = "Count", fill = "Institution Type") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r deliverable 29e}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme_excel() +
+  labs(title = "College Type by Region", x = "Region", y = "Count", fill = "Institution Type") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r deliverable 29f}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme_wsj() +
+  labs(title = "College Type by Region", x = "Region", y = "Count", fill = "Institution Type") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r deliverable 29g}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme_economist() +
+  labs(title = "College Type by Region", x = "Region", y = "Count", fill = "Institution Type") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r deliverable 29h}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme_economist_white() +
+  labs(title = "College Type by Region", x = "Region", y = "Count", fill = "Institution Type") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r deliverable 29i}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme_fivethirtyeight() +
+  labs(title = "College Type by Region", x = "Region", y = "Count", fill = "Institution Type") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+# Part 3: Plotting Data Visualizations on Maps Using the Google API
+
