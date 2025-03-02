@@ -534,15 +534,255 @@ register_google(key = google_api_key)
 
 ```{r deliverable 30}
 # Prepare the data for visualizations
-data_to_plot <- data_stacked_bar_chart %>%
-  dplyr::group_by(country_group, occupation) %>% 
-  dplyr::summarise(total = sum(count), .groups = "drop")
+job_data <- readr::read_csv("Lab_7/data/job_data.csv")
+utils::head(job_data, 10) # view created data
+data_to_plot <- job_data %>%
+  dplyr::group_by(Region, Year) 
+
 # Load shapefiles for the choropleth map
-esri_shapefile <- readr::read_sf("data/world-shape-files/")
-geojson_shapefile <- read_sf("data/world-geojson.json")
-shp_as_sf <- read_sf("data/world-shape-files/")
-converted_geojson <- geojson_list(shp_as_sf)
+esri_shapefile <- sf::read_sf("Lab_7/data/world-shape-files/")
+geojson_shapefile <- sf::read_sf("Lab_7/data/world-geojson.json")
+shp_as_sf <- sf::read_sf("Lab_7/data/world-shape-files/")
+converted_geojson <- geojsonio::geojson_list(shp_as_sf)
 # Prepare data for the Gapminder-based choropleth
 gapminder_most_recent <- gapminder %>%
-filter(year == max(year))
+  dplyr::filter(year == max(year))
+```
+
+## Deliverable 31: View Data in Highcharter
+
+```{r deliverable 31}
+library(highcharter)
+# Define categories and series for highcharter
+summary_data <- dplyr::summarize(
+  dplyr::group_by(job_data, Year, Category), 
+  Total = sum(Total, na.rm = TRUE)
+)
+
+# Define categories and series for highcharter
+years <- unique(summary_data$Year)  # Categories for x-axis
+categories <- unique(summary_data$Category)  # Series (subcategories)
+
+# Initialize and configure the highchart
+hc <- highcharter::highchart() %>%
+  highcharter::hc_chart(type = "column") %>%
+  highcharter::hc_title(text = "Job Data by Year and Category") %>%
+  highcharter::hc_xAxis(categories = years) %>%
+  highcharter::hc_yAxis(title = list(text = "Total")) %>%
+  highcharter::hc_plotOptions(series = list(stacking = "normal"))
+
+# Add a series for each job category
+for (category in categories) {
+  data_for_category <- summary_data %>%
+    dplyr::filter(Category == category) %>%
+    dplyr::arrange(Year) %>%
+    dplyr::pull(Total)
+  
+  hc <- hc %>%
+    highcharter::hc_add_series(
+      name = category,
+      data = data_for_category,
+      stack = "category"
+    )
+}
+
+# Display the chart
+hc
+```
+
+## Deliverable 32: View Data in Plotly Stacked Bar Chart
+
+```{r deliverable 32}
+library(plotly)
+# Group and summarize data
+summary_data <- dplyr::summarize(
+  dplyr::group_by(job_data, Country, `Job Title`), 
+  Total = sum(Total, na.rm = TRUE)
+)
+
+# Unique job titles
+job_titles <- unique(summary_data$`Job Title`)
+
+# Initialize the plotly object
+plot <- plotly::plot_ly()
+
+for (job_title in job_titles) {
+  # Correctly filtering based on the job title
+  job_data <- dplyr::filter(summary_data, `Job Title` == job_title)
+  
+  plot <- plot %>%
+    plotly::add_trace(
+      type = 'bar',
+      orientation = 'h',  # Horizontal bars
+      name = job_title,
+      y = job_data$Country,  # Countries on y-axis
+      x = job_data$Total,  # Totals on x-axis
+      text = job_data$`Job Title`,  # Text for bar labels
+      textposition = 'auto',  # Automatically position text
+      hovertemplate = paste('<b>Job Title:</b> %{text}<br>',
+                            '<b>Total:</b> %{x}<extra></extra>')
+    )
+}
+
+# Customize the layout
+plot <- plot %>%
+  plotly::layout(
+    title = 'Job Totals by Job Title and Country',
+    barmode = 'group',  # Grouped bar mode
+    xaxis = list(title = 'Total'),
+    yaxis = list(title = 'Country'),
+    bargap = 0.2  # Gap between groups of bars
+  )
+
+# Display the chart
+plot
+```
+
+## Deliverable 34: View Leaflet Map Plot
+
+```{r deliverable 34}
+# Summarize your data
+summary_data <- dplyr::summarize(
+  dplyr::group_by(job_data, Country, Latitude, Longitude),
+  Total = sum(Total, na.rm = TRUE)
+)
+
+# Initialize the leaflet map
+leaflet_map <- leaflet::leaflet(data = summary_data) %>%
+  leaflet::addTiles() %>%  # Add default OpenStreetMap map tiles
+  leaflet::addMarkers(
+    ~Longitude, ~Latitude,
+    popup = ~paste(
+      "<b>Country:</b>", Country, "<br>",
+      "<b>Total:</b>", Total
+    )
+  ) %>%
+  leaflet::setView(
+    lng = mean(summary_data$Longitude, na.rm = TRUE),
+    lat = mean(summary_data$Latitude, na.rm = TRUE),
+    zoom = 2
+  )
+
+# Display the map
+leaflet_map
+```
+
+## Deliverable 35: iew a Leaflet Map with Circle Markers
+
+```{r deliverable 35}
+library(leaflet)
+# Summarize your data
+summary_data <- dplyr::summarize(
+  dplyr::group_by(job_data, Country, Latitude, Longitude),
+  Total = sum(Total, na.rm = TRUE)
+)
+
+# Initialize the leaflet map
+leaflet_map2 <- leaflet::leaflet(data = summary_data) %>%
+  leaflet::addTiles() %>%  # Add default OpenStreetMap map tiles
+  leaflet::addCircleMarkers(
+    ~Longitude, ~Latitude,
+    radius = ~sqrt(Total),  # Optional: Use total to scale marker size
+    color = 'blue',
+    stroke = FALSE, fillOpacity = 0.5,
+    popup = ~paste(
+      "<b>Country:</b>", Country, "<br>",
+      "<b>Total:</b>", Total
+    )
+  ) %>%
+  leaflet::setView(
+    lng = mean(summary_data$Longitude, na.rm = TRUE),
+    lat = mean(summary_data$Latitude, na.rm = TRUE),
+    zoom = 2
+  )
+
+# Display the map
+leaflet_map2
+```
+
+## Deliverable 36: View Leafelet Map with Clustered Markers
+
+```{r deliverable 36}
+# Summarize your data
+summary_data <- dplyr::summarize(
+  dplyr::group_by(job_data, Country, Latitude, Longitude),
+  Total = sum(Total, na.rm = TRUE)
+)
+
+# Initialize the leaflet map
+leaflet_map3 <- leaflet::leaflet(data = summary_data) %>%
+  leaflet::addTiles() %>%  # Add default OpenStreetMap map tiles
+  leaflet::addMarkers(
+    ~Longitude, ~Latitude,
+    popup = ~paste(
+      "<b>Country:</b>", Country, "<br>",
+      "<b>Total:</b>", Total
+    ),
+    clusterOptions = leaflet::markerClusterOptions()
+  ) %>%
+  leaflet::setView(
+    lng = mean(summary_data$Longitude, na.rm = TRUE),
+    lat = mean(summary_data$Latitude, na.rm = TRUE),
+    zoom = 2
+  )
+
+# Display the map
+leaflet_map3
+```
+
+## Deliverable 37: Read in Shapefiles and View in Cloropleth Map
+
+```{r deliverable 37}
+# read in shape files
+esri_shapefile <- sf::read_sf("Lab_7/data/world-shape-files/")
+converted_geojson <- geojsonio::geojson_list(esri_shapefile)
+
+# Create a summary job data
+summary_data <- dplyr::summarize(
+  dplyr::group_by(job_data, Country),
+  Total = sum(Total, na.rm = TRUE)
+)
+
+# Merge the shapefile data with summary data
+joined_data <- dplyr::left_join(esri_shapefile, summary_data, by = c("name_long" = "Country"))
+
+# Define a color palette for the Total values
+color_palette <- leaflet::colorNumeric(
+  palette = "YlOrRd",  # A color palette for the map
+  domain = joined_data$Total,
+  na.color = "transparent"  # For regions with no data
+)
+
+# Create the map
+leaflet_map4 <- leaflet::leaflet(joined_data) %>%
+  leaflet::addTiles() %>%  # Add default map tiles
+  leaflet::addPolygons(
+    fillColor = ~color_palette(Total),
+    weight = 1,
+    opacity = 1,
+    color = "white",  # Border color between polygons
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlight = leaflet::highlightOptions(
+      weight = 2,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE
+    ),
+    label = ~paste("<b>Country:</b> ", name_long, "<br>",
+                   "<b>Total:</b> ", Total),
+    labelOptions = leaflet::labelOptions(
+      direction = "auto"
+    )
+  ) %>%
+  leaflet::addLegend(
+    pal = color_palette,
+    values = ~Total,
+    title = "Total by Country",
+    position = "bottomright"
+  )
+
+# Display the map
+leaflet_map4
 ```
