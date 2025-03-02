@@ -45,3 +45,8 @@ Thumbs.db
 .idea/
 .vscode/
 .Rproj.user
+
+# --- Environment Variables ---
+.env
+*.env
+!*.env.example 
