@@ -18,3 +18,16 @@ python:
   version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
 ---
 
+``` {r packages}
+# package installation and library
+required_pagackage <- c("geojsonio", "ggmap", "highcharter", "leaflet", "plotly", "Rserve", "sf", 
+                        "ggthemes", "DT", "gapminder", "devtools", "remotes")
+
+for (i in required_pagackage) {
+    if (!require(i, character.only = TRUE)) {
+        renv.install(i)
+    }
+    library(i, character.only = TRUE)
+}
+```
+
