@@ -642,6 +642,7 @@ plot
 
 ```{r deliverable 34}
 # Summarize your data
+library(leaflet)
 summary_data <- dplyr::summarize(
   dplyr::group_by(job_data, Country, Latitude, Longitude),
   Total = sum(Total, na.rm = TRUE)
