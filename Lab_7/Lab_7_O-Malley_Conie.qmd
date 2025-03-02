@@ -534,15 +534,15 @@ register_google(key = google_api_key)
 
 ```{r deliverable 30}
 # Prepare the data for visualizations
-job_data <- readr::read_csv("Lab_7/data/job_data.csv")
+job_data <- readr::read_csv("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab_7/data/job_data.csv")
 utils::head(job_data, 10) # view created data
 data_to_plot <- job_data %>%
   dplyr::group_by(Region, Year) 
 
 # Load shapefiles for the choropleth map
-esri_shapefile <- sf::read_sf("Lab_7/data/world-shape-files/")
-geojson_shapefile <- sf::read_sf("Lab_7/data/world-geojson.json")
-shp_as_sf <- sf::read_sf("Lab_7/data/world-shape-files/")
+esri_shapefile <- sf::read_sf("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab_7/data/world-shape-files")
+geojson_shapefile <- sf::read_sf("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab_7/data/world-geojson.json")
+shp_as_sf <- sf::read_sf("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab_7/data/world-shape-files")
 converted_geojson <- geojsonio::geojson_list(shp_as_sf)
 # Prepare data for the Gapminder-based choropleth
 gapminder_most_recent <- gapminder %>%
@@ -734,7 +734,7 @@ leaflet_map3
 
 ```{r deliverable 37}
 # read in shape files
-esri_shapefile <- sf::read_sf("Lab_7/data/world-shape-files/")
+esri_shapefile <- sf::read_sf("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab_7/data/world-shape-files")
 converted_geojson <- geojsonio::geojson_list(esri_shapefile)
 
 # Create a summary job data
