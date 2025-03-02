@@ -786,3 +786,129 @@ leaflet_map4 <- leaflet::leaflet(joined_data) %>%
 # Display the map
 leaflet_map4
 ```
+
+# Part 5: Data Visualization in Python
+
+## Deliverable 38: Prepare Your Python Environment for DataViz
+
+```{python deliverable 38}
+print("Hello, Python in Quarto")
+```
+
+```{python import libraries}
+# Load necessary libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import nltk
+from sklearn.datasets import load_iris
+from nltk.corpus import inaugural
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+nltk.download('inaugural')
+```
+
+## Deliverable 39: Prepare and Plot Your First Graph
+
+```{python data import 1}
+tips = sns.load_dataset('tips')
+print(tips.head())
+```
+
+```{python data prep 1}
+#Calculate average tips by day
+avg_tips = tips.groupby('day')['tip'].mean().reset_index()
+```
+
+```{python deliverable 39}
+# plot average tips by day
+plt.figure(figsize=(8, 6))
+plt.bar(avg_tips['day'], avg_tips['tip'], color='skyblue')
+plt.xlabel('Day of the Week')
+plt.ylabel('Average Tip')
+plt.title('Average Tip Amount by Day')
+plt.show()
+```
+
+## Deliverable 40: Data Visualization in Seaborn
+
+```{python deliverable 40}
+plt.figure(figsize=(8, 6))
+sns.boxplot(x='day', y='tip', data=tips)
+plt.xlabel('Day of the Week')
+plt.ylabel('Tip Amount')
+plt.title('Distribution of Tips by Day')
+plt.show()
+```
+
+## Deliverable 41: Adjusting and Customizing your Data Visualization
+
+```{python deliverable 41}
+sns.set_theme(style="whitegrid")
+plt.figure(figsize=(8, 6))
+sns.boxplot(x='day', y='tip', data=tips, palette='pastel')
+plt.xlabel('Day of the Week')
+plt.ylabel('Tip Amount')
+plt.title('Customized Distribution of Tips by Day')
+plt.show()
+```
+
+## Deliverable 42: Preparing to Visualize Text Data
+
+```{python deliverable 42}
+obama_speech = inaugural.raw('2009-Obama.txt')
+# print the first 500 charachters
+print(obama_speech[:500])
+```
+
+```{python deliverable 42a}
+# Tokenize the speech
+tokens = word_tokenize(obama_speech.lower())
+# Remove punctuation and stop words
+words = [word for word in tokens if word.isalpha()]
+stop_words = set(stopwords.words('english'))
+words = [word for word in words if not word in stop_words]
+# Preview the first 20 words
+print(words[:20])
+```
+
+## Deliverable 43: Visualizing Text Data
+
+```{python deliverable 43}
+# Calculate word frequency
+word_freq = nltk.FreqDist(words)
+# Select the top 10 most common words
+most_common_words = word_freq.most_common(10)
+# Convert to DataFrame for easier plotting
+df = pd.DataFrame(most_common_words, columns=['Word', 'Frequency'])
+# Plot
+plt.figure(figsize=(10, 6))
+plt.bar(df['Word'], df['Frequency'], color='lightblue')
+plt.xlabel('Words')
+plt.ylabel('Frequency')
+plt.title('Top 10 Most Frequent Words in Obama\'s 2009 Inaugural Address')
+plt.xticks(rotation=45)
+plt.show()
+```
+
+# Part 6: Building Dashboards in Shiny
+
+## Deliverable 44: Explore Shiny Examples
+
+```{r deliverable 44}
+library(shiny)
+runExample("01_hello")
+runExample("10_download")
+```
+
+## Deliverable 45: Creating a Basic RShiny App from Template
+
+```{r deliverable 45}
+print('Ran shiny app through console with `shiny::runApp("Lab_7/app.R")`')
+```
+
+## Deliverable 46: Creating a Basic PyShiny App from Template
+
+```{r deliverable 45}
+print('Ran shiny app through terminal with `shiny run --reload --port 8501 Lab_7/app.py`')
+```
