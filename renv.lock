@@ -69,6 +69,20 @@
       ],
       "Hash": "1a00d4828f33a9d690806e98bd17150c"
     },
+    "MatrixExtra": {
+      "Package": "MatrixExtra",
+      "Version": "0.1.15",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "Rcpp",
+        "RhpcBLASctl",
+        "float",
+        "methods"
+      ],
+      "Hash": "810aca0f5275951ca65e83941a060662"
+    },
     "NLP": {
       "Package": "NLP",
       "Version": "0.3-2",
@@ -121,6 +135,20 @@
       ],
       "Hash": "e7bdd9ee90e96921ca8a0f1972d66682"
     },
+    "RcppArmadillo": {
+      "Package": "RcppArmadillo",
+      "Version": "14.2.3-1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "methods",
+        "stats",
+        "utils"
+      ],
+      "Hash": "2f7cc7eceee4174dea52264aae41144b"
+    },
     "RcppTOML": {
       "Package": "RcppTOML",
       "Version": "0.2.2",
@@ -143,6 +171,13 @@
         "utils"
       ],
       "Hash": "788c7aac9d9f0bc736fe8caf8962ea23"
+    },
+    "RhpcBLASctl": {
+      "Package": "RhpcBLASctl",
+      "Version": "0.23-42",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c966ea2957ff75e77afa5c908dfc89e1"
     },
     "SnowballC": {
       "Package": "SnowballC",
@@ -644,6 +679,19 @@
         "R"
       ],
       "Hash": "7820eab9df275bcc3cb52d827993942d"
+    },
+    "float": {
+      "Package": "float",
+      "Version": "0.3-2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "methods",
+        "tools",
+        "utils"
+      ],
+      "Hash": "0d644aed82556eaf30e1601599592e47"
     },
     "fontawesome": {
       "Package": "fontawesome",
@@ -1186,6 +1234,17 @@
       ],
       "Hash": "d908914ae53b04d4c0c0fd72ecc35370"
     },
+    "lgr": {
+      "Package": "lgr",
+      "Version": "0.4.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "R6"
+      ],
+      "Hash": "a6bc51765d7e9eeb2b225a11805527aa"
+    },
     "lifecycle": {
       "Package": "lifecycle",
       "Version": "1.0.4",
@@ -1271,6 +1330,18 @@
         "utils"
       ],
       "Hash": "fec5f52652d60615fdb3957b3d74324a"
+    },
+    "mlapi": {
+      "Package": "mlapi",
+      "Version": "0.1.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R6",
+        "methods"
+      ],
+      "Hash": "12498a143cf0333be625ca133f381c28"
     },
     "modelr": {
       "Package": "modelr",
@@ -1839,6 +1910,25 @@
       ],
       "Hash": "4c8415e0ec1e29f3f4f6fc108bef0144"
     },
+    "rsparse": {
+      "Package": "rsparse",
+      "Version": "0.5.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "MatrixExtra",
+        "R",
+        "Rcpp",
+        "RcppArmadillo",
+        "RhpcBLASctl",
+        "data.table",
+        "float",
+        "lgr",
+        "methods"
+      ],
+      "Hash": "76d2fb41cc2305d3a821d57e00938d39"
+    },
     "rstudioapi": {
       "Package": "rstudioapi",
       "Version": "0.17.1",
@@ -2108,6 +2198,26 @@
       ],
       "Hash": "42f889439ccb14c55fc3d75c9c755056"
     },
+    "text2vec": {
+      "Package": "text2vec",
+      "Version": "0.6.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R",
+        "R6",
+        "Rcpp",
+        "data.table",
+        "digest",
+        "lgr",
+        "methods",
+        "mlapi",
+        "rsparse",
+        "stringi"
+      ],
+      "Hash": "94a38cec24f865c5b1f4efbb85687df6"
+    },
     "textshaping": {
       "Package": "textshaping",
       "Version": "0.4.1",
@@ -2255,13 +2365,13 @@
     },
     "tinytex": {
       "Package": "tinytex",
-      "Version": "0.54",
+      "Version": "0.56",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "xfun"
       ],
-      "Hash": "3ec7e3ddcacc2d34a9046941222bf94d"
+      "Hash": "68e6032b8c16f33fab8756e40a0dca1a"
     },
     "tm": {
       "Package": "tm",
@@ -2482,7 +2592,7 @@
     },
     "xfun": {
       "Package": "xfun",
-      "Version": "0.50",
+      "Version": "0.51",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -2491,7 +2601,7 @@
         "stats",
         "tools"
       ],
-      "Hash": "44ab88837d3f8dfc66a837299b887fa6"
+      "Hash": "e1a3c06389a46d065c18bd4bbc27c64c"
     },
     "xml2": {
       "Package": "xml2",

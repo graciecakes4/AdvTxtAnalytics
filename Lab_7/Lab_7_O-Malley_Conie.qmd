@@ -18,16 +18,346 @@ python:
   version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
 ---
 
-``` {r packages}
+# Lab Instructions
+
+## Deliverable 1: Get your working directory and paste below:
+
+```{r deliverable 1}
+getwd()
+```
+
+## Deliverable 2: Load the Required libraries
+
+``` {r deliverable 2}
 # package installation and library
 required_pagackage <- c("geojsonio", "ggmap", "highcharter", "leaflet", "plotly", "Rserve", "sf", 
                         "ggthemes", "DT", "gapminder", "devtools", "remotes")
 
 for (i in required_pagackage) {
     if (!require(i, character.only = TRUE)) {
-        renv.install(i)
+        renv::install(i)
     }
     library(i, character.only = TRUE)
 }
 ```
+
+# Part 1: Data Visualization Using ggplot2
+
+## Deliverable 3: Get and Explore the Diamonds Dataset
+
+```{r deliverable 3}
+utils::data(diamonds)
+utils::head(diamonds)
+utils::tail(diamonds)
+```
+
+## Deliverable 4: Create a Histogram of “diamonds” in Base R
+
+```{r deliverable 4}
+graphics::hist(diamonds$carat, main = "Carat Histogram", xlab = "Carat")
+```
+
+## Deliverable 5: Ccreate a Scatterplot of “diamonds” using Base R
+
+```{r deliverable 5}
+graphics::plot(price ~ carat, data = diamonds, xlab = "Carat", ylab = "Price", 
+              main = "Scatterplot of Carat vs Price")
+graphics::plot(diamonds$carat, diamonds$price, xlab = "Carat", ylab = "Price", 
+              main = "Scatterplot of Carat vs Price")
+```
+
+## Deliverable 6: Build a Boxplot of carat in the diamonds dataset
+
+```{r deliverable 6}
+graphics::boxplot(diamonds$carat, ylab = "Carat", main = "Boxplot of Diamonds by Carat")
+```
+
+## Deliverable 7: Create a Blank Canvas in ggplot
+
+```{r deliverable 7}
+ggplot()
+```
+
+## Deliverable 8: Rebuild the diamonds histogram with ggplot
+
+```{r deliverable 8}
+ggplot(data = diamonds) +
+  ggthemes::theme_economist_white(base_size = 10) +
+  geom_histogram(aes(x = carat)) +
+  labs(x = "Carat", y = "Frequency", title = "Histogram of Carat")
+```
+
+## Deliverable 9: Build a Density Plot
+
+```{r deliverable 9}
+ggplot(data = diamonds) +
+  geom_density(aes(x = carat),fill = "grey50") +
+  labs(title = "Density plot of Carat", x = "Carat", y = "Density") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Deliverable 10: Build a Scatterplot with ggplot
+
+```{r deliverable 10}
+ggplot(diamonds, aes(x = carat, y = price)) +
+  geom_point() + 
+  labs(title = "Scatterplot of Carat vs Price", x = "Carat", y = "Price") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Deliverable 11: Re-Build Your Scatterplot with Color
+
+```{r deliverable 11}
+g <- ggplot(diamonds, aes(x = carat, y = price))
+g + geom_point()
+g + geom_point(aes(color = color)) + 
+  labs(title = "Color Scatterplot of Carat vs Price", 
+      x = "Carat", 
+      y = "Price") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Deliverable 12: Demonstrate a Facet Wrap Plot
+
+```{r deliverable 12}
+g + geom_point(aes(color = color)) + facet_wrap(~ color) + labs(x = "Carat", y = "Price")
+```
+
+## Deliverable 13: Demonstrate a Facet Wrap Grid Plot
+
+```{r deliverable 13}
+g + geom_point(aes(color = color)) + facet_grid(cut ~ color) + labs(x = "Carat", y = "Price")
+```
+
+## Deliverable 14: Demonste a Facet Wrap Plot with a Histogram
+
+```{r deliverable 14}
+ggplot(diamonds, aes(x = carat)) +
+  geom_histogram() +
+  facet_wrap(~ color) +
+  labs(title = "Histogram of Carat by Color", x = "Carat", y = "Count") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Deliverable 15: Demonstrate Boxplots in ggplot
+
+```{r deliverable 15}
+ggplot(diamonds, aes(y = carat, x = 1)) +
+  geom_boxplot() + 
+  labs(title = "Boxplot of Carat", y = "Carat", x = NULL) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r deliverable 15b}
+ggplot(diamonds, aes(y = carat, x = cut)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Carat", y = "Carat", x = "Cut") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Deliverable 16: Demonstrate a Violinplot in ggplot
+
+```{r deliverable 16}
+ggplot(diamonds, aes(y = carat, x = cut)) +
+  geom_violin() +
+  labs(title = "Violin Plot of Carat", y = "Carat", x = "Cut") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+# Part 2: Reading in External Data and Visualizing with ggplot2
+
+## Deliverable 17: Read in a CSV file from the Web, Explore, and Summarize
+
+```{r deliverable 17}
+college <- readr::read_csv('http://672258.youcanlearnit.net/college.csv')
+utils::head(college)
+utils::tail(college)
+class(college)
+summary(college)
+```
+
+## Deliverable 18: Wrangle the Data and Re-Summarize
+
+```{r deliverable 18}
+college <- college %>%
+  dplyr::mutate(state=as.factor(state), region=as.factor(region), highest_degree=as.factor(highest_degree))
+
+summary(college)
+```
+
+## Deliverable 19: Create a Basic Scatterplot of the college Data
+
+```{r deliverable 19}
+ggplot(data=college) +
+  geom_point(mapping=aes(x=tuition, y=sat_avg)) +
+  labs(title = "Scatterplot of College Tuition vs SAT Average", x="Tuition", y="SAT Average") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Deliverable 20: Add Shape Control to Your Scatterplot
+
+ ```{r deliverable 20}
+ggplot(data=college) +
+  geom_point(mapping=aes(x=tuition, y=sat_avg, shape=control)) +
+  labs(title = "Scatterplot of College Tuition vs SAT Average by Control", x="Tuition", y="SAT Average") +
+  theme(plot.title = element_text(hjust = 0.5))
+ ```
+
+ ## Deliverable 21: Add Color to Your Shape Control
+
+ ```{r deliverable 21}
+ggplot(data=college) +
+  geom_point(mapping=aes(x=tuition, y=sat_avg, color=control)) +
+  labs(title = "Scatterplot of College Tuition vs SAT Average by Control", x="Tuition", y="SAT Average") +
+  theme(plot.title = element_text(hjust = 0.5))
+ ```
+
+ ## Deliverable 22: Add Size to Your AES and Interpret
+
+ ```{r deliverable 22}
+ggplot(data = college) +
+  geom_point(mapping=aes(x=tuition, y=sat_avg, color=control, size=undergrads)) +
+  labs(title = "Scatterplot of College Tuition vs SAT Average by Control", x="Tuition", y="SAT Average") +
+  theme(plot.title = element_text(hjust = 0.5))
+ ```
+
+ #### Analysis:
+
+ There appears to be an inverse relationship between SAT Score and Tuition. The concentration of larger bubbles in the top left corner (intersection of increased SAT Scores and decreased tuition) and the smaller bubbles concentrated in the lower right region (intersection of decreased SAT Scores and increased tuition) support this from visual analysis.
+
+ ## Deliverable 23: Add Alpha (Opacity) to Your AES
+
+ ```{r deliverable 23}
+ggplot(data = college) +
+  geom_point(mapping=aes(x=tuition, y=sat_avg, color=control, size=undergrads), alpha=1/2) +
+  labs(title = "Scatterplot of College Tuition vs SAT Average by Control", 
+        x="Tuition", 
+        y="SAT Average") +
+  theme(plot.title = element_text(hjust = 0.5))
+ ``` 
+
+ ## Deliverable 24: Add a Line Plot and Smooth
+
+ ```{r deliverable 24}
+ggplot(data = college) +
+  geom_line(mapping=aes(x=tuition, y=sat_avg, color=control, size=undergrads), alpha=1/2) +
+  labs(title = "Scatterplot of College Tuition vs SAT Average by Control", 
+        x="Tuition", 
+        y="SAT Average") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+ ```
+
+ ```{r deliverable 24b}
+ggplot(data = college) +
+  geom_smooth(mapping=aes(x=tuition, y=sat_avg, color=control, size=undergrads), alpha=1/2) +
+  labs(title = "Line Chart of College Tuition vs SAT Average by Control", 
+        x="Tuition", 
+        y="SAT Average" +
+  theme(plot.title = element_text(hjust = 0.5)) )
+ ```
+
+## Deliverable 25: Create a Bar Graph
+
+```{r deliverable 25}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme(panel.background = element_blank(), 
+        plot.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_x_discrete(name="Region") +
+  scale_y_continuous(name = "Number of Schools", limits = c(0,500)) +
+  labs(title = "Bar Graph of Number of Schools by Region and Control Type")
+```
+
+## Deliverable 26: Change Colors on your Bar Graph
+
+```{r deliverable 26}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme(panel.background = element_blank(),
+  plot.background = element_blank(),
+  plot.title = element_text(hjust = 0.5)) +
+  scale_x_discrete(name="Region") +
+  scale_y_continuous(name = "Number of Schools", limits = c(0,500)) +
+  scale_fill_manual(values = c("orange","blue")) +
+  labs(title = "Bar Graph of Number of Schools by Region and Control Type")
+```
+
+## Deliverable 27: Add Legends and Titles to Your Bar Graphs
+
+```{r deliverable 27}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme(panel.background = element_blank(),
+  plot.background = element_blank(), 
+  plot.title = element_text(hjust = 0.5)) +
+  scale_x_discrete(name="Region") +
+  scale_y_continuous(name = "Number of Schools", 
+                    limits = c(0,500)) +
+  scale_fill_manual(values = c("orange","blue"),
+                   guide=guide_legend(title ="Institution Type")) +
+  labs(title = "Bar Graph of Number of Schools by Region and Control Type")
+```
+
+```{r deliverable 27a}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme(panel.background = element_blank(),
+  plot.background = element_blank(),
+  plot.title = element_text(hjust = 0.5)) +
+  scale_x_discrete(name="Region") +
+  scale_y_continuous(name = "Number of Schools", limits = c(0,500)) +
+  scale_fill_manual(values = c("orange","blue"), 
+                    guide=guide_legend(title ="Institution Type", nrow = 1)) +
+  labs(title = "Bar Graph of Number of Schools by Region and Control Type")
+```
+
+```{r deliverable 27b}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme(panel.background = element_blank(),
+        plot.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_x_discrete(name="Region") +
+  scale_y_continuous(name = "Number of Schools", limits = c(0,500)) +
+  scale_fill_manual(values = c("orange","blue"), 
+                    guide=guide_legend(title ="Institution Type", 
+                                        nrow = 1,
+                                        label.position = "bottom")) +
+  labs(title = "Bar Graph of Number of Schools by Region and Control Type")
+```
+
+```{r deliverable 27c}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme(panel.background = element_blank(),
+        plot.background = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.key.size = unit(2.5, "lines")) +
+  scale_x_discrete(name="Region") +
+  scale_y_continuous(name = "Number of Schools", limits = c(0,500)) +
+  scale_fill_manual(values = c("orange","blue"), 
+                    guide=guide_legend(title ="Institution Type", 
+                                      nrow = 1,
+                                      label.position = "bottom")) +
+  labs(title = "Bar Graph of Number of Schools by Region and Control Type")
+```
+
+```{r deliverable 27d}
+ggplot(data = college) +
+  geom_bar(mapping = aes(x=region, fill=control)) +
+  theme(panel.background = element_blank(),
+        plot.background = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.position = "top") +
+  scale_x_discrete(name="Region") +
+  scale_y_continuous(name = "Number of Schools", limits = c(0,500)) +
+  scale_fill_manual(values = c("orange","blue"), 
+                    guide=guide_legend(title ="Institution Type", 
+                                        nrow = 1,
+                                        label.position = "bottom")) +
+  labs(title = "Bar Graph of Number of Schools by Region and Control Type")
+```
+
+## Deliverable 28: Add Annotations to Your Bar Graphs
 
