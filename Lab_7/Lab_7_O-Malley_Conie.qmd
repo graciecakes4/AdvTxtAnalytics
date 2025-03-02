@@ -3,12 +3,18 @@ title: "Lab 7"
 author: "Conie O'Malley"
 date: "`r Sys.Date()`"
 format: 
-  pdf: 
-    titlepage: true
-    toc: true
-    toc-depth: 2
-    code-block-wrap: true
-    number-sections: true
+  html:
+    title-block: true
+    toc: true 
+    toc-depth: 2 
+    code-fold: true
+    number-sections: true 
+#  pdf: 
+#    titlepage: true
+#    toc: true
+#    toc-depth: 2
+#    code-block-wrap: true
+#    number-sections: true
 execute:
   echo: true
   freeze: false
@@ -203,7 +209,7 @@ ggplot(data=college) +
  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-\## Deliverable 21: Add Color to Your Shape Control
+## Deliverable 21: Add Color to Your Shape Control
 
 ```{r deliverable 21}
 ggplot(data=college) +
@@ -212,7 +218,7 @@ ggplot(data=college) +
  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-\## Deliverable 22: Add Size to Your AES and Interpret
+## Deliverable 22: Add Size to Your AES and Interpret
 
 ```{r deliverable 22}
 ggplot(data = college) +
@@ -221,11 +227,11 @@ ggplot(data = college) +
  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-\#### Analysis:
+#### Analysis:
 
 There appears to be an inverse relationship between SAT Score and Tuition. The concentration of larger bubbles in the top left corner (intersection of increased SAT Scores and decreased tuition) and the smaller bubbles concentrated in the lower right region (intersection of decreased SAT Scores and increased tuition) support this from visual analysis.
 
-\## Deliverable 23: Add Alpha (Opacity) to Your AES
+## Deliverable 23: Add Alpha (Opacity) to Your AES
 
 ```{r deliverable 23}
 ggplot(data = college) +
@@ -236,7 +242,7 @@ ggplot(data = college) +
  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-\## Deliverable 24: Add a Line Plot and Smooth
+## Deliverable 24: Add a Line Plot and Smooth
 
 ```{r deliverable 24}
 ggplot(data = college) +
