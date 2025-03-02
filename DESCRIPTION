@@ -31,7 +31,8 @@ Imports:
     tinytex (>= 0.51),
     withr (>= 3.0.2),
     xfun (>= 0.38),
-    yaml (>= 2.3.6)
+    yaml (>= 2.3.6),
+    dotenv
 Suggests:
     testthat (>= 3.0.0)
     reticulate (>= 1.40.0)

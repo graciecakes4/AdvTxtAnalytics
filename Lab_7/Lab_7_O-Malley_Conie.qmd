@@ -31,7 +31,7 @@ getwd()
 ``` {r deliverable 2}
 # package installation and library
 required_pagackage <- c("geojsonio", "ggmap", "highcharter", "leaflet", "plotly", "Rserve", "sf", 
-                        "ggthemes", "DT", "gapminder", "devtools", "remotes")
+                        "ggthemes", "DT", "gapminder", "devtools", "remotes", "dotenv")
 
 for (i in required_pagackage) {
     if (!require(i, character.only = TRUE)) {
@@ -522,3 +522,8 @@ ggplot(data = college) +
 
 # Part 3: Plotting Data Visualizations on Maps Using the Google API
 
+```{r api key}
+dotenv::load_dot_env()
+google_api_key <- Sys.getenv("GOOGLE_MAPS_API_KEY")
+register_google(key = google_api_key)
+```
