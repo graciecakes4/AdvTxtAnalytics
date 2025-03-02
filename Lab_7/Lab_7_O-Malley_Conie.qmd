@@ -906,10 +906,14 @@ plt.show()
 
 ## Deliverable 44: Explore Shiny Examples
 
+#### Note 
+
+Ran a few of the shiny objects for practice, then commented them out for rendering.
+
 ```{r deliverable 44}
 library(shiny)
-runExample("01_hello")
-runExample("10_download")
+#runExample("01_hello")
+#runExample("10_download")
 ```
 
 ## Deliverable 45: Creating a Basic RShiny App from Template
