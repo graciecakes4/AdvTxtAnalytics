@@ -527,3 +527,22 @@ dotenv::load_dot_env()
 google_api_key <- Sys.getenv("GOOGLE_MAPS_API_KEY")
 register_google(key = google_api_key)
 ```
+
+# Part 4: Interactive Data Visualizations
+
+## Deliverable 30: Prepare the Data We Will Plot
+
+```{r deliverable 30}
+# Prepare the data for visualizations
+data_to_plot <- data_stacked_bar_chart %>%
+  dplyr::group_by(country_group, occupation) %>% 
+  dplyr::summarise(total = sum(count), .groups = "drop")
+# Load shapefiles for the choropleth map
+esri_shapefile <- readr::read_sf("data/world-shape-files/")
+geojson_shapefile <- read_sf("data/world-geojson.json")
+shp_as_sf <- read_sf("data/world-shape-files/")
+converted_geojson <- geojson_list(shp_as_sf)
+# Prepare data for the Gapminder-based choropleth
+gapminder_most_recent <- gapminder %>%
+filter(year == max(year))
+```
