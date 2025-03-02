@@ -464,7 +464,7 @@ ggplot(data = college) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-```{r deliverable 29c}
+```{r deliverable 29d}
 ggplot(data = college) +
   geom_bar(mapping = aes(x=region, fill=control)) +
   theme_dark() +
@@ -472,7 +472,7 @@ ggplot(data = college) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-```{r deliverable 29d}
+```{r deliverable 29e}
 ggplot(data = college) +
   geom_bar(mapping = aes(x=region, fill=control)) +
   theme_solarized() +
@@ -480,7 +480,7 @@ ggplot(data = college) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-```{r deliverable 29e}
+```{r deliverable 29f}
 ggplot(data = college) +
   geom_bar(mapping = aes(x=region, fill=control)) +
   theme_excel() +
@@ -488,7 +488,7 @@ ggplot(data = college) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-```{r deliverable 29f}
+```{r deliverable 29g}
 ggplot(data = college) +
   geom_bar(mapping = aes(x=region, fill=control)) +
   theme_wsj() +
@@ -496,7 +496,7 @@ ggplot(data = college) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-```{r deliverable 29g}
+```{r deliverable 29h}
 ggplot(data = college) +
   geom_bar(mapping = aes(x=region, fill=control)) +
   theme_economist() +
@@ -504,7 +504,7 @@ ggplot(data = college) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-```{r deliverable 29h}
+```{r deliverable 29i}
 ggplot(data = college) +
   geom_bar(mapping = aes(x=region, fill=control)) +
   theme_economist_white() +
@@ -512,7 +512,7 @@ ggplot(data = college) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-```{r deliverable 29i}
+```{r deliverable 29j}
 ggplot(data = college) +
   geom_bar(mapping = aes(x=region, fill=control)) +
   theme_fivethirtyeight() +
