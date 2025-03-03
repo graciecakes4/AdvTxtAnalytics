@@ -176,33 +176,35 @@ full_gutenberg_search <- function(banned_books, gutenberg_titles) {
 I have identified titles that I can pull from the Gutenberg library for my project. I am going to take a sample of 10 texts from each, Florida and Iowa, and use them as my sample texts. I ended up getting matches for 16 books from the Iowa banned books list and 53 from Florida. After matching the titles, I will see how many I can downloand and I may need to revise my sample numbers.
 
 ```{r full title search}
-fl_books_titles_cleaned <- fl_banned_books_list %>% 
+fl_books_titles_cleaned <- fl_banned_books_list %>% # cleaned fl titles list
     dplyr::select(Title) %>% 
     dplyr::pull() %>% 
     tolower() %>% 
     stringr::str_trim()
 
-md_books_titles_cleaned <- md_banned_books_list %>% 
+md_books_titles_cleaned <- md_banned_books_list %>% # cleaned md titles list
     dplyr::select(Title) %>% 
     dplyr::pull() %>% 
     tolower() %>% 
     stringr::str_trim()
 
-ia_books_titles_cleaned <- ia_banned_books_list %>% 
+ia_books_titles_cleaned <- ia_banned_books_list %>% # cleaned ia titles list
     dplyr::select(Title) %>% 
     dplyr::pull() %>% 
     tolower() %>% 
     stringr::str_trim()
 
-fl_match_list <- full_gutenberg_search(fl_books_titles_cleaned, gutenberg_titles_cleaned)
+fl_match_list <- full_gutenberg_search(fl_books_titles_cleaned, gutenberg_titles_cleaned) # fl match list
 fl_match_list
 
-md_match_list <- full_gutenberg_search(md_books_titles_cleaned, gutenberg_titles_cleaned)
+md_match_list <- full_gutenberg_search(md_books_titles_cleaned, gutenberg_titles_cleaned) # md match list
 md_match_list
 
-ia_match_list <- full_gutenberg_search(ia_books_titles_cleaned, gutenberg_titles_cleaned)
+ia_match_list <- full_gutenberg_search(ia_books_titles_cleaned, gutenberg_titles_cleaned) # ia match list
 ia_match_list
 ```
+
+Here I created a fuzzy title search function to allow proper title matching and minimizing the effects of grammar differences.
 
 ```{r title search function}
 fuzzy_title_search <- function(book_list) {
@@ -217,6 +219,8 @@ fuzzy_title_search <- function(book_list) {
 }
 ```
 
+Here I actually pull the sample of my data that I will use in the following steps.
+
 ```{r data re-sampling}
 ia_sample <- sample(ia_match_list, 10)
 fl_sample <- sample(fl_match_list, 10)
@@ -224,6 +228,9 @@ fl_sample <- sample(fl_match_list, 10)
 cat("IA Sample:\n",{ia_sample}, sep="\n")
 cat("\nFL Sample:\n",{fl_sample}, sep="\n")
 ```
+
+
+Here I ran my fuzzy matching title search. I was able to match all but one of the sampled titles, which I've identified and will add in by hand later on.
 
 ```{r fuzzy matching}
 # Iowa fuzzy matching
@@ -284,6 +291,8 @@ load_gutenberg_text <- function(book_id) {
 }
 ```
 
+I was able to pull in all of the texts necessary for the Florida banned books list - both through dowload from `gutenbergr` and the Project Gutenberg website. I've assigned it to a data frame `fl_book_texts_df`. 
+
 ```{r Florida texts}
 # download Florida texts and set up corpus
 fl_book_texts <- gutenbergr::gutenberg_download(fl_gutenberg_ids$gutenberg_id)
@@ -311,6 +320,8 @@ fl_missing_book_texts_df <- dplyr::bind_rows(fl_missing_book_texts_list)
 fl_book_texts_df <- dplyr::bind_rows(fl_book_texts, fl_missing_book_texts_df) # florida books data frame
 #utils::write.csv(fl_book_texts_df, "Project/data/fl_book_texts.csv") # write to csv so I don't have to do this again
 ```
+
+I pulled the book title, id, and text for the Iowa sample and added in the missing book title from the fuzzy matching. I had a number of issues downloading book texts so I had to do some exta work obtaining the data. Ultimately, I ended up with `ia_book_texts_df`.
 
 ```{r iowa books data download}
 ia_books_text_list <- list()
@@ -384,6 +395,53 @@ ia_book_texts_df <- ia_book_texts_df %>%
 #utils::write.csv(ia_book_texts_df, "Project/data/ia_book_texts.csv") # write to csv so I don't have to do this again
 ```
 
+### Title Additions
+
+I needed to correct the title and author names for further processing. This is an ugly way to do it, but it was easier than trying to loop through the previous code to pull the data. On a larger data set, the time spent generating a loop or function to do this would be worth it, but it was not a beneficial use of time in this case. I added in the book titles and authors and rearragned the columns.
+
+```{r title function}
+fl_book_titles <- c("Wuthering Heights", "Leonardo Da Vinci", "The Pirate", "The Dark Tower", "Native Son", "Redeemed", "The Taming of the Shrew",
+                    "The Road", "Chain Reaction", "The Heir")
+fl_book_authors <- c("Emily Brontë", "Maurice W. Brockwell", "Captain Frederick Marryat", "Phyllis Bottome", "T. D. Hamm", "George Sheldon Downs",
+                    "William Shakespeare", "Jack London", "Boyd Ellanby", "Sydney C. Grier")
+
+ia_book_titles <- c("The Picture of Dorian Gray", "The Talisman", "Christine", "The Great Return", "Smoke", "Glass", "The Bridge", "Dead End", 
+                    "Redeemed", "Dreamland")
+
+ia_book_authors <- c("Oscar Wilde", "Sir Walter Scott", "Elizabeth Von Arnim", "Arthur Machen", "Ivan Sergeevich Turgenev", "Edward Dillon", 
+                    "G. G. Revelle", "Wallace Macfarlane", "George Sheldon Downs", "Julie M. Lippmann")
+ia_book_texts_df$title <- ia_book_titles
+ia_book_texts_df$author <- ia_book_authors
+fl_book_texts_df$title <- fl_book_titles
+fl_book_texts_df$author <- fl_book_authors
+
+fl_book_texts_df <- fl_book_texts_df %>% 
+    dplyr::select(gutenberg_id, title, author, text)
+
+ia_book_texts_df <- ia_book_texts_df %>% 
+    dplyr::select(gutenberg_id, title, author, text)
+
+```
+
+
+### Google Books Metadata Collection
+
+This was an interesting issue - I ran into troubles trying to write functions to return the metadata from google books, even with the API. I ended up using ChatGPT to return a csv of the titles, subjects, and descriptions, which I was able to read into a variable and left join to my texts data frames to have the complete data set required to begin data preprocessing. I now have my final data sets ready for preproccessing and analysis:
+
+- `fl_book_texts_df`
+- `ia_book_texts_df`
+
+```{r metadata}
+fl_book_metadata <- readr::read_csv("Project/data/fl_book_metadata.csv")
+ia_book_metadata <- readr::read_csv("Project/data/ia_book_metadata.csv")
+
+fl_book_texts_df %>% dplyr::left_join(fl_book_metadata, by = "title") -> fl_book_texts_df
+ia_book_texts_df %>% dplyr::left_join(ia_book_metadata, by = "title") -> ia_book_texts_df
+```
+
+
 ```{r building corpus}
-# will complete at a later
+# Building Corpus
+corpus_ia_books <- Corpus(VectorSource(ia_book_texts_df$text))
+corpus_fl_books <- Corpus(VectorSource(fl_book_texts_df$text))
 ```
