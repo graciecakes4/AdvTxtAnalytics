@@ -23,6 +23,7 @@ library(jsonlite)
 library(httr)
 library(stringdist)
 library(quanteda)
+library(gutenbergr)
 data("gutenberg_metadata", package = "gutenbergr")
 ```
 
@@ -103,7 +104,7 @@ gutenberg_titles_cleaned <- gutenbergr::gutenberg_works() %>%
 in_gutenberg <- c()
 
 for(i in fl_sample_books_titles_cleaned) {
-  if (i %in% gutenberg_titles) {
+  if (i %in% gutenberg_titles_cleaned) {
     in_gutenberg <- c(in_gutenberg, i)
   }
 }
@@ -308,6 +309,7 @@ for (i in seq_along(fl_missing_books$gutenberg_id)) {
 }
 fl_missing_book_texts_df <- dplyr::bind_rows(fl_missing_book_texts_list)
 fl_book_texts_df <- dplyr::bind_rows(fl_book_texts, fl_missing_book_texts_df) # florida books data frame
+#utils::write.csv(fl_book_texts_df, "Project/data/fl_book_texts.csv") # write to csv so I don't have to do this again
 ```
 
 ```{r iowa books data download}
@@ -347,8 +349,39 @@ ia_additional_sample_text_df <- data.frame(gutenberg_id = book_id,
             stringsAsFactors = FALSE)
 ia_book_texts_df <- dplyr::bind_rows(ia_book_texts_df, ia_additional_sample_text_df) 
 
+dreams_end <- data.frame(gutenberg_id = as.integer(68179), text = load_gutenberg_text(68170), stringsAsFactors = FALSE)
+
+ia_book_texts_df <- dplyr::bind_rows(ia_book_texts_df, dreams_end)
+
 ia_book_texts_df <- ia_book_texts_df %>% 
-    dplyr::select(-title) # Iowa banned books list
+    dplyr::select(-title) %>%
+    dplyr::bind_rows(dreams_end) # Iowa banned books list
+
+# had issues downloading books again - had to run a separate download to retrieve and reproduce the Iowa banned books list
+
+redeemed <- gutenbergr::gutenberg_download(59277)
+extra_book <- gutenbergr::gutenberg_download(16348)
+
+redeemed <- redeemed %>% 
+    dplyr::summarise(text = paste0(text, collapse = " ")) %>% 
+    dplyr::mutate(gutenberg_id = as.integer(59277)) %>% 
+    dplyr::select(gutenberg_id, text)
+
+extra_book <- extra_book %>% 
+    dplyr::summarise(text = paste0(text, collapse = " ")) %>% 
+    dplyr::mutate(gutenberg_id = as.integer(16348)) %>% 
+    dplyr::select(gutenberg_id, text)
+
+ia_book_texts_df <- ia_book_texts_df %>% 
+    dplyr::bind_rows(redeemed, extra_book)
+
+# remove duplicates
+ia_book_texts_df <- ia_book_texts_df[-c(9,10),]
+
+ia_book_texts_df <- ia_book_texts_df %>%
+  filter(gutenberg_id != 68179) # iowa banned books list
+
+#utils::write.csv(ia_book_texts_df, "Project/data/ia_book_texts.csv") # write to csv so I don't have to do this again
 ```
 
 ```{r building corpus}
