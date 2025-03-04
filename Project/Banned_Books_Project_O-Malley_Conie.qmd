@@ -24,6 +24,11 @@ library(httr)
 library(stringdist)
 library(quanteda)
 library(gutenbergr)
+library(tm)
+library(stringr)
+library(textclean)
+library(tokenizers)
+library(tidytext)
 data("gutenberg_metadata", package = "gutenbergr")
 ```
 
@@ -439,9 +444,195 @@ fl_book_texts_df %>% dplyr::left_join(fl_book_metadata, by = "title") -> fl_book
 ia_book_texts_df %>% dplyr::left_join(ia_book_metadata, by = "title") -> ia_book_texts_df
 ```
 
+## Data Preprocessing
 
-```{r building corpus}
-# Building Corpus
-corpus_ia_books <- Corpus(VectorSource(ia_book_texts_df$text))
-corpus_fl_books <- Corpus(VectorSource(fl_book_texts_df$text))
+During the data preprocessing phase I will take all the text data and pass it through a function to:
+
+- Assure UTF-8 enconding of text data
+- Make all letters lowercase
+- Remove Gutenberg boilerplate text
+- Normalize quotation marks for accuracy
+- Expand contractions
+- Remove punctuation
+- Remove special characters
+- Remove extra white space and formatting
+- Remove stopwords
+- Remove numbers
+- Tokenize sentences
+
+```{r preprocessing function}
+clean_text <- function(text_vector) {
+  # confirm conversion to UTF-8 Encoding
+  text_vector <- iconv(text_vector, to = "UTF-8")
+  # convert to lowercase
+  text_vector <- tolower(text_vector)
+  # remove Gutenberg boilerplate text
+  text_vector <- stringr::str_remove_all(text_vector, "(?i)\\*{3,}.*?start of this project gutenberg ebook.*?\\*{3,}")
+  text_vector <- stringr::str_remove_all(text_vector, "(?i)\\*{3,}.*?end of this project gutenberg ebook.*?\\*{3,}")
+  # normalize apostrophes and quotes
+  text_vector <- stringr::str_replace_all(text_vector, "[“”]", "\"") 
+  text_vector <- stringr::str_replace_all(text_vector, "[‘’]", "'")
+  # expand contractions (optional, improves accuracy in analysis)
+  text_vector <- textclean::replace_contraction(text_vector)
+  # remove punctuation
+  text_vector <- stringr::str_remove_all(text_vector, "[[:punct:]]")
+  # remove numbers
+  text_vector <- stringr::str_remove_all(text_vector, "\\d+")
+  # remove special characters and symbols
+  text_vector <- stringr::str_replace_all(text_vector, "[^a-zA-Z\\s]", "")
+  # remove extra whitespace and blank lines
+  text_vector <- stringr::str_squish(text_vector)
+  # remove stopwords
+  text_vector <- tm::removeWords(text_vector, tm::stopwords("en"))
+  # remove ultra-short words (1-character words)
+  text_vector <- stringr::str_remove_all(text_vector, "\\b[a-zA-Z]\\b")
+  # tokenize sentences for later bigram analysis
+  text_vector <- tokenizers::tokenize_sentences(text_vector)
+  # collapse list into string 
+  text_vector <- sapply(text_vector, function(x) paste(x, collapse = " "))
+  return(text_vector)
+}
 ```
+
+```{r preprocess data}
+# apply preprocessing function to each data set
+fl_book_texts_df$cleaned_text <- sapply(fl_book_texts_df$text, clean_text)
+ia_book_texts_df$cleaned_text <- sapply(ia_book_texts_df$text, clean_text)
+
+fl_book_texts_df$cleaned_description <- sapply(fl_book_texts_df$description, clean_text)
+ia_book_texts_df$cleaned_description <- sapply(ia_book_texts_df$description, clean_text)
+
+fl_book_texts_df <- fl_book_texts_df %>% 
+    dplyr::filter(!is.na(cleaned_description)) %>% 
+    dplyr::filter(!is.na(cleaned_text))
+
+ia_book_texts_df <- ia_book_texts_df %>% 
+    dplyr::filter(!is.na(cleaned_description)) %>% 
+    dplyr::filter(!is.na(cleaned_text))
+```
+
+The novel `Redeemed` is giving me data preprocessing issues which I will work out in the future.
+
+## Data Analysis and Visualization 
+
+```{r florida tfidf}
+# unnest tokens from the cleaned text column
+fl_term_freq_df <- fl_book_texts_df %>%
+  tidytext::unnest_tokens(word, cleaned_text) %>%  # Tokenize words
+  dplyr::count(word, sort = TRUE)   # Count occurrences
+
+# view the top terms by frequency
+utils::head(fl_term_freq_df, 10)
+
+# convert cleaned text into a document-term matrix (DTM) and compute TF-IDF
+fl_doc_term_matrix <- fl_book_texts_df %>%
+  dplyr::select(gutenberg_id, cleaned_text) %>%
+  tidytext::unnest_tokens(word, cleaned_text) %>%
+  dplyr::count(gutenberg_id, word, sort = TRUE) %>%
+  dplyr::mutate(n = ifelse(is.na(n), 0, n)) %>%
+  tidytext::bind_tf_idf(word, gutenberg_id, n) %>% 
+  dplyr::filter(!is.na(tf_idf))
+
+# view TF-IDF scores
+head(fl_doc_term_matrix, 10)
+
+# workaround to remove na value tfidf - compute the 99th percentile TF-IDF value
+tfidf_threshold <- stats::quantile(ia_doc_term_matrix$tf_idf, 0.99, na.rm = TRUE)
+
+# remove TF-IDF values above this threshold
+ia_doc_term_matrix <- ia_doc_term_matrix %>%
+  dplyr::filter(tf_idf < tfidf_threshold)
+```
+
+
+```{r iowa tfidf}
+# unnest tokens from the cleaned text column
+ia_term_freq_df <- ia_book_texts_df %>%
+  tidytext::unnest_tokens(word, cleaned_text) %>%  # Tokenize words
+  dplyr::count(word, sort = TRUE)   # Count occurrences
+
+# view the top terms by frequency
+utils::head(ia_term_freq_df, 10)
+
+# convert cleaned text into a document-term matrix (DTM) and compute TF-IDF
+ia_doc_term_matrix <- ia_book_texts_df %>%
+  dplyr::select(gutenberg_id, cleaned_text) %>%
+  tidytext::unnest_tokens(word, cleaned_text) %>%
+  dplyr::count(gutenberg_id, word, sort = TRUE) %>%
+  dplyr::mutate(n = ifelse(is.na(n), 0, n)) %>%
+  tidytext::bind_tf_idf(word, gutenberg_id, n) %>% 
+  dplyr::filter(!is.na(tf_idf))
+
+# view TF-IDF scores
+head(ia_doc_term_matrix, 10)
+
+# workaround to remove na value tfidf - compute the 99th percentile TF-IDF value
+tfidf_threshold <- stats::quantile(ia_doc_term_matrix$tf_idf, 0.99, na.rm = TRUE)
+
+# remove TF-IDF values above this threshold
+ia_doc_term_matrix <- ia_doc_term_matrix %>%
+  dplyr::filter(tf_idf < tfidf_threshold)
+```
+
+```{r florida data visualization}
+# Select top 20 most frequent words
+fl_top_term_freq <- fl_term_freq_df %>%
+  dplyr::top_n(20, n)  # Select top 20 words by frequency
+
+# Plot
+ggplot2::ggplot(fl_top_term_freq, ggplot2::aes(x = stats::reorder(word, n), y = n)) +
+  ggplot2::geom_col(fill = "steelblue") +
+  ggplot2::coord_flip() +
+  ggplot2::labs(title = "Top 20 Most Frequent Words - Florida",
+                x = "Words",
+                y = "Frequency") +
+  ggthemes::theme_wsj()
+
+# Select top 20 words by TF-IDF score
+fl_top_tfidf <- fl_doc_term_matrix %>%
+  dplyr::arrange(dplyr::desc(tf_idf)) %>%
+  dplyr::top_n(20, tf_idf)
+
+# Plot TF-IDF
+ggplot2::ggplot(fl_top_tfidf, ggplot2::aes(x = stats::reorder(word, tf_idf), y = tf_idf)) +
+  ggplot2::geom_col(fill = "darkred") +
+  ggplot2::coord_flip() +
+  ggplot2::labs(title = "Top 20 Words by TF-IDF Score - Florida",
+                x = "Words",
+                y = "TF-IDF Score") +
+  ggthemes::theme_wsj()
+```
+
+
+```{r iowa data visualization}
+# Select top 20 most frequent words
+ia_top_term_freq <- ia_term_freq_df %>%
+  dplyr::top_n(20, n)  # Select top 20 words by frequency
+
+# Plot
+ggplot2::ggplot(ia_top_term_freq, ggplot2::aes(x = stats::reorder(word, n), y = n)) +
+  ggplot2::geom_col(fill = "steelblue") +
+  ggplot2::coord_flip() +
+  ggplot2::labs(title = "Top 20 Most Frequent Words - Iowa",
+                x = "Words",
+                y = "Frequency") +
+  ggthemes::theme_wsj()
+
+# Select top 20 words by TF-IDF score
+ia_top_tfidf <- ia_doc_term_matrix %>%
+  dplyr::arrange(dplyr::desc(tf_idf)) %>%
+  dplyr::top_n(20, tf_idf)
+
+# Plot TF-IDF
+ggplot2::ggplot(ia_top_tfidf, ggplot2::aes(x = stats::reorder(word, tf_idf), y = tf_idf)) +
+  ggplot2::geom_col(fill = "darkred") +
+  ggplot2::coord_flip() +
+  ggplot2::labs(title = "Top 20 Words by TF-IDF Score - Iowa",
+                x = "Words",
+                y = "TF-IDF Score") +
+  ggthemes::theme_wsj()
+```
+
+
+
+
