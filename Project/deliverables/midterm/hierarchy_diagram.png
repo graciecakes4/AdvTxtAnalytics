@@ -1,0 +1,13 @@
+digraph {
+	"Censorship in Florida" [fillcolor=lightblue shape=box style=filled]
+	"Political & Social Context" [fillcolor=lightgray shape=ellipse style=filled]
+	"Justifications for Censorship" [fillcolor=lightgray shape=ellipse style=filled]
+	"Impacts on Authors & Readers" [fillcolor=lightgray shape=ellipse style=filled]
+	"Text Mining & ML Analysis" [fillcolor=lightgreen shape=box style=filled]
+	"Censorship in Florida" -> "Political & Social Context"
+	"Censorship in Florida" -> "Justifications for Censorship"
+	"Censorship in Florida" -> "Impacts on Authors & Readers"
+	"Censorship in Florida" -> "Text Mining & ML Analysis"
+	"Text Mining & ML Analysis" -> "Justifications for Censorship"
+	"Text Mining & ML Analysis" -> "Impacts on Authors & Readers"
+}

@@ -1,0 +1,15 @@
+digraph {
+	"Research Question" [fillcolor=lightblue shape=parallelogram style=filled]
+	"Literature Review" [fillcolor=lightgray shape=box style=filled]
+	"Data Collection" [fillcolor=lightgray shape=box style=filled]
+	"Data Processing" [fillcolor=lightgray shape=box style=filled]
+	"Text Analysis (TF-IDF, ML)" [fillcolor=lightgreen shape=box style=filled]
+	"Findings & Interpretation" [fillcolor=lightyellow shape=parallelogram style=filled]
+	"Conclusion & Implications" [fillcolor=lightcoral shape=parallelogram style=filled]
+	"Research Question" -> "Literature Review"
+	"Literature Review" -> "Data Collection"
+	"Data Collection" -> "Data Processing"
+	"Data Processing" -> "Text Analysis (TF-IDF, ML)"
+	"Text Analysis (TF-IDF, ML)" -> "Findings & Interpretation"
+	"Findings & Interpretation" -> "Conclusion & Implications"
+}
