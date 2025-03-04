@@ -537,11 +537,11 @@ fl_doc_term_matrix <- fl_book_texts_df %>%
 head(fl_doc_term_matrix, 10)
 
 # workaround to remove na value tfidf - compute the 99th percentile TF-IDF value
-tfidf_threshold <- stats::quantile(ia_doc_term_matrix$tf_idf, 0.99, na.rm = TRUE)
+fl_tfidf_threshold <- stats::quantile(fl_doc_term_matrix$tf_idf, 0.99, na.rm = TRUE)
 
 # remove TF-IDF values above this threshold
-ia_doc_term_matrix <- ia_doc_term_matrix %>%
-  dplyr::filter(tf_idf < tfidf_threshold)
+fl_doc_term_matrix <- fl_doc_term_matrix %>%
+  dplyr::filter(tf_idf < fl_tfidf_threshold)
 ```
 
 
@@ -567,11 +567,11 @@ ia_doc_term_matrix <- ia_book_texts_df %>%
 head(ia_doc_term_matrix, 10)
 
 # workaround to remove na value tfidf - compute the 99th percentile TF-IDF value
-tfidf_threshold <- stats::quantile(ia_doc_term_matrix$tf_idf, 0.99, na.rm = TRUE)
+ia_tfidf_threshold <- stats::quantile(ia_doc_term_matrix$tf_idf, 0.99, na.rm = TRUE)
 
 # remove TF-IDF values above this threshold
 ia_doc_term_matrix <- ia_doc_term_matrix %>%
-  dplyr::filter(tf_idf < tfidf_threshold)
+  dplyr::filter(tf_idf < ia_tfidf_threshold)
 ```
 
 ```{r florida data visualization}
@@ -596,6 +596,11 @@ fl_top_tfidf <- fl_doc_term_matrix %>%
 # Plot TF-IDF
 ggplot2::ggplot(fl_top_tfidf, ggplot2::aes(x = stats::reorder(word, tf_idf), y = tf_idf)) +
   ggplot2::geom_col(fill = "darkred") +
+  ggplot2::geom_text(ggplot2::aes(label = round(tf_idf, 8)),  
+                     vjust = 0.5,  
+                     hjust = 1.5, 
+                     color = "black", 
+                     size = 4) +
   ggplot2::coord_flip() +
   ggplot2::labs(title = "Top 20 Words by TF-IDF Score - Florida",
                 x = "Words",
@@ -626,7 +631,13 @@ ia_top_tfidf <- ia_doc_term_matrix %>%
 # Plot TF-IDF
 ggplot2::ggplot(ia_top_tfidf, ggplot2::aes(x = stats::reorder(word, tf_idf), y = tf_idf)) +
   ggplot2::geom_col(fill = "darkred") +
+  ggplot2::geom_text(ggplot2::aes(label = round(tf_idf, 8)),  
+                     vjust = 0.5,  
+                     hjust = 1.5, 
+                     color = "black", 
+                     size = 4) +
   ggplot2::coord_flip() +
+  ggplot2::scale_y_continuous(labels = scales::comma) +
   ggplot2::labs(title = "Top 20 Words by TF-IDF Score - Iowa",
                 x = "Words",
                 y = "TF-IDF Score") +
