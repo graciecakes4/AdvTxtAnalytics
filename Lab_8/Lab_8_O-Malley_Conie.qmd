@@ -18,3 +18,569 @@ python:
   version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
 ---
 
+
+```{r libraries}
+
+packages <- c("openNLP", "sentimentr", "coreNLP", "cleanNLP", "magrittr", "NLP", "gridExtra", "spacyr", "NLP", "openNLP", "openNLPmodels.en", "pbapply",
+              "stringr", "rvest", "doBy", "tm", "cshapes", "purr", "dplyr", "spacyr", "tinytex")
+
+
+```
+
+
+## Deliverable 1: Get your working directory and paste below:
+
+"/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics"
+
+# Part 1: Parts of Speech (POS) Tagging in openNLP
+
+## Deliverable 2: Create Some Sample Test
+```{r deliverable 2}
+
+s <- paste0(c('Pierre Vinken, 61 years old, will join the board as a ',
+            'nonexecutive director Nov 29. ',
+            'Mr. Vinken is chairman of Elsevier, N.V., ',
+            'the Dutch publishing group.'),
+            collapse = '')
+s
+
+```
+
+## Deliverable 3: Create Sentence and Word Token Annotations
+
+```{r deliverable 3}
+
+#sent_token_annotator <- openNLP::Maxent_Sent_Token_Annotator()
+#word_token_annotator <- openNLP::Maxent_Word_Token_Annotator()
+
+#a2 <- NLP::annotate(s, list(openNLP::Maxent_Sent_Token_Annotator(), openNLP::Maxent_Word_Token_Annotator()))
+#a2
+
+#a3 <- NLP::annotate(s, openNLP::Maxent_Sent_Token_Annotator(), a2)
+#a3
+#a3w <- subset(a3, type == "word")
+#a3w
+
+#sapply(a3w$features,"[[","POS").
+
+#tags <- sapply(a3w$features,"[[","POS")
+#tags
+#table(tags)
+
+```
+
+Every time I would run this code, my r session would terminate prematurely and reset my whole session, requiring me to re-load and library every single pacakge. I was not able to find a solution for this, so I used an alternative method for POS tagging and moved on with the lab.
+
+```{r deliverable 3 new}
+
+# download pre-trained English model
+ud_model <- udpipe::udpipe_download_model(language = "english")
+
+# load the model
+ud_model <- udpipe::udpipe_load_model(file = ud_model$file_model)
+
+# amnotate text
+anno <- udpipe::udpipe_annotate(ud_model, x = s)
+
+# convert to a data frame
+anno_df <- as.data.frame(anno)
+
+# view POS tags
+anno_df$upos
+anno_df$xpos
+
+```
+
+
+## Deliverable 3: Extract Tokens/POS Pairs
+
+```{r deliverable 3a}
+
+# create pairs structure
+word_pos <- sprintf("%s/%s", anno_df$token, anno_df$xpos)
+
+# view structure
+print(word_pos)
+
+```
+
+# Part 2: Applying Named Entity Recognition (NER) to the Clinton Email Dataset
+
+## Deliverable 4: Import Data and Organize the Clinton Email Dataset
+
+```{r deliverable 4}
+
+tmp <- list.files(path ="Lab_8/data", pattern = '*.txt', full.names = T)
+emails <- pbapply::pblapply(tmp, readLines)
+names(emails) <- gsub('.txt', '', list.files(pattern = '.txt'))
+
+```
+
+## Deliverable 5: Examine the Clinton Email Dataset
+
+```{r deliverable 5}
+
+emails[1]
+
+```
+
+## Deliverable 6: Create a Custom Function to Clean the Emails
+
+```{r deliverable 6}
+
+txtClean <- function(x) {
+  x <- x[-1]
+  x <- paste0(x,collapse = " ")
+  x <- stringr::str_replace_all(x, "[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+", "")
+  x <- stringr::str_replace_all(x, "Doc No.", "")
+  x <- stringr::str_replace_all(x, "UNCLASSIFIED U.S. Department of State Case No.", "")
+  x <- tm::removeNumbers(x)
+  x <- toString(x)
+return(x)
+}
+
+```
+
+## Deliverable 7: Apply the Cleaning Function to the Clinton Email Dataset
+
+```{r deliverable 7}
+
+txtClean(emails[[1]])[[1]]
+
+
+allEmails <- pbapply::pblapply(emails,txtClean)
+
+allEmails[[2]][[1]][1]
+
+```
+
+## Deliverable 8: Apply POS Tagging to the Clinton Email Dataset
+
+```{r deliverable 8}
+
+# load model
+ud_model <- udpipe::udpipe_load_model(file = "english-ewt-ud-2.5-191206.udpipe")
+
+# Initialize an empty list to store annotations
+annotationsData <- list()
+
+# Iterate through each cleaned email
+for (i in 1:length(allEmails)) {
+  print(paste0('Starting annotations on doc ', i))
+  # get the cleaned email text
+  email_text <- allEmails[[i]]
+  # annotate the email using udpipe
+  annotations <- udpipe::udpipe_annotate(ud_model, x = email_text)
+  # convert annotation to a data.frame
+  annDF <- as.data.frame(annotations)
+  # check if annDF has rows before subsetting columns
+  if (nrow(annDF) > 0) {
+    # select only columns that exist in annDF
+    columns_to_select <- intersect(c("doc_id", "paragraph_id", "sentence_id", "token_id",
+                                     "token", "lemma", "upos", "xpos", "entity"),
+                                   colnames(annDF))
+    
+    annDF <- annDF[, columns_to_select, drop = FALSE]
+  } else {
+    # if no annotation found, create an empty data frame
+    annDF <- data.frame(doc_id = NA,
+                        paragraph_id = NA,
+                        sentence_id = NA,
+                        token_id = NA,
+                        token = NA,
+                        lemma = NA,
+                        upos = NA,
+                        xpos = NA,
+                        entity = NA)
+  }
+
+  # store the annotations in the list using the original email name
+  annotationsData[[names(allEmails)[i]]] <- annDF
+  
+  print(paste0('Finished annotations on doc ', i))
+}
+
+print(head(annotationsData))
+```
+
+## Deliverable 10: Extract Terms from the Clinton Email Dataset
+
+```{r deliverable 10}
+
+# Initialize an empty list to store extracted terms and their metadata
+allData <- list()
+
+# Loop through each email (annotationsData + allEmails already exist from before)
+#for (i in 1:length(allEmails)) {
+#  x <- allEmails[[i]]
+#  y <- annotationsData[[i]]
+#  print(paste('Starting document:', i, 'of', length(allEmails)))
+  # Skip documents with empty annotation data frames
+#  if (is.null(y) || nrow(y) == 0) {
+#    print(paste("No annotations for document:", i))
+#    next
+#  }
+#  POSls <- list()
+  # Loop through each annotation row
+#  for (j in 1:nrow(y)) {
+    # Extract each field carefully with length and NA checks
+#    doc_id_val   <- ifelse(length(names(allEmails)[i]) > 0, names(allEmails)[i], NA)
+#    type_val     <- ifelse(!is.na(y$upos[j]) & length(y$upos[j]) > 0, y$upos[j], "")
+#    token_id_val <- ifelse(!is.na(y$token_id[j]) & length(y$token_id[j]) > 0, y$token_id[j], NA)
+#    token_val    <- ifelse(!is.na(y$token[j]) & length(y$token[j]) > 0, y$token[j], "")
+#    lemma_val    <- ifelse(!is.na(y$lemma[j]) & length(y$lemma[j]) > 0, y$lemma[j], "")
+#    xpos_val     <- ifelse(!is.na(y$xpos[j]) & length(y$xpos[j]) > 0, y$xpos[j], "")
+#    entity_val   <- ifelse(!is.na(y$entity[j]) & length(y$entity[j]) > 0, y$entity[j], "")
+    # Build the row as a data frame, ensure one row per token
+#    z <- data.frame(
+#      doc_id   = doc_id_val,
+#      type     = type_val,
+#      token_id = token_id_val,
+#      token    = token_val,
+#      lemma    = lemma_val,
+#      xpos     = xpos_val,
+#      entity   = entity_val,
+#      stringsAsFactors = FALSE
+#    )
+    # Add the single-token row to the POS list
+#    POSls[[j]] <- z
+#  }
+  # Bind all the token rows together for this document
+#  docPOS <- do.call(rbind, POSls)
+  
+  # Add this document's annotated data to the allData list
+#  allData[[i]] <- docPOS
+#  print(paste('Finished document:', i))
+#}
+
+# View first annotated document
+#allData[[1]]
+
+```
+
+I could not make the above code loop work - the code from the lab will not run and I cannot work my way through the alternative here - I time bound my work on this section at 45 mins and I am moving on.
+
+## Deliverable 11: Subset the Clinton Email Dataset
+
+```{r deliverable 11}
+
+# Add a dummy entity column to every dataframe if it's missing
+annotationsData <- pbapply::pblapply(annotationsData, function(df) {
+  if (!"entity" %in% base::names(df)) {
+    df$entity <- NA
+  }
+  return(df)
+})
+
+# Subset for people entities
+people <- pbapply::pblapply(annotationsData, function(df) {
+  base::subset(df, base::grepl("person", df$entity, ignore.case = TRUE))
+})
+
+# Subset for location entities
+location <- pbapply::pblapply(annotationsData, function(df) {
+  base::subset(df, base::grepl("location", df$entity, ignore.case = TRUE))
+})
+
+# Subset for organization entities
+organization <- pbapply::pblapply(annotationsData, function(df) {
+  base::subset(df, base::grepl("organization", df$entity, ignore.case = TRUE))
+})
+
+# Combine all annotations into one flat data frame
+POSdf <- base::do.call(base::rbind, annotationsData)
+
+# Subset for people entities in document "doc1"
+subset_people_doc1 <- base::subset(
+  POSdf,
+  doc_id == "doc1" &
+    base::grepl("person", entity, ignore.case = TRUE)
+)
+
+# Count number of entities per document
+people_counts <- base::sapply(people, base::nrow)
+location_counts <- base::sapply(location, base::nrow)
+organization_counts <- base::sapply(organization, base::nrow)
+
+# View counts
+people_counts
+location_counts
+organization_counts
+
+```
+
+## Deliverable 12: Using the Annotate Entities Process
+
+## Deliverable 13: Annotate Entities with OpenNLP
+```{r deliverable 13}
+
+#annotate.entities <- function(doc, annotation.pipeline){
+#  annotations <- annotate(doc, annotation.pipeline)
+#                AnnotatedPlainTextDocument(doc, annotations)
+#}
+#ner.pipeline <- list(
+#  Maxent_Sent_Token_Annotator(),
+#  Maxent_Word_Token_Annotator(),
+#  Maxent_POS_Tag_Annotator(),
+#  Maxent_Entity_Annotator(kind = "person"),
+#  Maxent_Entity_Annotator(kind = "location"),
+#  Maxent_Entity_Annotator(kind = "organization")
+#)
+
+```
+
+The openNLP package caused positron to completely shut down every time I tried to run any of its methods - was not able to complete this section.
+
+## Deliverable 14: Apply the Annotation Function
+
+```{r deliverable 14}
+
+#all.ner <- pblapply(allEmails, annotate.entities, ner.pipeline)
+
+```
+
+The openNLP package caused positron to completely shut down every time I tried to run any of its methods - was not able to complete this section.
+
+# Part 3: Conducting NLP Analysis with spacyr
+
+## Deliverable 15: Load the spacyr Package
+
+```{r deliverable 15}
+
+spacyr::spacy_install()
+
+txt <- c(d1 = "spaCy is great at fast natural language processing.",
+        d2 = "Mr. Smith spent two years in North Carolina.")
+parsedtxt <- spacyr::spacy_parse(txt)
+parsedtxt
+
+```
+
+## Deliverable 16: Review the Parsed Text
+
+```{r deliverable 16}
+
+spacyr::spacy_parse(txt, tag = TRUE, entity = FALSE, lemma = FALSE)
+
+```
+
+## Deliverable 17: Parse the txt Object with spacyr
+
+```{r deliverable 17}
+
+spacyr::spacy_tokenize(txt)
+
+```
+
+## Deliverable 18: Tokenize Text into a Data Frame
+
+```{r deliverable 18}
+
+spacyr::spacy_tokenize(txt, remove_punct = TRUE, output = "data.frame") %>%
+  utils::tail()
+
+```
+
+## Deliverable 19: Extract Named Entities From Parsed Text
+
+```{r deliverable 19}
+
+spacyr::spacy_parse(txt, lemma = FALSE, entity = TRUE, nounphrase = TRUE)
+spacyr::entity_extract(parsedtxt)
+
+```
+
+## Deliverable 20: Extract Extended Entity Set
+
+```{r delivarable 20}
+
+spacyr::entity_extract(parsedtxt, type = "all")
+
+```
+
+## Deliverable 21: Consolidate Named Entities
+
+```{r deliverable 21}
+
+spacyr::entity_consolidate(parsedtxt) %>%
+  utils::tail()
+
+```
+
+
+## Deliverable 22: Extract Noun Phrases
+
+```{r deliverable 22}
+
+# Parse text with noun phrases enabled
+parsedtxt <- spacyr::spacy_parse(
+  txt,
+  nounphrase = TRUE
+)
+
+# Now extract the noun phrases
+nounphrases <- spacyr::nounphrase_extract(parsedtxt)
+
+# View the noun phrases
+nounphrases
+
+```
+
+## Deliverable 23: Extract Entities Without Parsing the Entire Text
+
+```{r deliverable 23}
+
+spacyr::spacy_extract_entity(txt)
+spacyr::spacy_extract_nounphrases(txt)
+spacyr::spacy_parse(txt, dependency = TRUE, lemma = FALSE, pos = FALSE)
+
+```
+
+## Deliverable 23: Extract Additional Attributes
+
+```{r deliverable 23b}
+
+spacyr::spacy_parse("I have six email addresses, including me@mymail.com.",
+                    additional_attributes = c("like_num", "like_email"),
+                    lemma = FALSE, pos = FALSE, entity = FALSE)
+
+```
+
+## Deliverable 24: Extract Additional Attributes
+
+```{r deliverable 24}
+
+#library(quanteda, warn.conflicts = FALSE, quietly = TRUE)
+# To identify the names of the documents
+quanteda::docnames(parsedtxt)
+
+```
+
+
+## Deliverable 25: Extract Additional Attributes
+```{r deliverable 25}
+
+parsedtxt <- spacyr::spacy_parse(txt, pos = TRUE, tag = TRUE)
+quanteda::as.tokens(parsedtxt)
+
+```
+
+## Deliverable 26: Using spacyr with tidytext
+
+```{r deliverable 26}
+
+library(tidytext)
+
+tidytext::unnest_tokens(parsedtxt, word, token) %>%
+  dplyr::anti_join(stop_words)
+
+```
+
+## Deliverable 27: POS Filtering
+
+```{r deliverable 27}
+
+spacyr::spacy_parse("The cat in the hat ate green eggs and ham.", pos = TRUE) %>%
+  tidytext::unnest_tokens(word, token) %>%
+  dplyr::filter(pos == "NOUN")
+
+```
+
+## Deliverable 28: Finalizing the SpaCy Connection
+
+```{r deliverable 28}
+
+spacyr::spacy_finalize()
+
+```
+
+# Part 4: Conducting NLP Analysis in Python
+
+## Deliverable 29: Importing the nltk Package and Downloading Necessary POS Taggers
+
+```{python deliverable 29}
+
+import nltk
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('maxent_ne_chunker')
+nltk.download('words')
+
+```
+
+## Deliverable 30: Downloading the Necessary Datasets
+
+```{python deliverable 30}
+
+from nltk.corpus import state_union
+nltk.download('state_union')
+
+```
+
+```{python deliverable 30a}
+
+# Load a sample text
+sample_text = state_union.raw("2006-GWBush.txt")
+print(sample_text)
+
+```
+
+## Deliverable 31: Tokenizing the Text
+
+```{python deliverable 31}
+
+from nltk.tokenize import sent_tokenize, word_tokenize
+
+# tokenize sentences
+sentences = sent_tokenize(sample_text)
+
+# tokenize words
+words = [word_tokenize(sentence) for sentence in sentences]
+
+```
+
+## Deliverable 32: Perform POS Tagging and NER
+
+```{python deliverable 32}
+
+pos_tagged = [nltk.pos_tag(word) for word in words]
+print(pos_tagged)
+
+```
+
+
+## Deliverable 33: Perform NER
+
+```{python deliverable 33}
+
+#named_entities = []
+#for tagged_sentence in pos_tagged:
+#  chunked_sentence = nltk.ne_chunk(tagged_sentence, binary = True)
+#  named_entities.extend([chunk for chunk in chunked_sentence if hasattr(chunk, 'label')])
+#print(named_entities[:10])
+
+```
+
+I could not get this to run properly - time bound at 30 minutes.
+
+
+## Deliverable 34: Visualizing the Results
+
+```{python deliverable 34}
+
+from nltk import FreqDist
+import matplotlib.pyplot as plt
+
+# Assuming `pos_tagged` contains your POS-tagged text
+pos_tags = [tag for sentence in pos_tagged for _, tag in sentence]
+
+# Frequency distribution of POS tags
+pos_freq = FreqDist(pos_tags)
+
+# Creating a bar plot for POS tags frequency
+plt.figure(figsize=(12, 8))
+pos_freq.plot(30, cumulative=False)
+
+plt.show()
+
+```
