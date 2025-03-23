@@ -492,13 +492,13 @@
     },
     "cpp11": {
       "Package": "cpp11",
-      "Version": "0.5.1",
+      "Version": "0.5.2",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R"
       ],
-      "Hash": "9df43854f1c84685d095ed6270b52387"
+      "Hash": "2720e3fd3dad08f34b19b56b3d6f073d"
     },
     "crayon": {
       "Package": "crayon",
@@ -745,6 +745,13 @@
       ],
       "Hash": "54ed3ea01b11e81a86544faaecfef8e2"
     },
+    "dtt": {
+      "Package": "dtt",
+      "Version": "0.1-2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c6d92416317cf258f8cc48631d81d68e"
+    },
     "e1071": {
       "Package": "e1071",
       "Version": "1.7-16",
@@ -771,6 +778,13 @@
         "rlang"
       ],
       "Hash": "bb0eec2fe32e88d9e2836c2f73ea2077"
+    },
+    "english": {
+      "Package": "english",
+      "Version": "1.2-6",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "eae5ce5432c3e995bc4aab2e612df7a5"
     },
     "evaluate": {
       "Package": "evaluate",
@@ -1447,13 +1461,13 @@
     },
     "jsonlite": {
       "Package": "jsonlite",
-      "Version": "1.9.0",
+      "Version": "1.9.1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "methods"
       ],
-      "Hash": "a61860f091bd20d8dd6c3fd8ac7f6e90"
+      "Hash": "c72fbb0e7ee73ea7497ffeebe44f0d91"
     },
     "knitr": {
       "Package": "knitr",
@@ -1554,6 +1568,18 @@
       ],
       "Hash": "c0b81ad9d5d932772f7a457ac398cf36"
     },
+    "lexicon": {
+      "Package": "lexicon",
+      "Version": "1.2.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "data.table",
+        "syuzhet"
+      ],
+      "Hash": "ba66486b4393871b0afd7f18da7bffd1"
+    },
     "lgr": {
       "Package": "lgr",
       "Version": "0.4.4",
@@ -1628,6 +1654,13 @@
         "utils"
       ],
       "Hash": "086028ca0460d0c368028d3bda58f31b"
+    },
+    "mgsub": {
+      "Package": "mgsub",
+      "Version": "1.7.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "5b5167274e8a738ecb62ed6aa8bb664d"
     },
     "mime": {
       "Package": "mime",
@@ -1716,6 +1749,28 @@
         "tibble"
       ],
       "Hash": "61eb941328b49a62d7f9816dfed7d959"
+    },
+    "openNLP": {
+      "Package": "openNLP",
+      "Version": "0.2-7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "NLP",
+        "openNLPdata",
+        "rJava"
+      ],
+      "Hash": "5f7d832d142f94d1d23e416de9c4a06c"
+    },
+    "openNLPdata": {
+      "Package": "openNLPdata",
+      "Version": "1.5.3-5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "rJava"
+      ],
+      "Hash": "ee51b66d043d50a66ed85feebe3e4dd7"
     },
     "openssl": {
       "Package": "openssl",
@@ -2001,7 +2056,7 @@
     },
     "purrr": {
       "Package": "purrr",
-      "Version": "1.0.2",
+      "Version": "1.0.4",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -2012,7 +2067,18 @@
         "rlang",
         "vctrs"
       ],
-      "Hash": "1cba04a4e9414bdefc9dcaa99649a8dc"
+      "Hash": "cc8b5d43f90551fa6df0a6be5d640a4f"
+    },
+    "qdapRegex": {
+      "Package": "qdapRegex",
+      "Version": "0.7.8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "stringi"
+      ],
+      "Hash": "8174dcd914f5b6292072fc7c73b6fc57"
     },
     "quanteda": {
       "Package": "quanteda",
@@ -2051,6 +2117,17 @@
         "zoo"
       ],
       "Hash": "59321b609790f8ccf92145810e4dd507"
+    },
+    "rJava": {
+      "Package": "rJava",
+      "Version": "1.0-11",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "methods"
+      ],
+      "Hash": "524167e771b81342f8dd7a891ed3afa8"
     },
     "ragg": {
       "Package": "ragg",
@@ -2669,6 +2746,25 @@
       ],
       "Hash": "213b6b8ed5afbf934843e6c3b090d418"
     },
+    "syuzhet": {
+      "Package": "syuzhet",
+      "Version": "1.0.7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "NLP",
+        "R",
+        "dplyr",
+        "dtt",
+        "graphics",
+        "rlang",
+        "stats",
+        "textshape",
+        "tidyr",
+        "zoo"
+      ],
+      "Hash": "894c8d45de6a15c2dc1a1b3832c95586"
+    },
     "terra": {
       "Package": "terra",
       "Version": "1.8-29",
@@ -2729,6 +2825,40 @@
         "stringi"
       ],
       "Hash": "94a38cec24f865c5b1f4efbb85687df6"
+    },
+    "textclean": {
+      "Package": "textclean",
+      "Version": "0.9.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "data.table",
+        "english",
+        "glue",
+        "lexicon",
+        "mgsub",
+        "qdapRegex",
+        "stringi",
+        "textshape",
+        "utils"
+      ],
+      "Hash": "99ac0db698fb9e029f8b52ad6c563ea7"
+    },
+    "textshape": {
+      "Package": "textshape",
+      "Version": "1.7.5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "data.table",
+        "slam",
+        "stats",
+        "stringi",
+        "utils"
+      ],
+      "Hash": "15360de1c662f65faa1c11a1d0f5bc5e"
     },
     "textshaping": {
       "Package": "textshaping",
@@ -2930,14 +3060,14 @@
     },
     "tzdb": {
       "Package": "tzdb",
-      "Version": "0.4.0",
+      "Version": "0.5.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R",
         "cpp11"
       ],
-      "Hash": "f561504ec2897f4d46f0c7657e488ae1"
+      "Hash": "09e3961e87b7bafa4a9340bbb34aeda8"
     },
     "units": {
       "Package": "units",
