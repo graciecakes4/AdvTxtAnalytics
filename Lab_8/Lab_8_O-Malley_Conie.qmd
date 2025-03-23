@@ -110,7 +110,7 @@ print(word_pos)
 
 ```{r deliverable 4}
 
-tmp <- list.files(path ="Lab_8/data", pattern = '*.txt', full.names = T)
+tmp <- list.files(path ="/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab_8/data", pattern = '*.txt', full.names = T)
 emails <- pbapply::pblapply(tmp, readLines)
 names(emails) <- gsub('.txt', '', list.files(pattern = '.txt'))
 
@@ -494,17 +494,30 @@ spacyr::spacy_finalize()
 
 ```
 
+
+**Part 4 has been moved to a separate document due to rendering issues with python**
+
+**Code below is an example, all outputs are in a jupyter notebook file.**
+
 # Part 4: Conducting NLP Analysis in Python
+
+```{r reticulate}
+
+#reticulate::use_condaenv("datascience", required = TRUE)
+# Or point directly to Python binary:
+#reticulate::use_python("/Users/coniecakes/anaconda3/envs/datascience/bin/python", required = TRUE)
+
+```
 
 ## Deliverable 29: Importing the nltk Package and Downloading Necessary POS Taggers
 
 ```{python deliverable 29}
 
-import nltk
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('maxent_ne_chunker')
-nltk.download('words')
+#import nltk
+#nltk.download('punkt')
+#nltk.download('averaged_perceptron_tagger')
+#nltk.download('maxent_ne_chunker')
+#nltk.download('words')
 
 ```
 
@@ -512,16 +525,16 @@ nltk.download('words')
 
 ```{python deliverable 30}
 
-from nltk.corpus import state_union
-nltk.download('state_union')
+#from nltk.corpus import state_union
+#nltk.download('state_union')
 
 ```
 
 ```{python deliverable 30a}
 
 # Load a sample text
-sample_text = state_union.raw("2006-GWBush.txt")
-print(sample_text)
+#sample_text = state_union.raw("2006-GWBush.txt")
+#print(sample_text)
 
 ```
 
@@ -529,13 +542,13 @@ print(sample_text)
 
 ```{python deliverable 31}
 
-from nltk.tokenize import sent_tokenize, word_tokenize
+#from nltk.tokenize import sent_tokenize, word_tokenize
 
 # tokenize sentences
-sentences = sent_tokenize(sample_text)
+#sentences = sent_tokenize(sample_text)
 
 # tokenize words
-words = [word_tokenize(sentence) for sentence in sentences]
+#words = [word_tokenize(sentence) for sentence in sentences]
 
 ```
 
@@ -543,8 +556,8 @@ words = [word_tokenize(sentence) for sentence in sentences]
 
 ```{python deliverable 32}
 
-pos_tagged = [nltk.pos_tag(word) for word in words]
-print(pos_tagged)
+#pos_tagged = [nltk.pos_tag(word) for word in words]
+#print(pos_tagged)
 
 ```
 
@@ -568,19 +581,19 @@ I could not get this to run properly - time bound at 30 minutes.
 
 ```{python deliverable 34}
 
-from nltk import FreqDist
-import matplotlib.pyplot as plt
+#from nltk import FreqDist
+#import matplotlib.pyplot as plt
 
 # Assuming `pos_tagged` contains your POS-tagged text
-pos_tags = [tag for sentence in pos_tagged for _, tag in sentence]
+#pos_tags = [tag for sentence in pos_tagged for _, tag in sentence]
 
 # Frequency distribution of POS tags
-pos_freq = FreqDist(pos_tags)
+#pos_freq = FreqDist(pos_tags)
 
 # Creating a bar plot for POS tags frequency
-plt.figure(figsize=(12, 8))
-pos_freq.plot(30, cumulative=False)
+#plt.figure(figsize=(12, 8))
+#pos_freq.plot(30, cumulative=False)
 
-plt.show()
+#plt.show()
 
 ```
