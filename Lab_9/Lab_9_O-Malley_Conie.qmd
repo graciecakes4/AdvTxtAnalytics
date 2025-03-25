@@ -183,7 +183,74 @@ austen_books <- janeaustenr::austen_books() %>%
         # Add line numbers within each book
         linenumber = row_number(),
         # Create chapter groups
-        chapter = cumsum(str_detect(text, regex("^chapter [\\dIVXLC]", ignore_case = TRUE)) | str_detect(text, regex("^[\\dIVXLC]+", ignore_case = TRUE)))) %>%
+        chapter = cumsum(stringr::str_detect(text, stringr::regex("^chapter [\\dIVXLC]", ignore_case = TRUE)) | 
+            stringr::str_detect(text, stringr::regex("^[\\dIVXLC]+", ignore_case = TRUE)))) %>%
     dplyr::ungroup()
+
+```
+
+## Organize by Chapter Words and Create Document-Term Matrix
+
+```{r dtm 2}
+
+stop_words <- tm::stopwords("english")
+
+by_chapter_word <- austen_books %>%
+    dplyr::filter(chapter > 0) %>%
+    tidyr::unite(document, book, chapter) %>%
+    tidytext::unnest_tokens(word, text)
+
+# remove stop words and count words
+word_counts <- by_chapter_word %>%
+    dplyr::anti_join(tibble::tibble(word = stop_words), by = "word") %>% # changed anti-join
+    dplyr::count(document, word, sort = TRUE) %>%
+    dplyr::ungroup()
+
+# create a document-term matrix
+chapters_dtm <- word_counts %>%
+    tidytext::cast_dtm(document, word, n)
+
+```
+
+## Let’s try to reduce the size of the dtm
+
+```{r dtm dim 2}
+
+dim(chapters_dtm)
+
+# remove sparse terms before converting to matrix
+chapters_dtm_reduced <- tm::removeSparseTerms(chapters_dtm, sparse = 0.99)
+dim(chapters_dtm_reduced)
+
+# now try the conversion with the reduced matrix
+chapters_matrix <- as.matrix(chapters_dtm_reduced)
+chapters_normalized <- scale(chapters_matrix)
+
+```
+
+## Determine Optimal Number of clusters with Elbow Method
+
+```{r cluster optimization}
+
+wss <- function(k) {
+    stats::kmeans(chapters_normalized, k, nstart = 25)$tot.withinss
+}
+
+# Calculate WSS for k=1 to k=10
+k.values <- 1:10
+wss_values <- purrr::map_dbl(k.values, wss)
+
+
+# Plot elbow curve
+elbow_plot <- tibble::tibble(k = k.values, wss = wss_values) %>%
+    ggplot2::ggplot(aes(k, wss)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_point() +
+    ggplot2::labs(title = "Elbow Method for Optimal k",
+                    x = "Number of Clusters (k)",
+                    y = "Total Within-cluster Sum of Squares") +
+    ggthemes::theme_economist_white()
+
+elbow_plot
 
 ```
