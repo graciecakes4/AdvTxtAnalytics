@@ -1,0 +1,64 @@
+---
+title: "Lab 8"
+author: "Conie O'Malley"
+date: "`r Sys.Date()`"
+format: 
+  pdf: 
+    titlepage: true
+    toc: true
+    toc-depth: 2
+    code-block-wrap: true
+    number-sections: true
+execute:
+  echo: true
+  freeze: false
+  error: false
+  jupyter: python3
+python:
+  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
+---
+
+# Pre Lab
+```{r libraries}
+
+required_packages <- c("tidyverse", "quanteda", "readtext", "stm", "stminsights", "wordcloud", "gsl", "topicmodels", 
+                        "caret", "gutenbergr", "tidytext", "quanteda.textmodels", "tm", "igraph", "ggraph", "widyr", 
+                        "jsonlite", "factoextra", "janeaustenr", "cluster", "SnowballC", "proxy", "stringr", "textclean",
+                        "dendextend", "ggdendro", "plotly", "reticulate")
+
+```
+
+## Deliverable 1: Get your working directory and paste below:
+
+"/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics"
+
+# Part 1: Introduction to K-Means Clustering with Synthetic Data
+
+```{r}
+
+texts <- c(
+    # Sports articles
+    "The football team scored three touchdowns. The quarterback threw perfect passes.",
+    "The basketball team won with slam dunks and three-point shots.",
+    "The baseball pitcher threw a perfect game with many strikeouts.",
+    "The soccer team scored two goals and won the championship.",
+    # Technology articles
+    "The computer system processed data using advanced algorithms and databases.",
+    "The network router managed bandwidth through secure encryption protocols.",
+    "The software code executed functions through compiled programming syntax.",
+    "The digital platform integrated APIs with cloud computing architecture.",
+    # Food articles
+    "The professional chef created sauces and prepared gourmet dishes.",
+    "The master baker produced artisan breads and pastries daily.",
+    "The culinary team seasoned meats and roasted vegetables.",
+    "The kitchen staff garnished plates and plated entrees."
+)
+
+categories <- rep(c("Sports", "Technology", "Food"), each = 4)
+
+cat("Initial document count:", {length(texts)})
+
+corpus <- Corpus(VectorSource(texts))
+print("Corpus size:")
+
+```
