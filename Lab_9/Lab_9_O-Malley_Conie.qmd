@@ -54,11 +54,136 @@ texts <- c(
     "The kitchen staff garnished plates and plated entrees."
 )
 
-categories <- rep(c("Sports", "Technology", "Food"), each = 4)
+```
 
+## Add category labels
+
+```{r categories}
+
+categories <- rep(c("Sports", "Technology", "Food"), each = 4)
 cat("Initial document count:", {length(texts)})
 
-corpus <- Corpus(VectorSource(texts))
-print("Corpus size:")
+```
+
+# Create corpus and preprocess text
+
+```{r corpus}
+
+corpus <- tm::Corpus(tm::VectorSource(texts))
+cat("Corpus size:", {length(corpus)})
+
+cleanCorpus <- function(corpus) {
+    corpus <- tm::tm_map(corpus, tm::content_transformer(tolower))
+    corpus <- tm::tm_map(corpus, tm::removePunctuation)
+    corpus <- tm::tm_map(corpus, tm::removeNumbers)
+    corpus <- tm::tm_map(corpus, tm::removeWords, tm::stopwords("english"))
+    corpus <- tm::tm_map(corpus, tm::stripWhitespace)
+    return(corpus)
+}
+
+cleaned_corpus <- cleanCorpus(corpus)
+cat("Cleaned corpus size:", {length(cleaned_corpus)})
+
+```
+
+## Create DTM and explore data
+
+```{r dtm}
+
+dtm <- tm::DocumentTermMatrix(cleaned_corpus)
+cat("DTM dimensions:", {dim(dtm)})
+
+```
+
+## Check for empty documents
+
+```{r empty docs}
+
+dtm_matrix <- as.matrix(dtm)
+row_sums <- Matrix::rowSums(dtm_matrix)
+cat("Document term counts:", {row_sums})
+
+```
+
+## Normalize the matrix
+
+```{r normalize matrix}
+
+dtm_normalized <- scale(dtm_matrix)
+
+```
+
+## Perform k-means Clustering with k=3
+```{r k-means clustering}
+
+set.seed(123)
+kmeans_result <- stats::kmeans(dtm_normalized, centers = 3, nstart = 25)
+
+```
+
+## Create visualization using PCA - Principal Component Analysis
+
+```{r PCA}
+
+pca_result <- stats::prcomp(dtm_normalized)
+cluster_plot_data <- data.frame(
+    PC1 = pca_result$x[,1],
+    PC2 = pca_result$x[,2],
+    Cluster = factor(kmeans_result$cluster),
+    Category = categories
+)
+
+# create scatter plot with enhanced visibility
+ggplot2::ggplot(cluster_plot_data, ggplot2::aes(PC1, PC2, color = Category, shape = Cluster)) +
+    ggplot2::geom_point(size = 5, alpha = 0.7) + 
+    ggplot2::labs(title = "Document Clusters",
+                    subtitle = "Sports, Technology, and Food Articles",
+                    x = "First Principal Component",
+                    y = "Second Principal Component") +
+    ggthemes::theme_economist_white() +
+    ggplot2::theme(legend.position = "right",
+            plot.title = ggplot2::element_text(size = 14, face = "bold"),
+            legend.text = ggplot2::element_text(size = 10))
+
+```
+
+## Print verification of cluster assignments
+
+```{r cluster assignments}
+
+print("Cluster assignments by category:")
+print(table(Category = categories, Cluster = kmeans_result$cluster))
+
+```
+
+## Print top terms for each cluster
+
+```{r top terms}
+
+print("Top terms per cluster:")
+terms <- colnames(dtm_matrix)
+centers <- kmeans_result$centers
+for(i in 1:3) {
+    cat(paste0("\nCluster ", i, " top terms:\n"))
+    top_indices <- order(centers[i,], decreasing = TRUE)[1:10]
+    print(terms[top_indices])
+}
+
+```
+
+# Part 2: Complex Text Clustering in R with a K-Means Algorithm
+
+## Prepare the Data
+
+```{r data prep 2}
+
+austen_books <- janeaustenr::austen_books() %>%
+    dplyr::group_by(book) %>%
+    dplyr::mutate(
+        # Add line numbers within each book
+        linenumber = row_number(),
+        # Create chapter groups
+        chapter = cumsum(str_detect(text, regex("^chapter [\\dIVXLC]", ignore_case = TRUE)) | str_detect(text, regex("^[\\dIVXLC]+", ignore_case = TRUE)))) %>%
+    dplyr::ungroup()
 
 ```
