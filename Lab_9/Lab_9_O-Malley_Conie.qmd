@@ -254,3 +254,240 @@ elbow_plot <- tibble::tibble(k = k.values, wss = wss_values) %>%
 elbow_plot
 
 ```
+
+## Perform k-means clustering with k=3
+
+```{r k means clustering}
+
+# k=3 means clustering
+set.seed(123) # for reproducibility
+kmeans_3 <- stats::kmeans(chapters_normalized, centers = 3, nstart = 25)
+
+# Perform k-means clustering with k=6
+set.seed(123)
+kmeans_6 <- stats::kmeans(chapters_normalized, centers = 6, nstart = 25)
+
+```
+
+## Create visualization and analysis for both
+
+```{r k means visualization}
+
+# First, let's look at which chapters are assigned to which clusters
+cluster_assignments_3 <- word_counts %>%
+    tidyr::separate(document, c("book", "chapter"), sep = "_") %>%
+    dplyr::distinct(book, chapter) %>%
+    dplyr::mutate(cluster = kmeans_3$cluster[as.numeric(factor(paste0(book, chapter, sep = "_")))])
+
+cluster_assignments_6 <- word_counts %>%
+    tidyr::separate(document, c("book", "chapter"), sep = "_") %>%
+    dplyr::distinct(book, chapter) %>%
+    dplyr::mutate(cluster = kmeans_6$cluster[as.numeric(factor(paste(book, chapter, sep = "_")))])
+
+```
+
+## Create heatmaps for both k=3 and k=6
+```{r k means heatmaps}
+
+heatmap_3 <- cluster_assignments_3 %>%
+    dplyr::count(book, cluster) %>%
+    ggplot2::ggplot(ggplot2::aes(factor(cluster), book, fill = n)) +
+        ggplot2::geom_tile() +
+        ggplot2::scale_fill_gradient(low = "white", high = "steelblue") +
+        ggplot2::labs(title = "Cluster Distribution (k=3)",
+                        x = "Cluster",
+                        y = "Book",
+                        fill = "Number of Chapters") +
+        ggthemes::theme_economist_white()
+
+heatmap_6 <- cluster_assignments_6 %>%
+    dplyr::count(book, cluster) %>%
+    ggplot2::ggplot(ggplot2::aes(factor(cluster), book, fill = n)) +
+        ggplot2::geom_tile() +
+        ggplot2::scale_fill_gradient(low = "white", high = "steelblue") +
+        ggplot2::labs(title = "Cluster Distribution (k=6)",
+                        x = "Cluster",
+                        y = "Book",
+                        fill = "Number of Chapters") +
+        ggthemes::theme_economist_white()
+
+```
+
+## Print Summary Statistics
+```{r summary statistics}
+
+print("Cluster sizes for k=3:")
+print(table(cluster_assignments_3$cluster))
+print("Cluster composition for k=3:")
+print(table(cluster_assignments_3$book, cluster_assignments_3$cluster))
+print("Cluster sizes for k=6:")
+print(table(cluster_assignments_6$cluster))
+print("Cluster composition for k=6:")
+print(table(cluster_assignments_6$book, cluster_assignments_6$cluster))
+
+```
+
+## Display Heatmaps for both K Values
+```{r heatmaps}
+
+print(heatmap_3)
+print(heatmap_6)
+
+```
+
+## Calculate and Display Characteristic Words in Each Cluster (k=3)
+```{r characteristic words k=3}
+
+cluster_words_3 <- word_counts %>%
+    tidyr::separate(document, c("book", "chapter"), sep = "_") %>%
+    dplyr::mutate(cluster = kmeans_3$cluster[as.numeric(factor(paste0(book, chapter, sep = "_")))]) %>%
+    dplyr::group_by(cluster, word) %>%
+    dplyr::summarise(total = sum(n), .groups = 'drop') %>%
+    dplyr::group_by(cluster) %>%
+    dplyr::slice_max(total, n = 10) %>% # Get top 10 words for each cluster
+    dplyr::arrange(cluster, desc(total))
+
+print("Top words in each cluster (k=3):")
+print(cluster_words_3)
+
+```
+
+## Calculate and Display Characteristic Words in Each Cluster (k=6)
+```{r characteristic-words-k6}
+
+cluster_words_6 <- word_counts %>%
+    tidyr::separate(document, c("book", "chapter"), sep = "_") %>%
+    dplyr::mutate(cluster = kmeans_6$cluster[as.numeric(factor(paste(book, chapter, sep = "_")))]) %>%
+    dplyr::group_by(cluster, word) %>%
+    dplyr::summarise(total = sum(n), .groups = 'drop') %>%
+    dplyr::group_by(cluster) %>%
+    dplyr::slice_max(total, n = 15) %>% # Get top 15 words for each cluster
+    dplyr::arrange(cluster, desc(total))
+
+print("Top words in each cluster (k=6):")
+print(cluster_words_6)
+
+```
+
+## Print the k=3 results in a more readable format
+```{r}
+
+cluster_words_3 %>%
+    dplyr::group_by(cluster) %>%
+    dplyr::summarise(words = paste0(word, collapse = ", ")) %>%
+    dplyr::mutate(cluster = paste0("Cluster", cluster)) %>%
+    print(width = Inf) # Print full width
+
+```
+
+# Part 3: Hierarchical (Tree) Clustering in R
+
+## Load the Customer Complaint’s Dataset and Preprocess
+```{r}
+
+complaints <- utils::read.csv("Lab_9/data/complaints.csv", stringsAsFactors = FALSE)
+# Text preprocessing function
+preprocess_text <- function(text) {
+    text %>%
+        # Convert to lowercase
+        stringr::str_to_lower() %>%
+        # Remove special characters and digits
+        stringr::str_replace_all("[^[:alpha:][:space:]]", "") %>%
+        # Remove extra whitespace
+        stringr::str_trim() %>%
+        stringr::str_squish()
+}
+# Apply preprocessing
+complaints <- complaints %>%
+    dplyr::mutate(processed_narrative = purrr::map_chr(consumer_complaint_narrative,
+                                                        ~preprocess_text(as.character(.))))
+    
+# Remove missing values
+complaints <- complaints %>%
+    dplyr::filter(!is.na(processed_narrative))
+
+# Create corpus
+corpus <- tm::Corpus(tm::VectorSource(complaints$processed_narrative))
+
+```
+
+## Perform Hierarchical Clustering
+```{r hierarchical clustering}
+
+# Create document-term matrix
+dtm_hierarchy <- tm::DocumentTermMatrix(corpus,
+                                        control = list(
+                                        weighting = "weightTfIdf",
+                                        stopwords = TRUE,
+                                        removeNumbers = TRUE,
+                                        removePunctuation = TRUE,
+                                        stemming = TRUE))
+
+# Convert to matrix and remove sparse terms
+dtm_matrix_hierarchy <- tm::removeSparseTerms(dtm_hierarchy, sparse = 0.99)
+dtm_matrix_hierarchy <- as.matrix(dtm_matrix_hierarchy)
+
+```
+
+## Calculate Distance Matrix and Perform Hierarchical Clustering
+```{r dist matrix and clustering}
+
+# Using first 100 documents for visualization purposes
+dist_matrix <- stats::dist(dtm_matrix_hierarchy[1:100,], method = "euclidean")
+
+# Perform hierarchical clustering
+hc <- stats::hclust(dist_matrix, method = "ward.D2")
+
+```
+
+## Visualize the Dendrogram
+```{r dendrogram}
+
+# Basic dendrogram
+graphics::plot(hc, main = "Hierarchical Clustering Dendrogram",
+                xlab = "Documents", ylab = "Height",
+                cex = 0.6, hang = -1)
+
+```
+
+```{r enhance dendrogram}
+
+# Enhanced dendrogram using dendextend
+dend <- stats::as.dendrogram(hc)
+dend <- dendextend::color_branches(dend, k = 5) # Color branches for 5 clusters
+
+# Plot enhanced dendrogram
+graphics::par(mar = c(5,5,3,1))
+graphics::plot(dend,
+                main = "Colored Dendrogram with 5 Clusters",
+                ylab = "Height",
+                leaflab = "none")
+
+```
+
+## Cut the Tree into Clusters and Analyze
+```{r tree cluster analysis}
+
+# Cut tree into 5 clusters
+clusters <- cutree(hc, k = 5)
+# Add cluster assignments to the original data
+complaints_subset <- complaints[1:100,] %>%
+mutate(cluster = as.factor(clusters))
+# Analyze clusters
+cluster_summary <- complaints_subset %>%
+group_by(cluster) %>%
+summarise(
+n = n(),
+sample_complaints = list(head(processed_narrative, 3))
+)
+
+# Print cluster summaries
+for(i in 1:nrow(cluster_summary)) {
+cat("\nCluster", i, "\n")
+cat("Number of complaints:", cluster_summary$n[i], "\n")
+cat("Sample complaints:\n")
+print(unlist(cluster_summary$sample_complaints[i]))
+cat("\n")
+}
+
+```
