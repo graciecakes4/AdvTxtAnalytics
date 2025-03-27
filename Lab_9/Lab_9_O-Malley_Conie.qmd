@@ -417,7 +417,7 @@ corpus <- tm::Corpus(tm::VectorSource(complaints$processed_narrative))
 # Create document-term matrix
 dtm_hierarchy <- tm::DocumentTermMatrix(corpus,
                                         control = list(
-                                        weighting = "weightTfIdf",
+                                        weighting = tm::weightTfIdf,
                                         stopwords = TRUE,
                                         removeNumbers = TRUE,
                                         removePunctuation = TRUE,
@@ -469,25 +469,124 @@ graphics::plot(dend,
 ```{r tree cluster analysis}
 
 # Cut tree into 5 clusters
-clusters <- cutree(hc, k = 5)
+clusters <- dendextend::cutree(hc, k = 5)
 # Add cluster assignments to the original data
 complaints_subset <- complaints[1:100,] %>%
-mutate(cluster = as.factor(clusters))
+    dplyr::mutate(cluster = as.factor(clusters))
 # Analyze clusters
 cluster_summary <- complaints_subset %>%
-group_by(cluster) %>%
-summarise(
-n = n(),
-sample_complaints = list(head(processed_narrative, 3))
+    dplyr::group_by(cluster) %>%
+    dplyr::summarise(
+                n = n(),
+                sample_complaints = list(utils::head(processed_narrative, 3))
 )
 
 # Print cluster summaries
 for(i in 1:nrow(cluster_summary)) {
-cat("\nCluster", i, "\n")
-cat("Number of complaints:", cluster_summary$n[i], "\n")
-cat("Sample complaints:\n")
-print(unlist(cluster_summary$sample_complaints[i]))
-cat("\n")
+    cat("\nCluster", i, "\n")
+    cat("Number of complaints:", cluster_summary$n[i], "\n")
+    cat("Sample complaints:\n")
+    print(unlist(cluster_summary$sample_complaints[i]))
+    cat("\n")
 }
 
 ```
+
+```{r silhouette plot}
+
+sil <- cluster::silhouette(clusters, dist_matrix)
+graphics::plot(sil, main = "Silhouette Plot")
+
+# Average silhouette width
+avg_sil <- mean(sil[,3])
+cat("Average silhouette width:", avg_sil)
+
+```
+
+```{r color silhouette plot}
+
+# Plot silhouette analysis using factoextra
+factoextra::fviz_silhouette(sil)
+
+```
+
+## Get Top Words for Each Cluster
+```{r top words}
+
+# Function to get top words for each cluster
+get_top_words <- function(cluster_num, n_words = 10) {
+    # Get documents in cluster
+    cluster_docs <- complaints_subset %>%
+        dplyr::filter(cluster == cluster_num) %>%
+        dplyr::pull(processed_narrative)
+        # Create DTM for cluster
+        cluster_corpus <- tm::Corpus(tm::VectorSource(cluster_docs))
+        cluster_dtm <- tm::DocumentTermMatrix(cluster_corpus,
+                                                control = list(
+                                                        weighting = tm::weightTfIdf,
+                                                        stopwords = TRUE)
+                                                        )
+    # Get term frequencies
+    term_freq <- colSums(as.matrix(cluster_dtm))
+    top_terms <- sort(term_freq, decreasing = TRUE)[1:n_words]
+    return(names(top_terms))
+}
+
+# Print top words for each cluster
+for(i in 1:5) {
+    cat("\nCluster", i, "top words:\n")
+    print(get_top_words(i))
+}
+
+```
+
+## Create Cluster Visualization Using Factoextra
+```{r cluster viz}
+
+# Perform PCA on the distance matrix for visualization
+pca <- stats::prcomp(dtm_matrix_hierarchy[1:100,])
+
+# Plot clusters in first two principal components
+factoextra::fviz_cluster(list(data = pca$x[,1:2], cluster = clusters),
+                                main = "Cluster Plot",
+                                ellipse.type = "convex",
+                                repel = TRUE,
+                                show.clust.cent = TRUE)
+
+```
+
+## Compare Different Distance Metrics
+```{r metrics comparison}
+
+# Compare different distance metrics
+distance_methods <- c("euclidean", "manhattan", "cosine")
+dendlist <- list()
+for(method in distance_methods) {
+    dist_mat <- proxy::dist(dtm_matrix_hierarchy[1:100,], method = method)
+    hc_temp <- stats::hclust(dist_mat, method = "ward.D2")
+    dendlist[[method]] <- stats::as.dendrogram(hc_temp)
+}
+# Compare dendrograms
+dend_list <- dendextend::dendlist(dendlist[[1]], dendlist[[2]], dendlist[[3]])
+names(dend_list) <- distance_methods
+dendextend::tanglegram(dend_list[[1]], dend_list[[2]])
+
+```
+
+## Convert Dendrogram to Plotly for Interactive Visualization
+```{r plotly visual}
+
+# Convert dendrogram to plotly
+dend_data <- ggdendro::dendro_data(dend)
+
+p <- ggplot2::ggplot(ggdendro::segment(dend_data)) +
+                        ggplot2::geom_segment(ggplot2::aes(x = x, y = y, xend = xend, yend = yend)) +
+                        ggplot2::labs(title = "Dendrogram Visualization") +
+                        ggthemes::theme_economist_white()
+                        
+
+plotly::ggplotly(p)
+
+```
+
+# Part 4: Introduction to Topic Modeling
