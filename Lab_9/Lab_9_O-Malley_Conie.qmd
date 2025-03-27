@@ -590,3 +590,5 @@ plotly::ggplotly(p)
 ```
 
 # Part 4: Introduction to Topic Modeling
+
+## Get AP Data and Build a DTM to submit for the LDA model
