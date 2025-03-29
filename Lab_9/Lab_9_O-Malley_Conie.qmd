@@ -385,7 +385,7 @@ cluster_words_3 %>%
 ## Load the Customer Complaint’s Dataset and Preprocess
 ```{r}
 
-complaints <- utils::read.csv("Lab_9/data/complaints.csv", stringsAsFactors = FALSE)
+complaints <- utils::read.csv("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/004_School/001. MBA_MS/008. Spring 2025/004. Advanced Text Analytics_ML/complaints.csv", stringsAsFactors = FALSE)
 # Text preprocessing function
 preprocess_text <- function(text) {
     text %>%
@@ -592,3 +592,351 @@ plotly::ggplotly(p)
 # Part 4: Introduction to Topic Modeling
 
 ## Get AP Data and Build a DTM to submit for the LDA model
+
+```{r ap data load}
+
+data("AssociatedPress")
+AssociatedPress
+
+ap_lda <- topicmodels::LDA(AssociatedPress, k=8, control = list(seed=1234))
+ap_lda
+
+```
+
+## Explore and Interpret the Model
+
+```{r lda model interpretation}
+
+# Step 1: Extract beta matrix from the LDA model
+beta_matrix <- exp(ap_lda@beta)  # Convert log probabilities to probabilities
+
+# Step 2: Retrieve the terms (vocabulary) from the DocumentTermMatrix
+terms <- colnames(AssociatedPress)
+
+# Step 3: Validate the beta matrix dimensions with vocabulary size
+if (ncol(beta_matrix) != length(terms)) {
+  stop("Mismatch between number of columns in beta_matrix and the length of terms.")
+}
+
+# Step 4: Convert beta matrix to data frame and assign topic identifiers
+beta_df <- as.data.frame(beta_matrix)
+beta_df$topic <- 1:nrow(beta_df)
+
+# Step 5: Pivot the data to a long format correctly
+ap_topics_long <- beta_df %>%
+  tidyr::pivot_longer(
+    cols = -topic,      # Keep the topic column static
+    names_to = "term_index",  # Create index for terms
+    values_to = "beta"
+  ) %>%
+  dplyr::mutate(
+    term_index = as.integer(gsub("V", "", term_index)),  # Extract integer index
+    term = terms[term_index]  # Map term names using the index
+  ) %>%
+  dplyr::select(topic, term, beta)
+
+# Step 6: Display the tidy data frame
+print(head(ap_topics_long, 20))
+
+# Step 7: Extract the top terms for each topic using dplyr
+ap_top_terms <- ap_topics_long %>%
+  dplyr::group_by(topic) %>%
+  dplyr::top_n(10, beta) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(topic, dplyr::desc(beta))
+
+# Display the top terms for each topic
+print(head(ap_top_terms, 20))
+
+```
+
+## Visualize the Top Terms
+
+```{r top terms visualization}
+
+ap_top_terms %>%
+    dplyr::mutate(term = reorder(term, beta)) %>%
+    ggplot2::ggplot(ggplot2::aes(term, beta, fill = factor(topic))) +
+    ggplot2::geom_col(show.legend = FALSE) +
+    ggplot2::facet_wrap(~ topic, scales = "free") +
+    ggplot2::coord_flip() + 
+    ggthemes::theme_economist_white() +
+    ggplot2::labs(title = "Top Terms by Beta and Topic",
+                 x = "Term",)
+
+```
+
+```{r beta spread}
+
+beta_spread <- ap_topics_long %>%
+  dplyr::mutate(topic = paste0("topic", topic)) %>%  # Create a topic identifier
+  tidyr::pivot_wider(
+    names_from = topic,        # Pivot topic names to separate columns
+    values_from = beta         # Populate those columns with beta values
+  ) %>%
+  dplyr::filter(!is.na(topic1) & !is.na(topic2) & (topic1 > 0.001 | topic2 > 0.001)) %>%
+  dplyr::mutate(log_ratio = log2(topic2 / topic1))
+
+beta_spread
+
+```
+
+```{r gamma matrix}
+
+gamma_matrix <- exp(ap_lda@gamma)  # Convert log probabilities to probabilities
+
+document_count <- nrow(AssociatedPress)
+
+documents <- 1:document_count  # This is a placeholder, replace with actual document IDs if available
+
+gamma_df <- as.data.frame(gamma_matrix)
+gamma_df$document <- documents
+
+ap_documents_long <- gamma_df %>%
+  tidyr::pivot_longer(
+    cols = -document,      # Keep the document column static
+    names_to = "topic_index",  # Create index for topics
+    values_to = "gamma"
+  ) %>%
+  dplyr::mutate(
+    topic_index = as.integer(gsub("V", "", topic_index)),  # Extract integer index
+    topic = topic_index  # Direct mapping for simplicity
+  ) %>%
+  dplyr::select(document, topic, gamma)
+
+print(head(ap_documents_long, 20))
+
+```
+
+
+# Part 5: Topic Modelling Sanity Check with Project Gutenberg
+
+## Collect and Prepare the Data
+
+```{r gutenberg books download}
+
+options(gutenberg_mirror = "https://gutenberg.pglaf.org")
+
+books <- gutenbergr::gutenberg_download(c(1259, # Great Expectations (Dickens)
+                                            36, # The War of the Worlds (Wells)
+                                            98, # A Tale of Two Cities (Dickens)
+                                            74)) # The Adventures of Tom Sawyer (Twain)
+
+
+# Create labels for the books
+books <- books %>%
+    dplyr::mutate(title = dplyr::case_when(
+                                    gutenberg_id == 1259 ~ "Great Expectations",
+                                    gutenberg_id == 36 ~ "The War of the Worlds",
+                                    gutenberg_id == 98 ~ "Tale of Two Cities",
+                                    gutenberg_id == 74 ~ "Tom Sawyer",
+                                    TRUE ~ NA_character_
+))
+
+books
+
+```
+
+```{r chapters check}
+
+by_chapter <- books %>%
+    dplyr::group_by(title) %>%
+    dplyr::mutate(
+# Enhanced chapter detection for different formats
+            chapter = cumsum(
+                        stringr::str_detect(text, stringr::regex("^chapter [\\dIVXLC]", ignore_case = TRUE)) |
+                        stringr::str_detect(text, stringr::regex("^[\\dIVXLC]+\\.", ignore_case = TRUE))
+        )
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(chapter > 0) %>%
+    # Remove Project Gutenberg headers/footers
+    dplyr::filter(!stringr::str_detect(text, "Project Gutenberg")) %>%
+    dplyr::filter(!stringr::str_detect(text, "\\*\\*\\* START OF")) %>%
+    dplyr::filter(!stringr::str_detect(text, "\\*\\*\\* END OF"))
+
+chapter_counts <- by_chapter %>%
+    dplyr::group_by(title) %>%
+    dplyr::summarize(chapters = dplyr::n_distinct(chapter))
+
+print("Chapters per book:")
+print(chapter_counts)
+
+```
+
+```{r tokenize gutenberg books}
+
+# Tokenize and remove stop words
+by_chapter_word <- by_chapter %>%
+    tidyr::unite(document, title, chapter) %>%
+    tidytext::unnest_tokens(word, text)
+# Assuming 'word' is the column in 'by_chapter_word' representing the individual words
+stop_words_df <- tibble(word = stop_words)
+
+word_counts <- by_chapter_word %>%
+  dplyr::anti_join(stop_words_df, by = "word") %>%  # Use 'by = "word"' to specify the join column
+  dplyr::count(document, word, sort = TRUE) %>%
+  dplyr::ungroup()
+
+```
+
+## Prepare the Data: Convert the Tibble to a DTM
+```{r gutenberg dtm}
+
+# Create document-term matrix
+chapters_dtm <- word_counts %>%
+    tidytext::cast_dtm(document, word, n)
+
+chapters_dtm
+
+```
+
+## Create the LDA Topic Model
+```{r gutenberg lda model}
+
+# Fit LDA model
+chapters_lda <- topicmodels::LDA(chapters_dtm, k = 4, control = list(seed = 1234))
+chapters_lda
+
+```
+
+```{r gutenberg beta matrix}
+
+chapters_beta_matrix <- exp(chapters_lda@beta)  # Convert log probabilities to probabilities
+
+chapters_terms <- colnames(chapters_dtm)
+
+chapters_beta_df <- as.data.frame(chapters_beta_matrix)
+chapters_beta_df$topic <- 1:nrow(chapters_beta_df)
+
+chapters_topics_long <- chapters_beta_df %>%
+  tidyr::pivot_longer(
+    cols = -topic,      # Keep the topic column static
+    names_to = "term_index",  # Create index for terms
+    values_to = "beta"
+  ) %>%
+  dplyr::mutate(
+    term_index = as.integer(gsub("V", "", term_index)),  # Extract integer index
+    term = chapters_terms[term_index]  # Map term names using the index
+  ) %>%
+  dplyr::select(topic, term, beta)
+
+print(head(chapters_topics_long, 20))
+
+chapters_top_terms <- chapters_topics_long %>%
+  dplyr::group_by(topic) %>%
+  dplyr::top_n(10, beta) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(topic, dplyr::desc(beta))
+
+# Display the top terms for each topic
+print(head(chapters_top_terms, 20))
+
+```
+
+```{r gutenberg dtm visualization}
+
+# Create visualization of top terms
+top_terms_plot <- chapters_top_terms %>%
+    dplyr::mutate(term = tidytext::reorder_within(term, beta, topic)) %>%
+    ggplot2::ggplot(ggplot2::aes(beta, term, fill = factor(topic))) +
+    ggplot2::geom_col(show.legend = FALSE) +
+    ggplot2::facet_wrap(~topic, scales = "free_y") +
+    tidytext::scale_y_reordered() +
+    ggplot2::labs(title = "Top 10 Terms in Each Topic",
+                    x = "Beta Score",
+                    y = NULL) +
+    ggthemes::theme_economist_white()
+
+top_terms_plot
+
+```
+
+```{r gutenberg gamma matrix}
+
+gamma_matrix <- exp(chapters_lda@gamma)  # Convert log probabilities to probabilities
+
+document_ids <- rownames(chapters_dtm)  # Placeholder, adjust to your source
+
+gamma_df <- as.data.frame(gamma_matrix)
+gamma_df$document <- document_ids
+
+chapters_gamma <- gamma_df %>%
+    tidyr::pivot_longer(
+        cols = -document,          # All columns except 'document'
+        names_to = "topic_index",  # Create an index for topics
+        values_to = "gamma"        # Store probabilities in 'gamma'
+    ) %>%
+    dplyr::mutate(
+        topic_index = as.integer(gsub("V", "", topic_index)),
+        topic = topic_index
+    )
+# Separate document field back into title and chapter
+chapters_gamma <- chapters_gamma %>%
+    tidyr::separate(document, c("title", "chapter"), sep = "_", convert = TRUE)
+# Calculate average topic probabilities per book
+book_topics <- chapters_gamma %>%
+    dplyr::group_by(title, topic) %>%
+    dplyr::summarise(gamma = mean(gamma)) %>%
+    dplyr::ungroup()
+
+```
+
+## Create a Per-Document Classification
+```{r gutenberg document classification}
+
+# Create book-topic heatmap
+book_topics_plot <- book_topics %>%
+    ggplot2::ggplot(ggplot2::aes(factor(topic), title, fill = gamma)) +
+    ggplot2::geom_tile() +
+    ggplot2::scale_fill_gradient(low = "white", high = "red") +
+    ggplot2::labs(title = "Topic Distribution Across Books",
+                    x = "Topic",
+                    y = "Book",
+                    fill = "Gamma") +
+    ggthemes::theme_economist_white()
+
+book_topics_plot
+
+
+```
+
+```{r gutenberg summaries}
+
+# Print top terms for each topic
+print("Top terms for each topic:")
+chapters_top_terms %>%
+    dplyr::group_by(topic) %>%
+    dplyr::slice_head(n = 10) %>%
+    dplyr::arrange(topic, -beta) %>%
+
+print(n = 40)
+
+# Print topic distribution by book
+print("Topic distribution by book:")
+book_topics %>%
+    tidyr::pivot_wider(names_from = topic,
+                        values_from = gamma,
+                        names_prefix = "Topic ") %>%
+    dplyr::arrange(desc(`Topic 1`)) %>%
+    print()
+
+# Calculate and print the most distinctive words for each book
+distinctive_words <- by_chapter_word %>%
+    tidyr::separate(document, c("title", "chapter"), sep = "_") %>%
+    dplyr::anti_join(stop_words_df) %>%
+    dplyr::count(title, word) %>%
+    tidytext::bind_tf_idf(word, title, n) %>%
+    dplyr::group_by(title) %>%
+    dplyr::slice_max(tf_idf, n = 10) %>%
+    dplyr::ungroup()
+
+print("Most distinctive words for each book:")
+distinctive_words %>%
+    dplyr::arrange(title, desc(tf_idf)) %>%
+    print(n = 40)
+
+```
+
+# Part 6: Clustering in Python: K-Means, DBSCAN, and Hierarchical
+
