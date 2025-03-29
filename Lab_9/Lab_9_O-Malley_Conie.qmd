@@ -1,6 +1,6 @@
 ---
-title: "Lab 8"
-author: "Conie O'Malley"
+title: "Lab 9"
+author: "Conie OMalley"
 date: "`r Sys.Date()`"
 format: 
   pdf: 
@@ -336,7 +336,7 @@ print(heatmap_6)
 ```
 
 ## Calculate and Display Characteristic Words in Each Cluster (k=3)
-```{r characteristic words k=3}
+```{r characteristics k3}
 
 cluster_words_3 <- word_counts %>%
     tidyr::separate(document, c("book", "chapter"), sep = "_") %>%
