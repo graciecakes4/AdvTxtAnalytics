@@ -3,20 +3,17 @@ title: "Lab 9"
 author: "Conie OMalley"
 date: "`r Sys.Date()`"
 format: 
-  pdf: 
-    titlepage: true
+  html:
+    theme: cosmo
     toc: true
     toc-depth: 2
-    code-block-wrap: true
+    code-fold: true
     number-sections: true
 execute:
   echo: true
   freeze: false
   error: false
   jupyter: python3
-python:
-  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
-prefer-html: true
 ---
 
 # Pre Lab
@@ -898,7 +895,6 @@ book_topics_plot <- book_topics %>%
     ggthemes::theme_economist_white()
 
 book_topics_plot
-
 
 ```
 
