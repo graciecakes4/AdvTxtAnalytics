@@ -1,0 +1,41 @@
+---
+title: "Lab 10"
+author: "Grace O'Malley"
+date: "`r Sys.Date()`"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    number-sections: true
+execute:
+  echo: true
+  freeze: false
+  error: false
+  jupyter: python3
+---
+
+```{r libraries}
+
+required_packages <- c("remotes", "tidymodels", "discrim", "naivebayes", "quanteda.textmodels", 
+                        "textrecipes", "workflows", "parsnip", "tune", "yardstick", "dials")
+
+# Check if all required packages are installed and install them if not
+for (pkg in required_packages) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+        renv::install(pkg)
+    }
+        library(pkg, character.only = TRUE)
+}
+
+remotes::install_github("EmilHvitfeldt/scotus")
+library(scotus)
+
+# for reference to install later
+python_packages <- c("pandas", "numpy", "matplotlib", "seaborn", "scikit-learn", "nltk")
+
+```
+
+
+
