@@ -1,0 +1,1098 @@
+---
+title: "Lab 9"
+author: "Conie OMalley"
+date: "`r Sys.Date()`"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    number-sections: true
+execute:
+  echo: true
+  freeze: false
+  error: false
+  jupyter: python3
+---
+
+
+
+# Pre Lab
+
+
+```{r libraries}
+
+required_packages <- c("tidyverse", "quanteda", "readtext", "stm", "stminsights", "wordcloud", "gsl", "topicmodels", 
+                        "caret", "gutenbergr", "tidytext", "quanteda.textmodels", "tm", "igraph", "ggraph", "widyr", 
+                        "jsonlite", "factoextra", "janeaustenr", "cluster", "SnowballC", "proxy", "stringr", "textclean",
+                        "dendextend", "ggdendro", "plotly", "reticulate")
+
+```
+
+
+
+## Deliverable 1: Get your working directory and paste below:
+
+"/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics"
+
+# Part 1: Introduction to K-Means Clustering with Synthetic Data
+
+
+
+```{r}
+
+texts <- c(
+    # Sports articles
+    "The football team scored three touchdowns. The quarterback threw perfect passes.",
+    "The basketball team won with slam dunks and three-point shots.",
+    "The baseball pitcher threw a perfect game with many strikeouts.",
+    "The soccer team scored two goals and won the championship.",
+    # Technology articles
+    "The computer system processed data using advanced algorithms and databases.",
+    "The network router managed bandwidth through secure encryption protocols.",
+    "The software code executed functions through compiled programming syntax.",
+    "The digital platform integrated APIs with cloud computing architecture.",
+    # Food articles
+    "The professional chef created sauces and prepared gourmet dishes.",
+    "The master baker produced artisan breads and pastries daily.",
+    "The culinary team seasoned meats and roasted vegetables.",
+    "The kitchen staff garnished plates and plated entrees."
+)
+
+```
+
+
+
+## Add category labels
+
+
+
+```{r categories}
+
+categories <- rep(c("Sports", "Technology", "Food"), each = 4)
+cat("Initial document count:", {length(texts)})
+
+```
+
+
+
+# Create corpus and preprocess text
+
+
+
+```{r corpus}
+
+corpus <- tm::Corpus(tm::VectorSource(texts))
+cat("Corpus size:", {length(corpus)})
+
+cleanCorpus <- function(corpus) {
+    corpus <- tm::tm_map(corpus, tm::content_transformer(tolower))
+    corpus <- tm::tm_map(corpus, tm::removePunctuation)
+    corpus <- tm::tm_map(corpus, tm::removeNumbers)
+    corpus <- tm::tm_map(corpus, tm::removeWords, tm::stopwords("english"))
+    corpus <- tm::tm_map(corpus, tm::stripWhitespace)
+    return(corpus)
+}
+
+cleaned_corpus <- cleanCorpus(corpus)
+cat("Cleaned corpus size:", {length(cleaned_corpus)})
+
+```
+
+
+
+## Create DTM and explore data
+
+
+
+```{r dtm}
+
+dtm <- tm::DocumentTermMatrix(cleaned_corpus)
+cat("DTM dimensions:", {dim(dtm)})
+
+```
+
+
+
+## Check for empty documents
+
+
+
+```{r empty docs}
+
+dtm_matrix <- as.matrix(dtm)
+row_sums <- Matrix::rowSums(dtm_matrix)
+cat("Document term counts:", {row_sums})
+
+```
+
+
+
+## Normalize the matrix
+
+
+
+```{r normalize matrix}
+
+dtm_normalized <- scale(dtm_matrix)
+
+```
+
+
+
+## Perform k-means Clustering with k=3
+
+
+```{r k-means clustering}
+
+set.seed(123)
+kmeans_result <- stats::kmeans(dtm_normalized, centers = 3, nstart = 25)
+
+```
+
+
+
+## Create visualization using PCA - Principal Component Analysis
+
+
+
+```{r PCA}
+
+pca_result <- stats::prcomp(dtm_normalized)
+cluster_plot_data <- data.frame(
+    PC1 = pca_result$x[,1],
+    PC2 = pca_result$x[,2],
+    Cluster = factor(kmeans_result$cluster),
+    Category = categories
+)
+
+# create scatter plot with enhanced visibility
+ggplot2::ggplot(cluster_plot_data, ggplot2::aes(PC1, PC2, color = Category, shape = Cluster)) +
+    ggplot2::geom_point(size = 5, alpha = 0.7) + 
+    ggplot2::labs(title = "Document Clusters",
+                    subtitle = "Sports, Technology, and Food Articles",
+                    x = "First Principal Component",
+                    y = "Second Principal Component") +
+    ggthemes::theme_economist_white() +
+    ggplot2::theme(legend.position = "right",
+            plot.title = ggplot2::element_text(size = 14, face = "bold"),
+            legend.text = ggplot2::element_text(size = 10))
+
+```
+
+
+
+## Print verification of cluster assignments
+
+
+
+```{r cluster assignments}
+
+print("Cluster assignments by category:")
+print(table(Category = categories, Cluster = kmeans_result$cluster))
+
+```
+
+
+
+## Print top terms for each cluster
+
+
+
+```{r top terms}
+
+print("Top terms per cluster:")
+terms <- colnames(dtm_matrix)
+centers <- kmeans_result$centers
+for(i in 1:3) {
+    cat(paste0("\nCluster ", i, " top terms:\n"))
+    top_indices <- order(centers[i,], decreasing = TRUE)[1:10]
+    print(terms[top_indices])
+}
+
+```
+
+
+
+# Part 2: Complex Text Clustering in R with a K-Means Algorithm
+
+## Prepare the Data
+
+
+
+```{r data prep 2}
+
+austen_books <- janeaustenr::austen_books() %>%
+    dplyr::group_by(book) %>%
+    dplyr::mutate(
+        # Add line numbers within each book
+        linenumber = row_number(),
+        # Create chapter groups
+        chapter = cumsum(stringr::str_detect(text, stringr::regex("^chapter [\\dIVXLC]", ignore_case = TRUE)) | 
+            stringr::str_detect(text, stringr::regex("^[\\dIVXLC]+", ignore_case = TRUE)))) %>%
+    dplyr::ungroup()
+
+```
+
+
+
+## Organize by Chapter Words and Create Document-Term Matrix
+
+
+
+```{r dtm 2}
+
+stop_words <- tm::stopwords("english")
+
+by_chapter_word <- austen_books %>%
+    dplyr::filter(chapter > 0) %>%
+    tidyr::unite(document, book, chapter) %>%
+    tidytext::unnest_tokens(word, text)
+
+# remove stop words and count words
+word_counts <- by_chapter_word %>%
+    dplyr::anti_join(tibble::tibble(word = stop_words), by = "word") %>% # changed anti-join
+    dplyr::count(document, word, sort = TRUE) %>%
+    dplyr::ungroup()
+
+# create a document-term matrix
+chapters_dtm <- word_counts %>%
+    tidytext::cast_dtm(document, word, n)
+
+```
+
+
+
+## Let’s try to reduce the size of the dtm
+
+
+
+```{r dtm dim 2}
+
+dim(chapters_dtm)
+
+# remove sparse terms before converting to matrix
+chapters_dtm_reduced <- tm::removeSparseTerms(chapters_dtm, sparse = 0.99)
+dim(chapters_dtm_reduced)
+
+# now try the conversion with the reduced matrix
+chapters_matrix <- as.matrix(chapters_dtm_reduced)
+chapters_normalized <- scale(chapters_matrix)
+
+```
+
+
+
+## Determine Optimal Number of clusters with Elbow Method
+
+
+
+```{r cluster optimization}
+
+wss <- function(k) {
+    stats::kmeans(chapters_normalized, k, nstart = 25)$tot.withinss
+}
+
+# Calculate WSS for k=1 to k=10
+k.values <- 1:10
+wss_values <- purrr::map_dbl(k.values, wss)
+
+
+# Plot elbow curve
+elbow_plot <- tibble::tibble(k = k.values, wss = wss_values) %>%
+    ggplot2::ggplot(ggplot2::aes(k, wss)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_point() +
+    ggplot2::labs(title = "Elbow Method for Optimal k",
+                    x = "Number of Clusters (k)",
+                    y = "Total Within-cluster Sum of Squares") +
+    ggthemes::theme_economist_white()
+
+elbow_plot
+
+```
+
+
+
+## Perform k-means clustering with k=3
+
+
+
+```{r k means clustering}
+
+# k=3 means clustering
+set.seed(123) # for reproducibility
+kmeans_3 <- stats::kmeans(chapters_normalized, centers = 3, nstart = 25)
+
+# Perform k-means clustering with k=6
+set.seed(123)
+kmeans_6 <- stats::kmeans(chapters_normalized, centers = 6, nstart = 25)
+
+```
+
+
+
+## Create visualization and analysis for both
+
+
+
+```{r k means visualization}
+
+# First, let's look at which chapters are assigned to which clusters
+cluster_assignments_3 <- word_counts %>%
+    tidyr::separate(document, c("book", "chapter"), sep = "_") %>%
+    dplyr::distinct(book, chapter) %>%
+    dplyr::mutate(cluster = kmeans_3$cluster[as.numeric(factor(paste0(book, chapter, sep = "_")))])
+
+cluster_assignments_6 <- word_counts %>%
+    tidyr::separate(document, c("book", "chapter"), sep = "_") %>%
+    dplyr::distinct(book, chapter) %>%
+    dplyr::mutate(cluster = kmeans_6$cluster[as.numeric(factor(paste(book, chapter, sep = "_")))])
+
+```
+
+
+
+## Create heatmaps for both k=3 and k=6
+
+
+```{r k means heatmaps}
+
+heatmap_3 <- cluster_assignments_3 %>%
+    dplyr::count(book, cluster) %>%
+    ggplot2::ggplot(ggplot2::aes(factor(cluster), book, fill = n)) +
+        ggplot2::geom_tile() +
+        ggplot2::scale_fill_gradient(low = "white", high = "steelblue") +
+        ggplot2::labs(title = "Cluster Distribution (k=3)",
+                        x = "Cluster",
+                        y = "Book",
+                        fill = "Number of Chapters") +
+        ggthemes::theme_economist_white()
+
+heatmap_6 <- cluster_assignments_6 %>%
+    dplyr::count(book, cluster) %>%
+    ggplot2::ggplot(ggplot2::aes(factor(cluster), book, fill = n)) +
+        ggplot2::geom_tile() +
+        ggplot2::scale_fill_gradient(low = "white", high = "steelblue") +
+        ggplot2::labs(title = "Cluster Distribution (k=6)",
+                        x = "Cluster",
+                        y = "Book",
+                        fill = "Number of Chapters") +
+        ggthemes::theme_economist_white()
+
+```
+
+
+
+## Print Summary Statistics
+
+
+```{r summary statistics}
+
+print("Cluster sizes for k=3:")
+print(table(cluster_assignments_3$cluster))
+print("Cluster composition for k=3:")
+print(table(cluster_assignments_3$book, cluster_assignments_3$cluster))
+print("Cluster sizes for k=6:")
+print(table(cluster_assignments_6$cluster))
+print("Cluster composition for k=6:")
+print(table(cluster_assignments_6$book, cluster_assignments_6$cluster))
+
+```
+
+
+
+## Display Heatmaps for both K Values
+
+
+```{r heatmaps}
+
+print(heatmap_3)
+print(heatmap_6)
+
+```
+
+
+
+## Calculate and Display Characteristic Words in Each Cluster (k=3)
+
+
+```{r characteristics k3}
+
+cluster_words_3 <- word_counts %>%
+    tidyr::separate(document, c("book", "chapter"), sep = "_") %>%
+    dplyr::mutate(cluster = kmeans_3$cluster[as.numeric(factor(paste0(book, chapter, sep = "_")))]) %>%
+    dplyr::group_by(cluster, word) %>%
+    dplyr::summarise(total = sum(n), .groups = 'drop') %>%
+    dplyr::group_by(cluster) %>%
+    dplyr::slice_max(total, n = 10) %>% # Get top 10 words for each cluster
+    dplyr::arrange(cluster, desc(total))
+
+print("Top words in each cluster (k=3):")
+print(cluster_words_3)
+
+```
+
+
+
+## Calculate and Display Characteristic Words in Each Cluster (k=6)
+
+
+```{r characteristic-words-k6}
+
+cluster_words_6 <- word_counts %>%
+    tidyr::separate(document, c("book", "chapter"), sep = "_") %>%
+    dplyr::mutate(cluster = kmeans_6$cluster[as.numeric(factor(paste(book, chapter, sep = "_")))]) %>%
+    dplyr::group_by(cluster, word) %>%
+    dplyr::summarise(total = sum(n), .groups = 'drop') %>%
+    dplyr::group_by(cluster) %>%
+    dplyr::slice_max(total, n = 15) %>% # Get top 15 words for each cluster
+    dplyr::arrange(cluster, desc(total))
+
+print("Top words in each cluster (k=6):")
+print(cluster_words_6)
+
+```
+
+
+
+## Print the k=3 results in a more readable format
+
+
+```{r}
+
+cluster_words_3 %>%
+    dplyr::group_by(cluster) %>%
+    dplyr::summarise(words = paste0(word, collapse = ", ")) %>%
+    dplyr::mutate(cluster = paste0("Cluster", cluster)) %>%
+    print(width = Inf) # Print full width
+
+```
+
+
+
+# Part 3: Hierarchical (Tree) Clustering in R
+
+## Load the Customer Complaint’s Dataset and Preprocess
+
+
+```{r}
+
+complaints <- utils::read.csv("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/004_School/001. MBA_MS/008. Spring 2025/004. Advanced Text Analytics_ML/complaints.csv", stringsAsFactors = FALSE)
+# Text preprocessing function
+preprocess_text <- function(text) {
+    text %>%
+        # Convert to lowercase
+        stringr::str_to_lower() %>%
+        # Remove special characters and digits
+        stringr::str_replace_all("[^[:alpha:][:space:]]", "") %>%
+        # Remove extra whitespace
+        stringr::str_trim() %>%
+        stringr::str_squish()
+}
+# Apply preprocessing
+complaints <- complaints %>%
+    dplyr::mutate(processed_narrative = purrr::map_chr(consumer_complaint_narrative,
+                                                        ~preprocess_text(as.character(.))))
+    
+# Remove missing values
+complaints <- complaints %>%
+    dplyr::filter(!is.na(processed_narrative))
+
+# Create corpus
+corpus <- tm::Corpus(tm::VectorSource(complaints$processed_narrative))
+
+```
+
+
+
+## Perform Hierarchical Clustering
+
+
+```{r hierarchical clustering}
+
+# Create document-term matrix
+dtm_hierarchy <- tm::DocumentTermMatrix(corpus,
+                                        control = list(
+                                        weighting = tm::weightTfIdf,
+                                        stopwords = TRUE,
+                                        removeNumbers = TRUE,
+                                        removePunctuation = TRUE,
+                                        stemming = TRUE))
+
+# Convert to matrix and remove sparse terms
+dtm_matrix_hierarchy <- tm::removeSparseTerms(dtm_hierarchy, sparse = 0.99)
+dtm_matrix_hierarchy <- as.matrix(dtm_matrix_hierarchy)
+
+```
+
+
+
+## Calculate Distance Matrix and Perform Hierarchical Clustering
+
+
+```{r dist matrix and clustering}
+
+# Using first 100 documents for visualization purposes
+dist_matrix <- stats::dist(dtm_matrix_hierarchy[1:100,], method = "euclidean")
+
+# Perform hierarchical clustering
+hc <- stats::hclust(dist_matrix, method = "ward.D2")
+
+```
+
+
+
+## Visualize the Dendrogram
+
+
+```{r dendrogram}
+
+# Basic dendrogram
+graphics::plot(hc, main = "Hierarchical Clustering Dendrogram",
+                xlab = "Documents", ylab = "Height",
+                cex = 0.6, hang = -1)
+
+```
+
+```{r enhance dendrogram}
+
+# Enhanced dendrogram using dendextend
+dend <- stats::as.dendrogram(hc)
+dend <- dendextend::color_branches(dend, k = 5) # Color branches for 5 clusters
+
+# Plot enhanced dendrogram
+graphics::par(mar = c(5,5,3,1))
+graphics::plot(dend,
+                main = "Colored Dendrogram with 5 Clusters",
+                ylab = "Height",
+                leaflab = "none")
+
+```
+
+
+
+## Cut the Tree into Clusters and Analyze
+
+
+```{r tree cluster analysis}
+
+# Cut tree into 5 clusters
+clusters <- dendextend::cutree(hc, k = 5)
+# Add cluster assignments to the original data
+complaints_subset <- complaints[1:100,] %>%
+    dplyr::mutate(cluster = as.factor(clusters))
+# Analyze clusters
+cluster_summary <- complaints_subset %>%
+    dplyr::group_by(cluster) %>%
+    dplyr::summarise(
+                n = n(),
+                sample_complaints = list(utils::head(processed_narrative, 3))
+)
+
+# Print cluster summaries
+for(i in 1:nrow(cluster_summary)) {
+    cat("\nCluster", i, "\n")
+    cat("Number of complaints:", cluster_summary$n[i], "\n")
+    cat("Sample complaints:\n")
+    print(unlist(cluster_summary$sample_complaints[i]))
+    cat("\n")
+}
+
+```
+
+```{r silhouette plot}
+
+sil <- cluster::silhouette(clusters, dist_matrix)
+graphics::plot(sil, main = "Silhouette Plot")
+
+# Average silhouette width
+avg_sil <- mean(sil[,3])
+cat("Average silhouette width:", avg_sil)
+
+```
+
+```{r color silhouette plot}
+
+# Plot silhouette analysis using factoextra
+factoextra::fviz_silhouette(sil)
+
+```
+
+
+
+## Get Top Words for Each Cluster
+
+
+```{r top words}
+
+# Function to get top words for each cluster
+get_top_words <- function(cluster_num, n_words = 10) {
+    # Get documents in cluster
+    cluster_docs <- complaints_subset %>%
+        dplyr::filter(cluster == cluster_num) %>%
+        dplyr::pull(processed_narrative)
+        # Create DTM for cluster
+        cluster_corpus <- tm::Corpus(tm::VectorSource(cluster_docs))
+        cluster_dtm <- tm::DocumentTermMatrix(cluster_corpus,
+                                                control = list(
+                                                        weighting = tm::weightTfIdf,
+                                                        stopwords = TRUE)
+                                                        )
+    # Get term frequencies
+    term_freq <- colSums(as.matrix(cluster_dtm))
+    top_terms <- sort(term_freq, decreasing = TRUE)[1:n_words]
+    return(names(top_terms))
+}
+
+# Print top words for each cluster
+for(i in 1:5) {
+    cat("\nCluster", i, "top words:\n")
+    print(get_top_words(i))
+}
+
+```
+
+
+
+## Create Cluster Visualization Using Factoextra
+
+
+```{r cluster viz}
+
+# Perform PCA on the distance matrix for visualization
+pca <- stats::prcomp(dtm_matrix_hierarchy[1:100,])
+
+# Plot clusters in first two principal components
+factoextra::fviz_cluster(list(data = pca$x[,1:2], cluster = clusters),
+                                main = "Cluster Plot",
+                                ellipse.type = "convex",
+                                repel = TRUE,
+                                show.clust.cent = TRUE)
+
+```
+
+
+
+## Compare Different Distance Metrics
+
+
+```{r metrics comparison}
+
+# Compare different distance metrics
+distance_methods <- c("euclidean", "manhattan", "cosine")
+dendlist <- list()
+for(method in distance_methods) {
+    dist_mat <- proxy::dist(dtm_matrix_hierarchy[1:100,], method = method)
+    hc_temp <- stats::hclust(dist_mat, method = "ward.D2")
+    dendlist[[method]] <- stats::as.dendrogram(hc_temp)
+}
+# Compare dendrograms
+dend_list <- dendextend::dendlist(dendlist[[1]], dendlist[[2]], dendlist[[3]])
+names(dend_list) <- distance_methods
+dendextend::tanglegram(dend_list[[1]], dend_list[[2]])
+
+```
+
+
+
+## Convert Dendrogram to Plotly for Interactive Visualization
+
+
+```{r plotly visual}
+
+# Convert dendrogram to plotly
+dend_data <- ggdendro::dendro_data(dend)
+
+p <- ggplot2::ggplot(ggdendro::segment(dend_data)) +
+                        ggplot2::geom_segment(ggplot2::aes(x = x, y = y, xend = xend, yend = yend)) +
+                        ggplot2::labs(title = "Dendrogram Visualization") +
+                        ggthemes::theme_economist_white()
+                        
+
+plotly::ggplotly(p)
+
+```
+
+
+
+# Part 4: Introduction to Topic Modeling
+
+## Get AP Data and Build a DTM to submit for the LDA model
+
+
+
+```{r ap data load}
+
+library(topicmodels)
+data(AssociatedPress)
+
+ap_lda <- topicmodels::LDA(AssociatedPress, k=8, control = list(seed=1234))
+ap_lda
+
+```
+
+
+
+## Explore and Interpret the Model
+
+
+
+```{r lda model interpretation}
+
+# Step 1: Extract beta matrix from the LDA model
+beta_matrix <- exp(ap_lda@beta)  # Convert log probabilities to probabilities
+
+# Step 2: Retrieve the terms (vocabulary) from the DocumentTermMatrix
+terms <- colnames(AssociatedPress)
+
+# Step 3: Validate the beta matrix dimensions with vocabulary size
+if (ncol(beta_matrix) != length(terms)) {
+  stop("Mismatch between number of columns in beta_matrix and the length of terms.")
+}
+
+# Step 4: Convert beta matrix to data frame and assign topic identifiers
+beta_df <- as.data.frame(beta_matrix)
+beta_df$topic <- 1:nrow(beta_df)
+
+# Step 5: Pivot the data to a long format correctly
+ap_topics_long <- beta_df %>%
+  tidyr::pivot_longer(
+    cols = -topic,      # Keep the topic column static
+    names_to = "term_index",  # Create index for terms
+    values_to = "beta"
+  ) %>%
+  dplyr::mutate(
+    term_index = as.integer(gsub("V", "", term_index)),  # Extract integer index
+    term = terms[term_index]  # Map term names using the index
+  ) %>%
+  dplyr::select(topic, term, beta)
+
+# Step 6: Display the tidy data frame
+print(head(ap_topics_long, 20))
+
+# Step 7: Extract the top terms for each topic using dplyr
+ap_top_terms <- ap_topics_long %>%
+  dplyr::group_by(topic) %>%
+  dplyr::top_n(10, beta) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(topic, dplyr::desc(beta))
+
+# Display the top terms for each topic
+print(head(ap_top_terms, 20))
+
+```
+
+
+
+## Visualize the Top Terms
+
+
+
+```{r top terms visualization}
+
+ap_top_terms %>%
+    dplyr::mutate(term = reorder(term, beta)) %>%
+    ggplot2::ggplot(ggplot2::aes(term, beta, fill = factor(topic))) +
+    ggplot2::geom_col(show.legend = FALSE) +
+    ggplot2::facet_wrap(~ topic, scales = "free") +
+    ggplot2::coord_flip() + 
+    ggthemes::theme_economist_white() +
+    ggplot2::labs(title = "Top Terms by Beta and Topic",
+                 x = "Term",)
+
+```
+
+```{r beta spread}
+
+beta_spread <- ap_topics_long %>%
+  dplyr::mutate(topic = paste0("topic", topic)) %>%  # Create a topic identifier
+  tidyr::pivot_wider(
+    names_from = topic,        # Pivot topic names to separate columns
+    values_from = beta         # Populate those columns with beta values
+  ) %>%
+  dplyr::filter(!is.na(topic1) & !is.na(topic2) & (topic1 > 0.001 | topic2 > 0.001)) %>%
+  dplyr::mutate(log_ratio = log2(topic2 / topic1))
+
+beta_spread
+
+```
+
+```{r gamma matrix}
+
+gamma_matrix <- exp(ap_lda@gamma)  # Convert log probabilities to probabilities
+
+document_count <- nrow(AssociatedPress)
+
+documents <- 1:document_count  # This is a placeholder, replace with actual document IDs if available
+
+gamma_df <- as.data.frame(gamma_matrix)
+gamma_df$document <- documents
+
+ap_documents_long <- gamma_df %>%
+  tidyr::pivot_longer(
+    cols = -document,      # Keep the document column static
+    names_to = "topic_index",  # Create index for topics
+    values_to = "gamma"
+  ) %>%
+  dplyr::mutate(
+    topic_index = as.integer(gsub("V", "", topic_index)),  # Extract integer index
+    topic = topic_index  # Direct mapping for simplicity
+  ) %>%
+  dplyr::select(document, topic, gamma)
+
+print(head(ap_documents_long, 20))
+
+```
+
+
+
+
+# Part 5: Topic Modelling Sanity Check with Project Gutenberg
+
+## Collect and Prepare the Data
+
+
+
+```{r gutenberg books download}
+
+options(gutenberg_mirror = "https://gutenberg.pglaf.org")
+
+books <- gutenbergr::gutenberg_download(c(1259, # Great Expectations (Dickens)
+                                            36, # The War of the Worlds (Wells)
+                                            98, # A Tale of Two Cities (Dickens)
+                                            74)) # The Adventures of Tom Sawyer (Twain)
+
+
+# Create labels for the books
+books <- books %>%
+    dplyr::mutate(title = dplyr::case_when(
+                                    gutenberg_id == 1259 ~ "Great Expectations",
+                                    gutenberg_id == 36 ~ "The War of the Worlds",
+                                    gutenberg_id == 98 ~ "Tale of Two Cities",
+                                    gutenberg_id == 74 ~ "Tom Sawyer",
+                                    TRUE ~ NA_character_
+))
+
+books
+
+```
+
+```{r chapters check}
+
+by_chapter <- books %>%
+    dplyr::group_by(title) %>%
+    dplyr::mutate(
+# Enhanced chapter detection for different formats
+            chapter = cumsum(
+                        stringr::str_detect(text, stringr::regex("^chapter [\\dIVXLC]", ignore_case = TRUE)) |
+                        stringr::str_detect(text, stringr::regex("^[\\dIVXLC]+\\.", ignore_case = TRUE))
+        )
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(chapter > 0) %>%
+    # Remove Project Gutenberg headers/footers
+    dplyr::filter(!stringr::str_detect(text, "Project Gutenberg")) %>%
+    dplyr::filter(!stringr::str_detect(text, "\\*\\*\\* START OF")) %>%
+    dplyr::filter(!stringr::str_detect(text, "\\*\\*\\* END OF"))
+
+chapter_counts <- by_chapter %>%
+    dplyr::group_by(title) %>%
+    dplyr::summarize(chapters = dplyr::n_distinct(chapter))
+
+print("Chapters per book:")
+print(chapter_counts)
+
+```
+
+```{r tokenize gutenberg books}
+
+# Tokenize and remove stop words
+by_chapter_word <- by_chapter %>%
+    tidyr::unite(document, title, chapter) %>%
+    tidytext::unnest_tokens(word, text)
+# Assuming 'word' is the column in 'by_chapter_word' representing the individual words
+stop_words_df <- tibble(word = stop_words)
+
+word_counts <- by_chapter_word %>%
+  dplyr::anti_join(stop_words_df, by = "word") %>%  # Use 'by = "word"' to specify the join column
+  dplyr::count(document, word, sort = TRUE) %>%
+  dplyr::ungroup()
+
+```
+
+
+
+## Prepare the Data: Convert the Tibble to a DTM
+
+
+```{r gutenberg dtm}
+
+# Create document-term matrix
+chapters_dtm <- word_counts %>%
+    tidytext::cast_dtm(document, word, n)
+
+chapters_dtm
+
+```
+
+
+
+## Create the LDA Topic Model
+
+
+```{r gutenberg lda model}
+
+# Fit LDA model
+chapters_lda <- topicmodels::LDA(chapters_dtm, k = 4, control = list(seed = 1234))
+chapters_lda
+
+```
+
+```{r gutenberg beta matrix}
+
+chapters_beta_matrix <- exp(chapters_lda@beta)  # Convert log probabilities to probabilities
+
+chapters_terms <- colnames(chapters_dtm)
+
+chapters_beta_df <- as.data.frame(chapters_beta_matrix)
+chapters_beta_df$topic <- 1:nrow(chapters_beta_df)
+
+chapters_topics_long <- chapters_beta_df %>%
+  tidyr::pivot_longer(
+    cols = -topic,      # Keep the topic column static
+    names_to = "term_index",  # Create index for terms
+    values_to = "beta"
+  ) %>%
+  dplyr::mutate(
+    term_index = as.integer(gsub("V", "", term_index)),  # Extract integer index
+    term = chapters_terms[term_index]  # Map term names using the index
+  ) %>%
+  dplyr::select(topic, term, beta)
+
+print(head(chapters_topics_long, 20))
+
+chapters_top_terms <- chapters_topics_long %>%
+  dplyr::group_by(topic) %>%
+  dplyr::top_n(10, beta) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(topic, dplyr::desc(beta))
+
+# Display the top terms for each topic
+print(head(chapters_top_terms, 20))
+
+```
+
+```{r gutenberg dtm visualization}
+
+# Create visualization of top terms
+top_terms_plot <- chapters_top_terms %>%
+    dplyr::mutate(term = tidytext::reorder_within(term, beta, topic)) %>%
+    ggplot2::ggplot(ggplot2::aes(beta, term, fill = factor(topic))) +
+    ggplot2::geom_col(show.legend = FALSE) +
+    ggplot2::facet_wrap(~topic, scales = "free_y") +
+    tidytext::scale_y_reordered() +
+    ggplot2::labs(title = "Top 10 Terms in Each Topic",
+                    x = "Beta Score",
+                    y = NULL) +
+    ggthemes::theme_economist_white()
+
+top_terms_plot
+
+```
+
+```{r gutenberg gamma matrix}
+
+gamma_matrix <- exp(chapters_lda@gamma)  # Convert log probabilities to probabilities
+
+document_ids <- rownames(chapters_dtm)  # Placeholder, adjust to your source
+
+gamma_df <- as.data.frame(gamma_matrix)
+gamma_df$document <- document_ids
+
+chapters_gamma <- gamma_df %>%
+    tidyr::pivot_longer(
+        cols = -document,          # All columns except 'document'
+        names_to = "topic_index",  # Create an index for topics
+        values_to = "gamma"        # Store probabilities in 'gamma'
+    ) %>%
+    dplyr::mutate(
+        topic_index = as.integer(gsub("V", "", topic_index)),
+        topic = topic_index
+    )
+# Separate document field back into title and chapter
+chapters_gamma <- chapters_gamma %>%
+    tidyr::separate(document, c("title", "chapter"), sep = "_", convert = TRUE)
+# Calculate average topic probabilities per book
+book_topics <- chapters_gamma %>%
+    dplyr::group_by(title, topic) %>%
+    dplyr::summarise(gamma = mean(gamma)) %>%
+    dplyr::ungroup()
+
+```
+
+
+
+## Create a Per-Document Classification
+
+
+```{r gutenberg document classification}
+
+# Create book-topic heatmap
+book_topics_plot <- book_topics %>%
+    ggplot2::ggplot(ggplot2::aes(factor(topic), title, fill = gamma)) +
+    ggplot2::geom_tile() +
+    ggplot2::scale_fill_gradient(low = "white", high = "red") +
+    ggplot2::labs(title = "Topic Distribution Across Books",
+                    x = "Topic",
+                    y = "Book",
+                    fill = "Gamma") +
+    ggthemes::theme_economist_white()
+
+book_topics_plot
+
+```
+
+```{r gutenberg summaries}
+
+# Print top terms for each topic
+print("Top terms for each topic:")
+chapters_top_terms %>%
+    dplyr::group_by(topic) %>%
+    dplyr::slice_head(n = 10) %>%
+    dplyr::arrange(topic, -beta) %>%
+
+print(n = 40)
+
+# Print topic distribution by book
+print("Topic distribution by book:")
+book_topics %>%
+    tidyr::pivot_wider(names_from = topic,
+                        values_from = gamma,
+                        names_prefix = "Topic ") %>%
+    dplyr::arrange(desc(`Topic 1`)) %>%
+    print()
+
+# Calculate and print the most distinctive words for each book
+distinctive_words <- by_chapter_word %>%
+    tidyr::separate(document, c("title", "chapter"), sep = "_") %>%
+    dplyr::anti_join(stop_words_df) %>%
+    dplyr::count(title, word) %>%
+    tidytext::bind_tf_idf(word, title, n) %>%
+    dplyr::group_by(title) %>%
+    dplyr::slice_max(tf_idf, n = 10) %>%
+    dplyr::ungroup()
+
+print("Most distinctive words for each book:")
+distinctive_words %>%
+    dplyr::arrange(title, desc(tf_idf)) %>%
+    print(n = 40)
+
+```
+
+
+
+
+Python Code would not run - it is included in a separate ipynb file.
+
