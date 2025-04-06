@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.40">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Grace O’Malley">
+<meta name="dcterms.date" content="2025-04-06">
+
+<title>Lab 10</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Lab_10_O-Malley_Grace_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Lab_10_O-Malley_Grace_files/libs/quarto-html/quarto.js"></script>
+<script src="Lab_10_O-Malley_Grace_files/libs/quarto-html/popper.min.js"></script>
+<script src="Lab_10_O-Malley_Grace_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Lab_10_O-Malley_Grace_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Lab_10_O-Malley_Grace_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Lab_10_O-Malley_Grace_files/libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Lab_10_O-Malley_Grace_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Lab_10_O-Malley_Grace_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Lab_10_O-Malley_Grace_files/libs/bootstrap/bootstrap-81e35ebdb4125010edbabe6010586085.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul class="collapse">
+  <li><a href="#deliverable-1-get-your-working-directory-and-paste-below" id="toc-deliverable-1-get-your-working-directory-and-paste-below" class="nav-link active" data-scroll-target="#deliverable-1-get-your-working-directory-and-paste-below"><span class="header-section-number">0.1</span> Deliverable 1: Get your working directory and paste below</a></li>
+  <li><a href="#part-1-regression-modeling" id="toc-part-1-regression-modeling" class="nav-link" data-scroll-target="#part-1-regression-modeling"><span class="header-section-number">1</span> Part 1: Regression Modeling</a>
+  <ul class="collapse">
+  <li><a href="#preparing-the-scotus-data" id="toc-preparing-the-scotus-data" class="nav-link" data-scroll-target="#preparing-the-scotus-data"><span class="header-section-number">1.1</span> Preparing the SCOTUS Data</a></li>
+  <li><a href="#building-a-predictive-regression-model" id="toc-building-a-predictive-regression-model" class="nav-link" data-scroll-target="#building-a-predictive-regression-model"><span class="header-section-number">1.2</span> Building a Predictive Regression Model</a></li>
+  <li><a href="#exploring-text-recipes-and-workflows" id="toc-exploring-text-recipes-and-workflows" class="nav-link" data-scroll-target="#exploring-text-recipes-and-workflows"><span class="header-section-number">1.3</span> Exploring Text Recipes and Workflows</a></li>
+  <li><a href="#evaluating-the-model" id="toc-evaluating-the-model" class="nav-link" data-scroll-target="#evaluating-the-model"><span class="header-section-number">1.4</span> Evaluating the Model</a></li>
+  </ul></li>
+  <li><a href="#part-2-classification-modeling" id="toc-part-2-classification-modeling" class="nav-link" data-scroll-target="#part-2-classification-modeling"><span class="header-section-number">2</span> Part 2: Classification Modeling</a>
+  <ul class="collapse">
+  <li><a href="#preparing-the-complaints-data" id="toc-preparing-the-complaints-data" class="nav-link" data-scroll-target="#preparing-the-complaints-data"><span class="header-section-number">2.1</span> Preparing the Complaints Data</a></li>
+  <li><a href="#creating-a-two-class-model-and-splitting-data" id="toc-creating-a-two-class-model-and-splitting-data" class="nav-link" data-scroll-target="#creating-a-two-class-model-and-splitting-data"><span class="header-section-number">2.2</span> Creating a Two-Class Model and Splitting Data</a></li>
+  <li><a href="#creating-a-complaints-recipe-and-workflow" id="toc-creating-a-complaints-recipe-and-workflow" class="nav-link" data-scroll-target="#creating-a-complaints-recipe-and-workflow"><span class="header-section-number">2.3</span> Creating a Complaints Recipe and Workflow</a></li>
+  <li><a href="#evaluating-the-naive-bayes-model" id="toc-evaluating-the-naive-bayes-model" class="nav-link" data-scroll-target="#evaluating-the-naive-bayes-model"><span class="header-section-number">2.4</span> Evaluating the Naive Bayes Model</a></li>
+  <li><a href="#exploring-a-lasso-model" id="toc-exploring-a-lasso-model" class="nav-link" data-scroll-target="#exploring-a-lasso-model"><span class="header-section-number">2.5</span> Exploring a Lasso Model</a></li>
+  <li><a href="#tuning-model-hyperparameters" id="toc-tuning-model-hyperparameters" class="nav-link" data-scroll-target="#tuning-model-hyperparameters"><span class="header-section-number">2.6</span> Tuning Model Hyperparameters</a></li>
+  <li><a href="#evaluating-the-lasso-model" id="toc-evaluating-the-lasso-model" class="nav-link" data-scroll-target="#evaluating-the-lasso-model"><span class="header-section-number">2.7</span> Evaluating the Lasso Model</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Lab 10</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Grace O’Malley </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 6, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>required_packages <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"remotes"</span>, <span class="st">"tidymodels"</span>, <span class="st">"discrim"</span>, <span class="st">"naivebayes"</span>, <span class="st">"quanteda.textmodels"</span>, </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"textrecipes"</span>, <span class="st">"workflows"</span>, <span class="st">"parsnip"</span>, <span class="st">"tune"</span>, <span class="st">"yardstick"</span>, <span class="st">"dials"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if all required packages are installed and install them if not</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (pkg <span class="cf">in</span> required_packages) {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">requireNamespace</span>(pkg, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        renv<span class="sc">::</span><span class="fu">install</span>(pkg)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="fu">library</span>(pkg, <span class="at">character.only =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'remotes' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tidymodels' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching packages ────────────────────────────────────── tidymodels 1.3.0 ──</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>✔ broom        1.0.7     ✔ rsample      1.2.1
+✔ dials        1.4.0     ✔ tibble       3.2.1
+✔ ggplot2      3.5.1     ✔ tidyr        1.3.1
+✔ infer        1.0.7     ✔ tune         1.3.0
+✔ modeldata    1.4.0     ✔ workflows    1.2.0
+✔ parsnip      1.3.1     ✔ workflowsets 1.1.0
+✔ purrr        1.0.4     ✔ yardstick    1.3.2
+✔ recipes      1.2.0     </code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'broom' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'dials' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'modeldata' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'parsnip' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'recipes' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tune' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'workflows' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'yardstick' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Conflicts ───────────────────────────────────────── tidymodels_conflicts() ──
+✖ purrr::discard() masks scales::discard()
+✖ stats::filter()  masks dplyr::filter()
+✖ stats::lag()     masks dplyr::lag()
+✖ recipes::step()  masks stats::step()</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'discrim'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:dials':
+
+    smoothness</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'naivebayes' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>naivebayes 1.0.0 loaded</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>For more information please visit: </code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>https://majkamichal.github.io/naivebayes/</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in .recacheSubclasses(def@className, def, env): undefined subclass
+"ndiMatrix" of class "replValueSp"; definition not updated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'quanteda.textmodels' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'textrecipes' was built under R version 4.3.3</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"EmilHvitfeldt/scotus"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Using GitHub PAT from the git credential store.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Skipping install of 'scotus' from a github remote, the SHA1 (e5ccdead) has not changed since last install.
+  Use `force = TRUE` to force installation</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scotus)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="co"># for reference to install later</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>python_packages <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"pandas"</span>, <span class="st">"numpy"</span>, <span class="st">"matplotlib"</span>, <span class="st">"seaborn"</span>, <span class="st">"scikit-learn"</span>, <span class="st">"nltk"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="deliverable-1-get-your-working-directory-and-paste-below" class="level2" data-number="0.1">
+<h2 data-number="0.1" class="anchored" data-anchor-id="deliverable-1-get-your-working-directory-and-paste-below"><span class="header-section-number">0.1</span> Deliverable 1: Get your working directory and paste below</h2>
+<p><em>/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics</em></p>
+</section>
+<section id="part-1-regression-modeling" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Part 1: Regression Modeling</h1>
+<section id="preparing-the-scotus-data" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="preparing-the-scotus-data"><span class="header-section-number">1.1</span> Preparing the SCOTUS Data</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>scotus_data <span class="ot">&lt;-</span> scotus<span class="sc">::</span>scotus_filtered <span class="sc">%&gt;%</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    tibble<span class="sc">::</span><span class="fu">as_tibble</span>()</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>utils<span class="sc">::</span><span class="fu">head</span>(scotus_data, <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 5
+  year  case_name                                      docket_number    id text 
+  &lt;chr&gt; &lt;chr&gt;                                          &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;
+1 1903  Clara Perry, Plff. In Err. v. Cornelius L. Ha… 16            80304 "No.…
+2 1987  West v. Conrail                                85-1804       96216 "No.…
+3 1957  Roth v. United States                          582           89930 "Nos…
+4 1913  McDermott v. Wisconsin                         Nos. 112 and… 82218 "Nos…
+5 1826  Wetzell v. Bussard                             &lt;NA&gt;          52899 "Feb…</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(scotus_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 10,000
+Columns: 5
+$ year          &lt;chr&gt; "1903", "1987", "1957", "1913", "1826", "1900", "1871", …
+$ case_name     &lt;chr&gt; "Clara Perry, Plff. In Err. v. Cornelius L. Haines. The …
+$ docket_number &lt;chr&gt; "16", "85-1804", "582", "Nos. 112 and 113", NA, "180", N…
+$ id            &lt;dbl&gt; 80304, 96216, 89930, 82218, 52899, 79609, 57846, 53394, …
+$ text          &lt;chr&gt; "No. 16.\n State Report Title: The Robert W. Parsons Thi…</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>scotus_data <span class="sc">%&gt;%</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">as.numeric</span>(year), <span class="at">year =</span> <span class="dv">10</span> <span class="sc">*</span> (year <span class="sc">%/%</span> <span class="dv">10</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">count</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(ggplot2<span class="sc">::</span><span class="fu">aes</span>(year, n))<span class="sc">+</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">geom_col</span>()<span class="sc">+</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">labs</span>(<span class="at">x=</span><span class="st">"Year"</span>, <span class="at">y=</span><span class="st">"Number of opinions per decade"</span>) <span class="sc">+</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>    ggthemes<span class="sc">::</span><span class="fu">theme_economist_white</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Lab_10_O-Malley_Grace_files/figure-html/scotus%20data%20prep-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="building-a-predictive-regression-model" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="building-a-predictive-regression-model"><span class="header-section-number">1.2</span> Building a Predictive Regression Model</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>set_seed <span class="ot">&lt;-</span> <span class="dv">1234</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(set_seed)</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>scotus_split <span class="ot">&lt;-</span> scotus<span class="sc">::</span>scotus_filtered <span class="sc">%&gt;%</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">year=</span><span class="fu">as.numeric</span>(year), <span class="at">text=</span>stringr<span class="sc">::</span><span class="fu">str_remove_all</span>(text,<span class="st">"'"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    rsample<span class="sc">::</span><span class="fu">initial_split</span>()</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>scotus_train <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">training</span>(scotus_split)</span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>scotus_test <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">testing</span>(scotus_split)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="exploring-text-recipes-and-workflows" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="exploring-text-recipes-and-workflows"><span class="header-section-number">1.3</span> Exploring Text Recipes and Workflows</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>scotus_rec <span class="ot">&lt;-</span> recipes<span class="sc">::</span><span class="fu">recipe</span>(year <span class="sc">~</span> text, <span class="at">data =</span> scotus_train) <span class="sc">%&gt;%</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>    textrecipes<span class="sc">::</span><span class="fu">step_tokenize</span>(text) <span class="sc">%&gt;%</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    textrecipes<span class="sc">::</span><span class="fu">step_tokenfilter</span>(text, <span class="at">max_tokens =</span> <span class="fl">1e3</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    textrecipes<span class="sc">::</span><span class="fu">step_tfidf</span>(text) <span class="sc">%&gt;%</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    recipes<span class="sc">::</span><span class="fu">step_normalize</span>(recipes<span class="sc">::</span><span class="fu">all_predictors</span>())</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>scotus_rec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code></code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Recipe ──────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code></code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Inputs </code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Number of variables by role</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>outcome:   1
+predictor: 1</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code></code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Operations </code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>• Tokenization for: text</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>• Text filtering for: text</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>• Term frequency-inverse document frequency with: text</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>• Centering and scaling for: recipes::all_predictors()</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>scotus_prep <span class="ot">&lt;-</span> recipes<span class="sc">::</span><span class="fu">prep</span>(scotus_rec)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>scotus_bake <span class="ot">&lt;-</span> recipes<span class="sc">::</span><span class="fu">bake</span>(scotus_prep, <span class="at">new_data=</span><span class="cn">NULL</span>)</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(scotus_bake)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 7500 1001</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>scotus_wf <span class="ot">&lt;-</span> workflows<span class="sc">::</span><span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_recipe</span>(scotus_rec)</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>scotus_wf</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow ════════════════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: None
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+4 Recipe Steps
+
+• step_tokenize()
+• step_tokenfilter()
+• step_tfidf()
+• step_normalize()</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>svm_spec <span class="ot">&lt;-</span> parsnip<span class="sc">::</span><span class="fu">svm_linear</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_mode</span>(<span class="st">"regression"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_engine</span>(<span class="st">"LiblineaR"</span>)</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>svm_fit <span class="ot">&lt;-</span> scotus_wf <span class="sc">%&gt;%</span></span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_model</span>(svm_spec) <span class="sc">%&gt;%</span></span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">fit</span>(<span class="at">data =</span> scotus_train)</span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>svm_fit <span class="sc">%&gt;%</span></span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">extract_fit_parsnip</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>    recipes<span class="sc">::</span><span class="fu">tidy</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(<span class="sc">-</span>estimate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,001 × 2
+   term                  estimate
+   &lt;chr&gt;                    &lt;dbl&gt;
+ 1 Bias                   1920.  
+ 2 tfidf_text_later          1.50
+ 3 tfidf_text_appeals        1.48
+ 4 tfidf_text_see            1.39
+ 5 tfidf_text_noted          1.38
+ 6 tfidf_text_example        1.27
+ 7 tfidf_text_petitioner     1.26
+ 8 tfidf_text_even           1.23
+ 9 tfidf_text_rather         1.21
+10 tfidf_text_including      1.13
+# ℹ 991 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="evaluating-the-model" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="evaluating-the-model"><span class="header-section-number">1.4</span> Evaluating the Model</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>test_words1 <span class="ot">&lt;-</span> svm_fit <span class="sc">%&gt;%</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">extract_fit_parsnip</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>    recipes<span class="sc">::</span><span class="fu">tidy</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">slice_max</span>(estimate, <span class="at">n =</span> <span class="dv">10</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">term =</span> stringr<span class="sc">::</span><span class="fu">str_remove</span>(term, <span class="st">"tfidf_text_"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">pull</span>(term)</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>test_words1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "Bias"       "later"      "appeals"    "see"        "noted"     
+ [6] "example"    "petitioner" "even"       "rather"     "including" </code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>svm_fit <span class="sc">%&gt;%</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">extract_fit_parsnip</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>    recipes<span class="sc">::</span><span class="fu">tidy</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(estimate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,001 × 2
+   term                 estimate
+   &lt;chr&gt;                   &lt;dbl&gt;
+ 1 tfidf_text_ought        -2.77
+ 2 tfidf_text_1st          -1.94
+ 3 tfidf_text_but          -1.63
+ 4 tfidf_text_same         -1.62
+ 5 tfidf_text_the          -1.57
+ 6 tfidf_text_therefore    -1.54
+ 7 tfidf_text_it           -1.46
+ 8 tfidf_text_which        -1.40
+ 9 tfidf_text_this         -1.39
+10 tfidf_text_be           -1.33
+# ℹ 991 more rows</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>test_words2 <span class="ot">&lt;-</span> svm_fit <span class="sc">%&gt;%</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">extract_fit_parsnip</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>    recipes<span class="sc">::</span><span class="fu">tidy</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">slice_max</span>(<span class="sc">-</span>estimate, <span class="at">n =</span> <span class="dv">10</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">term =</span> stringr<span class="sc">::</span><span class="fu">str_remove</span>(term, <span class="st">"tfidf_text_"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">pull</span>(term)</span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>test_words2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "ought"     "1st"       "but"       "same"      "the"       "therefore"
+ [7] "it"        "which"     "this"      "be"       </code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>set_seed_2 <span class="ot">&lt;-</span> <span class="dv">123</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(set_seed_2)</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>scotus_folds <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">vfold_cv</span>(scotus_train)</span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>scotus_folds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>#  10-fold cross-validation 
+# A tibble: 10 × 2
+   splits             id    
+   &lt;list&gt;             &lt;chr&gt; 
+ 1 &lt;split [6750/750]&gt; Fold01
+ 2 &lt;split [6750/750]&gt; Fold02
+ 3 &lt;split [6750/750]&gt; Fold03
+ 4 &lt;split [6750/750]&gt; Fold04
+ 5 &lt;split [6750/750]&gt; Fold05
+ 6 &lt;split [6750/750]&gt; Fold06
+ 7 &lt;split [6750/750]&gt; Fold07
+ 8 &lt;split [6750/750]&gt; Fold08
+ 9 &lt;split [6750/750]&gt; Fold09
+10 &lt;split [6750/750]&gt; Fold10</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(set_seed_2)</span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>svm_rs <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">fit_resamples</span>(scotus_wf <span class="sc">%&gt;%</span> </span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_model</span>(svm_spec), scotus_folds, <span class="at">control =</span> <span class="fu">control_resamples</span>(<span class="at">save_pred =</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'LiblineaR' was built under R version 4.3.3</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>svm_rs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># Resampling results
+# 10-fold cross-validation 
+# A tibble: 10 × 5
+   splits             id     .metrics         .notes           .predictions
+   &lt;list&gt;             &lt;chr&gt;  &lt;list&gt;           &lt;list&gt;           &lt;list&gt;      
+ 1 &lt;split [6750/750]&gt; Fold01 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+ 2 &lt;split [6750/750]&gt; Fold02 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+ 3 &lt;split [6750/750]&gt; Fold03 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+ 4 &lt;split [6750/750]&gt; Fold04 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+ 5 &lt;split [6750/750]&gt; Fold05 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+ 6 &lt;split [6750/750]&gt; Fold06 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+ 7 &lt;split [6750/750]&gt; Fold07 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+ 8 &lt;split [6750/750]&gt; Fold08 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+ 9 &lt;split [6750/750]&gt; Fold09 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+10 &lt;split [6750/750]&gt; Fold10 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    </code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>tune<span class="sc">::</span><span class="fu">collect_metrics</span>(svm_rs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 6
+  .metric .estimator   mean     n std_err .config             
+  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+1 rmse    standard   15.6      10 0.214   Preprocessor1_Model1
+2 rsq     standard    0.895    10 0.00242 Preprocessor1_Model1</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>first_attemp_rmse <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">collect_metrics</span>(svm_rs) <span class="sc">%&gt;%</span></span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(.metric <span class="sc">==</span> <span class="st">"rmse"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">pull</span>(mean) <span class="sc">%&gt;%</span></span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(<span class="dv">1</span>)</span>
+<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>svm_rs <span class="sc">%&gt;%</span></span>
+<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>    tune<span class="sc">::</span><span class="fu">collect_predictions</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(ggplot2<span class="sc">::</span><span class="fu">aes</span>(year, .pred, <span class="at">color =</span> id)) <span class="sc">+</span></span>
+<span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">geom_abline</span>(<span class="at">lty =</span> <span class="dv">2</span>, <span class="at">color =</span> <span class="st">"gray80"</span>, <span class="at">size =</span> <span class="fl">1.5</span>) <span class="sc">+</span></span>
+<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb67-11"><a href="#cb67-11" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">labs</span>(</span>
+<span id="cb67-12"><a href="#cb67-12" aria-hidden="true" tabindex="-1"></a>            <span class="at">x =</span> <span class="st">"Truth"</span>,</span>
+<span id="cb67-13"><a href="#cb67-13" aria-hidden="true" tabindex="-1"></a>            <span class="at">y =</span> <span class="st">"Predicted year"</span>,</span>
+<span id="cb67-14"><a href="#cb67-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">color =</span> <span class="cn">NULL</span>,</span>
+<span id="cb67-15"><a href="#cb67-15" aria-hidden="true" tabindex="-1"></a>            <span class="at">title =</span> <span class="st">"Predicted and true years for Supreme Court opinions"</span>,</span>
+<span id="cb67-16"><a href="#cb67-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">subtitle =</span> <span class="st">"Each cross-validation fold is shown in a different color"</span>) <span class="sc">+</span></span>
+<span id="cb67-17"><a href="#cb67-17" aria-hidden="true" tabindex="-1"></a>    ggthemes<span class="sc">::</span><span class="fu">theme_economist_white</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+ℹ Please use `linewidth` instead.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Lab_10_O-Malley_Grace_files/figure-html/scotus%20rmse-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>null_regression <span class="ot">&lt;-</span> parsnip<span class="sc">::</span><span class="fu">null_model</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_engine</span>(<span class="st">"parsnip"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_mode</span>(<span class="st">"regression"</span>)</span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>null_rs <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">fit_resamples</span>(scotus_wf <span class="sc">%&gt;%</span> </span>
+<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_model</span>(null_regression), scotus_folds, <span class="at">metrics =</span> yardstick<span class="sc">::</span><span class="fu">metric_set</span>(rmse))</span>
+<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a>null_rs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># Resampling results
+# 10-fold cross-validation 
+# A tibble: 10 × 4
+   splits             id     .metrics         .notes          
+   &lt;list&gt;             &lt;chr&gt;  &lt;list&gt;           &lt;list&gt;          
+ 1 &lt;split [6750/750]&gt; Fold01 &lt;tibble [1 × 4]&gt; &lt;tibble [0 × 3]&gt;
+ 2 &lt;split [6750/750]&gt; Fold02 &lt;tibble [1 × 4]&gt; &lt;tibble [0 × 3]&gt;
+ 3 &lt;split [6750/750]&gt; Fold03 &lt;tibble [1 × 4]&gt; &lt;tibble [0 × 3]&gt;
+ 4 &lt;split [6750/750]&gt; Fold04 &lt;tibble [1 × 4]&gt; &lt;tibble [0 × 3]&gt;
+ 5 &lt;split [6750/750]&gt; Fold05 &lt;tibble [1 × 4]&gt; &lt;tibble [0 × 3]&gt;
+ 6 &lt;split [6750/750]&gt; Fold06 &lt;tibble [1 × 4]&gt; &lt;tibble [0 × 3]&gt;
+ 7 &lt;split [6750/750]&gt; Fold07 &lt;tibble [1 × 4]&gt; &lt;tibble [0 × 3]&gt;
+ 8 &lt;split [6750/750]&gt; Fold08 &lt;tibble [1 × 4]&gt; &lt;tibble [0 × 3]&gt;
+ 9 &lt;split [6750/750]&gt; Fold09 &lt;tibble [1 × 4]&gt; &lt;tibble [0 × 3]&gt;
+10 &lt;split [6750/750]&gt; Fold10 &lt;tibble [1 × 4]&gt; &lt;tibble [0 × 3]&gt;</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>tune<span class="sc">::</span><span class="fu">collect_metrics</span>(null_rs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 6
+  .metric .estimator  mean     n std_err .config             
+  &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+1 rmse    standard    47.9    10   0.294 Preprocessor1_Model1</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="part-2-classification-modeling" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Part 2: Classification Modeling</h1>
+<section id="preparing-the-complaints-data" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="preparing-the-complaints-data"><span class="header-section-number">2.1</span> Preparing the Complaints Data</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>complaints <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(<span class="st">"/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/data_files/data/complaints_sample_25k.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 25000 Columns: 18
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (15): product, sub_product, issue, sub_issue, consumer_complaint_narrat...
+dbl   (1): complaint_id
+date  (2): date_received, date_sent_to_company
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(complaints)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 25,000
+Columns: 18
+$ date_received                &lt;date&gt; 2019-04-25, 2019-02-13, 2019-01-10, 2019…
+$ product                      &lt;chr&gt; "Mortgage", "Credit reporting, credit rep…
+$ sub_product                  &lt;chr&gt; "Conventional home mortgage", "Credit rep…
+$ issue                        &lt;chr&gt; "Closing on a mortgage", "Incorrect infor…
+$ sub_issue                    &lt;chr&gt; NA, "Information belongs to someone else"…
+$ consumer_complaint_narrative &lt;chr&gt; "The reason for this complaint is three e…
+$ company_public_response      &lt;chr&gt; NA, NA, "Company has responded to the con…
+$ company                      &lt;chr&gt; "Caliber Home Loans, Inc.", "EQUIFAX, INC…
+$ state                        &lt;chr&gt; "IL", "PA", "FL", "CA", "MO", "GA", "FL",…
+$ zip_code                     &lt;chr&gt; NA, NA, NA, "926XX", NA, "30044", NA, "70…
+$ tags                         &lt;chr&gt; NA, NA, "Older American", NA, NA, NA, NA,…
+$ consumer_consent_provided    &lt;chr&gt; "Consent provided", "Consent provided", "…
+$ submitted_via                &lt;chr&gt; "Web", "Web", "Web", "Web", "Web", "Web",…
+$ date_sent_to_company         &lt;date&gt; 2019-04-25, 2019-02-13, 2019-01-10, 2019…
+$ company_response_to_consumer &lt;chr&gt; "Closed with explanation", "Closed with e…
+$ timely_response              &lt;chr&gt; "Yes", "Yes", "Yes", "No", "Yes", "Yes", …
+$ consumer_disputed            &lt;chr&gt; "N/A", "N/A", "N/A", "N/A", "N/A", "N/A",…
+$ complaint_id                 &lt;dbl&gt; 3222333, 3150889, 3121678, 3137459, 33056…</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a>utils<span class="sc">::</span><span class="fu">head</span>(complaints<span class="sc">$</span>consumer_complaint_narrative)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "The reason for this complaint is three employees of Caliber Home Loans fraudulently misrepresented terms of the loan that were not disclosed on any of the paperwork or disclosures sent to us for this refinance. \n\nOn XX/XX/2019 I was approached by my mortgage lender, Caliber Home Loans, to do a  refinance on my home. I was told by XXXX XXXX ( XXXXXXXX ) the benefit to refinance include about a {$1100.00} refund from the PMI company because we were refinancing under a certain period of time, a refund of our escrow at closing, which was approximately {$4700.00}, and we would be skipping the subsequent month 's payment. The total cash benefit to us was about {$7000.00}. In addition to this XXXX indicated we would be saving over $ XXXX/month on the total mortgage payment and eliminate PMI. XXXX said, from what she could see, the home value was at a place that refinancing made sense, despite my concerns of being approached by Caliber representatives before and others stating it was not. She said it was. With these representations I agreed to allow them to run my credit. She ran my credit while on the phone. During this same conversation, we discussed adding my husband to the deal. She ran his credit as well. We decided at the time it did not make sense, and we agreed to move forward with myself as the sole borrower, and I paid a {$99.00} appraisal fee. \n\nThe appraisal was conducted, and came in lower than XXXX assured me it would. Then, on top of that, she claimed to have read my credit report wrong and all of a sudden saw my car loan which has been on my credit report since XX/XX/2019. XXXX unilaterally then tried to change the terms of the refinance, claiming I no longer qualified for what she presented on XX/XX/XXXX. We then agreed to put my husband back in the mix as co-borrower, and XXXX promised she would use the same credit reporting done on XX/XX/XXXX. Almost immediately after we hung up the phone, we learned XXXX ran my husband 's credit again, and that caused his score to drop significantly. Two hard inquires in a short period of time was a hit. XXXX flat out lied, and we had provided proof to Caliber home loans, and their associate XXXX XXXX ( XXXXXXXX confirmed for me Caliber did run the credit twice, proving XXXX lied. After days of attempting to have a reasonable conversation with her, of which she is incapable of doing, I was able to speak with her manager, XXXX XXXX ( XXXXXXXX ). He became my POC from that point forward. He said he would take over the file and work with underwriting to make the deal work, as XXXX initially presented to me. \n\nIt took a couple weeks going back and forth because of the addition of my husband to the file, the lower appraisal, and the review of our credit reports, however, XXXX eventually confirmed he was able to work with underwriting and the initial presentation of what XXXX had provided to me did not change. We were still able to have the same program, same interest rate, etc. Nothing changed. We agreed to move forward. \n\nAfter more weeks of providing an unreasonable amount of paperwork and jumping through several hoops for XXXX 's document requests, we were able to schedule closing on the loan. I have reviewed every disclosure provided from XX/XX/2019 up to and including the date of closing. At no time in this paperwork did we agree to, sign with authorization, or get provided any sort of document allowing Caliber Home Loans to take our escrow fund, which was not their money to use, and apply it to the principal of the loan. \n\nThe loan closed on XX/XX/2019. We went through every document with the closing specialist and even discussed the escrow refund with her, and no document did not indicate this was happening. \n\nI followed up with XXXX XXXX on XX/XX/2019 to clarify a few follow-up details - when would the escrow refund be processed, when would my loan be visible on line, and when would the refund from the PMI company be processed. \n\nIt was during this email conversation that XXXX XXXX disclosed Caliber Home Loans used the escrow balance of approximately {$4700.00} to put money toward the principal of the loan. \n\nCaliber Home loans never disclosed this, nor did they have permission from me to use the money set aside in the escrow account for taxes and property insurance to pay the principal of the loan, to serve their needs, not mine as the mortgage consumer. \n\nIt is apparent that XXXX XXXX, XXXX XXXX and XXXX XXXX made misrepresentations and withheld significant details in order to close this loan. We were required to sign an Anti-mortgage Fraud Statement certifying everything we represented was true. I had to sign a statement that said the funds used in the closing were not obtained or borrowed from any source not disclosed on my application. I never agreed to allow Caliber Home Loans to use these funds as closing costs or down payment. Further we were asked, by the closing agent, to sign a \" borrower 's certificate of refinance loan benefit '' certifying that one of the statements were true. Everything about this loan went up - interest rate, principal &amp; interest payment, total debt obligation, etc. There was no benefit to the loan except for these three things ( {$1100.00} back from the PMI company, skipping XX/XX/XXXX 's payment, and the {$4700.00} refund on escrow ), which was outlined in the last bullet indicating cash back at closing on this refinance certification, and why we were doing this in the first place. We relied upon the statements we would receive money back after closing, with an eventual total of about {$7000.00} when all said and done. \n\nWe were misled by these three people into a refinance that was fraudulently represented. Had any of this been disclosed before or at closing, we would have not moved forward as there is absolutely no benefit to us. \n\nWe feel that Caliber Home Loans owes us the refund of the escrow balance on the account as of XX/XX/2019, which was {$4700.00}."
+[2] "I requested that this account be verified previously and it was removed from my credit report. I requested validation again and they are ignoring my request. Since when can an account be added back to a credit report with a different name and more inaccurates."                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+[3] "I was in a panic over not being able to pay my bills, because my son, who was living with me lost his job a few months earlier and I alone was not able to pay my bills. I was short each month by the {$1000.00} my son had been paying me. I had a low credit score and already had 2 personal loans and some credit card debt. I was desperate and took out a XXXX XXXX XXXX XXXX XXXX loan for {$1000.00} in XX/XX/2018. They deducted the 1st payment on XXXX for XXXX, ( {$380.00} of that was INTEREST ) after that I would have {$480.00} taken out for the next seven months. I was able to negotiate with them to deffer my XXXX payment to the end of the loan, which helped some. \nWhen I finally came to my senses, I realized that over the term of the loan which was 8 months I would be paying them {$3700.00} for a loan for {$1000.00}. Can they legally charge that much interest?"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+[4] "Suddenly today I received 5 phone calls in a row from XXXX a guy claiming to be XXXX XXXX says I have a case that is filed in the XXXX courts and to call XXXX I have no outstanding debts, we looked online and found the XXXX number listed a fake solicitation of debts-scammers! when I called the XXXX, they identify themself only as XXXX XXXX XXXX, a collection agency. Complete fakery! they kept calling and wouldn't give any information and threatened to call my employer, ridiculous!"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+[5] "The following accounts are fraudulent on my credit report : - XXXX XXXX XXXX, XXXX - XXXX XXXX - XXXX XXXX XXXX - XXXX XXXX XXXX - XXXX XXXX, XXXX"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+[6] "I have sent numerous ( 11 ) certified and Notarized letters to Equifax to correct errors found on my credit report but to no avail, the reply Ive gotten back is \" The disputed item ( s ) was verified as belonging to you and information has changed or been updated to reflect recent activity ''. I have repeatedly requested the names, addresses and telephone numbers of individuals Equifax contacted during their investigation repeatedly advising any automated response or XXXX verification is unacceptable and again still no avail. According to the provisions of the Fair Credit Reporting Act 611 ( a ) [ 15 USC 1681i ( a ) ], the disputed items must be reinvestigated or deleted from my credit record within 30 days. During the investigation period, the items must be removed from my credit report as the mere reporting of items prior to debt validation constitutes collection activity. Repeatedly, I have asked Equifax with written notices requesting a correction on my report. Repeatedly, reporting incorrect information Equifax refuses to correct. I have sent copies of my identification to include Drivers License and SSNcard repeatedly. Again, failure to correct. After several ( 11 ) unsuccessful letters, I have experienced tremendous stress and anxiety as a result of multiple attempts to correct Equifaxs false reporting and failure to correct such errors which my identification has repeatedly been provided and the letters sent were Notarized. The entire experience and repeated attempts for correction have imposed upon my significant distrust, frustration, and distress, and has rendered me hopeless as to my ability to regain my good name and the credit rating that I deserve and has worked hard to earn. My requesting that Equifax delete specific items in my credit file that is blatantly inaccurate, by failing to conduct a reasonable investigation into my disputes in this regard, Equifax willfully and/or negligently violated the Fair Credit Reporting Act 611 ( a ) 15 U.S.C. 1681i ( a ) ( 1 ) with respect to each dispute lodge"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a>utils<span class="sc">::</span><span class="fu">tail</span>(complaints<span class="sc">$</span>consumer_complaint_narrative)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "This could be filed as separate complaints, one is trying to get Wells Fargo to cooperate on repayment negotiation, second they have exceeded the agreed percentage rate and lastly they will not provide copies of the loan documents.\n\nI have been calling, emailing for about 3 years to get Wells Fargo to cooperate with me. They are charging more than can afford being off and on unemployment twice in the last 3 years. My payments are over {$700.00} a month now. I have almost completely drained my retirement savings and have had to sell pretty much everything. I am making on time payments. Have not been late, and I did have the loan in deferment while on unemployment, but they will NOT reply to getting this loan rate lowered/adjusted and they can not provide me copies of signed documents. \nOriginally this loan was setup not to exceed 8 % interest. It is now at 8.49 % and it goes up every other month. \nI can prove all of the information provided and have documentation and notes. \n\nPlease help. I am XXXX and have no savings left to retire on. I am enslaved to Wells Fargo for {$74000.00}. It is as much as my mortgage. I need help and have no where else to turn. Thank you"
+[2] "Hi there! \n\nI did not approve this inquiry I want to dispute this transaction Thanks!"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+[3] "I have disputed several times reached out to the company to remove this fraudulent charge and they wont"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+[4] "Someone called stating I had felony committed under my social security number and name. Took XXXX out of my checking account to \" secure my assets \". Stating from police department."                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+[5] "I have been disputing with a collection agency by the name of Eastern Account System that has reported a bill to the credit reports that is inaccurate. The company was contacted numerous times in writing and by telephone. I have certified letters that were sent to the company dating XX/XX/2019, XXXX  2019, and my third letter will go out tomorrow as that will be another 30 days the company has refused to reply. \n\nIn my letters to the company, I requested validation, made pursuant from the Fair Debt Collection Practices Act and the Fair Credit Reporting Act, to validate competent evidence bearing my signature, showing that I have ( or ever had ) some contractual obligation to pay Eastern Account System. \n\nAlso, I had informed them that any negative marks found on my credit report XXXX from their company or any company that they represent, for a debt that I DON'T owe, is a violation of the FCRA &amp; FDCPA ; therefore, if Eastern Account System can not validate the debt, they must request that all crediting reporting agencies delete the entry. \n\nAgain, they have not sent any evidence nor have they responded to any of my letters."                                         
+[6] "I have made multiple attempts with Experian to fix incorrect information on my credit report regarding a closed credit card account. The account was re-dated in XX/XX/XXXX as  failure to pay after being paid off in XX/XX/XXXX. It's negatively affecting my credit score and every time I attempt to have Experian fix it, they come back less then a week later stating they have re-investigated and nothing changes. I feel that my rights under the Fair Credit Reporting Act have been violated by this incorrect account information and Experian 's unwillingness to correct the information."                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a>complaints<span class="sc">$</span>consumer_complaint_narrative <span class="sc">%&gt;%</span></span>
+<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a>    stringr<span class="sc">::</span><span class="fu">str_extract_all</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">{</span><span class="sc">\\</span><span class="st">$[0-9</span><span class="sc">\\</span><span class="st">.]*</span><span class="sc">\\</span><span class="st">}"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>    purrr<span class="sc">::</span><span class="fu">compact</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb81-4"><a href="#cb81-4" aria-hidden="true" tabindex="-1"></a>    utils<span class="sc">::</span><span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+[1] "{$1100.00}" "{$4700.00}" "{$7000.00}" "{$99.00}"   "{$4700.00}"
+[6] "{$1100.00}" "{$4700.00}" "{$7000.00}" "{$4700.00}"
+
+[[2]]
+[1] "{$1000.00}" "{$1000.00}" "{$380.00}"  "{$480.00}"  "{$3700.00}"
+[6] "{$1000.00}"
+
+[[3]]
+[1] "{$3500.00}"
+
+[[4]]
+[1] "{$840.00}" "{$280.00}" "{$280.00}" "{$150.00}"
+
+[[5]]
+[1] "{$480.00}"
+
+[[6]]
+[1] "{$350.00}"</code></pre>
+</div>
+</div>
+</section>
+<section id="creating-a-two-class-model-and-splitting-data" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="creating-a-two-class-model-and-splitting-data"><span class="header-section-number">2.2</span> Creating a Two-Class Model and Splitting Data</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(set_seed)</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>complaints2class <span class="ot">&lt;-</span> complaints <span class="sc">%&gt;%</span></span>
+<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb83-5"><a href="#cb83-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">product =</span> stringr<span class="sc">::</span><span class="fu">str_trim</span>(product),</span>
+<span id="cb83-6"><a href="#cb83-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">product =</span> <span class="fu">factor</span>(dplyr<span class="sc">::</span><span class="fu">if_else</span>(</span>
+<span id="cb83-7"><a href="#cb83-7" aria-hidden="true" tabindex="-1"></a>                    product <span class="sc">==</span> <span class="fu">paste</span>(<span class="st">"Credit reporting, credit repair services,"</span>,</span>
+<span id="cb83-8"><a href="#cb83-8" aria-hidden="true" tabindex="-1"></a>                                    <span class="st">"or other personal consumer reports"</span>),</span>
+<span id="cb83-9"><a href="#cb83-9" aria-hidden="true" tabindex="-1"></a>                                    <span class="st">"Credit"</span>, <span class="st">"Other"</span>)))</span>
+<span id="cb83-10"><a href="#cb83-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb83-11"><a href="#cb83-11" aria-hidden="true" tabindex="-1"></a>complaints_split <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">initial_split</span>(complaints2class, <span class="at">strata =</span> product)</span>
+<span id="cb83-12"><a href="#cb83-12" aria-hidden="true" tabindex="-1"></a>complaints_train <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">training</span>(complaints_split)</span>
+<span id="cb83-13"><a href="#cb83-13" aria-hidden="true" tabindex="-1"></a>complaints_test <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">testing</span>(complaints_split)</span>
+<span id="cb83-14"><a href="#cb83-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb83-15"><a href="#cb83-15" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(complaints_train)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 18749    18</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(complaints_test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 6251   18</code></pre>
+</div>
+</div>
+</section>
+<section id="creating-a-complaints-recipe-and-workflow" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="creating-a-complaints-recipe-and-workflow"><span class="header-section-number">2.3</span> Creating a Complaints Recipe and Workflow</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb87"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a>complaints_rec <span class="ot">&lt;-</span></span>
+<span id="cb87-2"><a href="#cb87-2" aria-hidden="true" tabindex="-1"></a>    recipes<span class="sc">::</span><span class="fu">recipe</span>(product <span class="sc">~</span> consumer_complaint_narrative, <span class="at">data =</span> complaints_train)</span>
+<span id="cb87-3"><a href="#cb87-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb87-4"><a href="#cb87-4" aria-hidden="true" tabindex="-1"></a>complaints_rec <span class="ot">&lt;-</span> complaints_rec <span class="sc">%&gt;%</span></span>
+<span id="cb87-5"><a href="#cb87-5" aria-hidden="true" tabindex="-1"></a>    textrecipes<span class="sc">::</span><span class="fu">step_tokenize</span>(consumer_complaint_narrative) <span class="sc">%&gt;%</span></span>
+<span id="cb87-6"><a href="#cb87-6" aria-hidden="true" tabindex="-1"></a>    textrecipes<span class="sc">::</span><span class="fu">step_tokenfilter</span>(consumer_complaint_narrative, <span class="at">max_tokens =</span> <span class="dv">500</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb87-7"><a href="#cb87-7" aria-hidden="true" tabindex="-1"></a>    textrecipes<span class="sc">::</span><span class="fu">step_tfidf</span>(consumer_complaint_narrative)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a>complaint_wf <span class="ot">&lt;-</span> workflows<span class="sc">::</span><span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_recipe</span>(complaints_rec)</span>
+<span id="cb88-3"><a href="#cb88-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb88-4"><a href="#cb88-4" aria-hidden="true" tabindex="-1"></a>nb_spec <span class="ot">&lt;-</span> parsnip<span class="sc">::</span><span class="fu">naive_Bayes</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb88-5"><a href="#cb88-5" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_mode</span>(<span class="st">"classification"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb88-6"><a href="#cb88-6" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_engine</span>(<span class="st">"naivebayes"</span>)</span>
+<span id="cb88-7"><a href="#cb88-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb88-8"><a href="#cb88-8" aria-hidden="true" tabindex="-1"></a>nb_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Naive Bayes Model Specification (classification)
+
+Computational engine: naivebayes </code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a>nb_fit <span class="ot">&lt;-</span> complaint_wf <span class="sc">%&gt;%</span></span>
+<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_model</span>(nb_spec) <span class="sc">%&gt;%</span></span>
+<span id="cb90-3"><a href="#cb90-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fit</span>(<span class="at">data =</span> complaints_train)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb91"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a>set_seed_3 <span class="ot">&lt;-</span> <span class="dv">234</span></span>
+<span id="cb91-2"><a href="#cb91-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb91-3"><a href="#cb91-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(set_seed_3)</span>
+<span id="cb91-4"><a href="#cb91-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb91-5"><a href="#cb91-5" aria-hidden="true" tabindex="-1"></a>complaints_folds <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">vfold_cv</span>(complaints_train, <span class="at">v =</span> <span class="dv">5</span>, <span class="at">strata =</span> product)</span>
+<span id="cb91-6"><a href="#cb91-6" aria-hidden="true" tabindex="-1"></a>complaints_folds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>#  5-fold cross-validation using stratification 
+# A tibble: 5 × 2
+  splits               id   
+  &lt;list&gt;               &lt;chr&gt;
+1 &lt;split [14998/3751]&gt; Fold1
+2 &lt;split [14999/3750]&gt; Fold2
+3 &lt;split [14999/3750]&gt; Fold3
+4 &lt;split [15000/3749]&gt; Fold4
+5 &lt;split [15000/3749]&gt; Fold5</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb93"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a>nb_wf <span class="ot">&lt;-</span> workflows<span class="sc">::</span><span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb93-2"><a href="#cb93-2" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_recipe</span>(complaints_rec) <span class="sc">%&gt;%</span></span>
+<span id="cb93-3"><a href="#cb93-3" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_model</span>(nb_spec)</span>
+<span id="cb93-4"><a href="#cb93-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb93-5"><a href="#cb93-5" aria-hidden="true" tabindex="-1"></a>nb_wf</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow ════════════════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: naive_Bayes()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+3 Recipe Steps
+
+• step_tokenize()
+• step_tokenfilter()
+• step_tfidf()
+
+── Model ───────────────────────────────────────────────────────────────────────
+Naive Bayes Model Specification (classification)
+
+Computational engine: naivebayes </code></pre>
+</div>
+</div>
+</section>
+<section id="evaluating-the-naive-bayes-model" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="evaluating-the-naive-bayes-model"><span class="header-section-number">2.4</span> Evaluating the Naive Bayes Model</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb95"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a>nb_rs <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">fit_resamples</span>(nb_wf, complaints_folds, <span class="at">control =</span> tune<span class="sc">::</span><span class="fu">control_resamples</span>(<span class="at">save_pred =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb95-2"><a href="#cb95-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb95-3"><a href="#cb95-3" aria-hidden="true" tabindex="-1"></a>nb_rs_metrics <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">collect_metrics</span>(nb_rs)</span>
+<span id="cb95-4"><a href="#cb95-4" aria-hidden="true" tabindex="-1"></a>nb_rs_predictions <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">collect_predictions</span>(nb_rs)</span>
+<span id="cb95-5"><a href="#cb95-5" aria-hidden="true" tabindex="-1"></a>nb_rs_metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 6
+  .metric     .estimator  mean     n std_err .config             
+  &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+1 accuracy    binary     0.670     5 0.00491 Preprocessor1_Model1
+2 brier_class binary     0.324     5 0.00530 Preprocessor1_Model1
+3 roc_auc     binary     0.880     5 0.00199 Preprocessor1_Model1</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb97"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb97-1"><a href="#cb97-1" aria-hidden="true" tabindex="-1"></a>nb_rs_predictions <span class="sc">%&gt;%</span></span>
+<span id="cb97-2"><a href="#cb97-2" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">group_by</span>(id) <span class="sc">%&gt;%</span></span>
+<span id="cb97-3"><a href="#cb97-3" aria-hidden="true" tabindex="-1"></a>    yardstick<span class="sc">::</span><span class="fu">roc_curve</span>(<span class="at">truth =</span> product, .pred_Credit) <span class="sc">%&gt;%</span></span>
+<span id="cb97-4"><a href="#cb97-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">autoplot</span>() <span class="sc">+</span></span>
+<span id="cb97-5"><a href="#cb97-5" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">labs</span>(<span class="at">color =</span> <span class="cn">NULL</span>,</span>
+<span id="cb97-6"><a href="#cb97-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">title =</span> <span class="st">"ROC curve for US Consumer Finance Complaints"</span>,</span>
+<span id="cb97-7"><a href="#cb97-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">subtitle =</span> <span class="st">"Each resample fold is shown in a different color"</span>) <span class="sc">+</span></span>
+<span id="cb97-8"><a href="#cb97-8" aria-hidden="true" tabindex="-1"></a>    ggthemes<span class="sc">::</span><span class="fu">theme_economist_white</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Lab_10_O-Malley_Grace_files/figure-html/nb%20evaluation%20viz%20a-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>tune<span class="sc">::</span><span class="fu">conf_mat_resampled</span>(nb_rs, <span class="at">tidy =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb98-2"><a href="#cb98-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">autoplot</span>(<span class="at">type =</span> <span class="st">"heatmap"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Lab_10_O-Malley_Grace_files/figure-html/nb%20evaluation%20viz%20b-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb99"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a>null_classification <span class="ot">&lt;-</span> parsnip<span class="sc">::</span><span class="fu">null_model</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb99-2"><a href="#cb99-2" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_engine</span>(<span class="st">"parsnip"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb99-3"><a href="#cb99-3" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span>
+<span id="cb99-4"><a href="#cb99-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb99-5"><a href="#cb99-5" aria-hidden="true" tabindex="-1"></a>null_rs <span class="ot">&lt;-</span> workflows<span class="sc">::</span><span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb99-6"><a href="#cb99-6" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_recipe</span>(complaints_rec) <span class="sc">%&gt;%</span></span>
+<span id="cb99-7"><a href="#cb99-7" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_model</span>(null_classification) <span class="sc">%&gt;%</span></span>
+<span id="cb99-8"><a href="#cb99-8" aria-hidden="true" tabindex="-1"></a>    tune<span class="sc">::</span><span class="fu">fit_resamples</span>(complaints_folds)</span>
+<span id="cb99-9"><a href="#cb99-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb99-10"><a href="#cb99-10" aria-hidden="true" tabindex="-1"></a>null_rs <span class="sc">%&gt;%</span></span>
+<span id="cb99-11"><a href="#cb99-11" aria-hidden="true" tabindex="-1"></a>    tune<span class="sc">::</span><span class="fu">collect_metrics</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 6
+  .metric     .estimator  mean     n    std_err .config             
+  &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;      &lt;dbl&gt; &lt;chr&gt;               
+1 accuracy    binary     0.527     5 0.0000322  Preprocessor1_Model1
+2 brier_class binary     0.249     5 0.00000173 Preprocessor1_Model1
+3 roc_auc     binary     0.5       5 0          Preprocessor1_Model1</code></pre>
+</div>
+</div>
+</section>
+<section id="exploring-a-lasso-model" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="exploring-a-lasso-model"><span class="header-section-number">2.5</span> Exploring a Lasso Model</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb101"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a>lasso_spec <span class="ot">&lt;-</span> parsnip<span class="sc">::</span><span class="fu">logistic_reg</span>(<span class="at">penalty =</span> <span class="fl">0.01</span>, <span class="at">mixture =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb101-2"><a href="#cb101-2" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_mode</span>(<span class="st">"classification"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb101-3"><a href="#cb101-3" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_engine</span>(<span class="st">"glmnet"</span>)</span>
+<span id="cb101-4"><a href="#cb101-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb101-5"><a href="#cb101-5" aria-hidden="true" tabindex="-1"></a>lasso_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Logistic Regression Model Specification (classification)
+
+Main Arguments:
+  penalty = 0.01
+  mixture = 1
+
+Computational engine: glmnet </code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb103"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a>lasso_wf <span class="ot">&lt;-</span> workflows<span class="sc">::</span><span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb103-2"><a href="#cb103-2" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_recipe</span>(complaints_rec) <span class="sc">%&gt;%</span></span>
+<span id="cb103-3"><a href="#cb103-3" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_model</span>(lasso_spec)</span>
+<span id="cb103-4"><a href="#cb103-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb103-5"><a href="#cb103-5" aria-hidden="true" tabindex="-1"></a>lasso_wf</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow ════════════════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: logistic_reg()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+3 Recipe Steps
+
+• step_tokenize()
+• step_tokenfilter()
+• step_tfidf()
+
+── Model ───────────────────────────────────────────────────────────────────────
+Logistic Regression Model Specification (classification)
+
+Main Arguments:
+  penalty = 0.01
+  mixture = 1
+
+Computational engine: glmnet </code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb105"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a>set_seed_4 <span class="ot">&lt;-</span> <span class="dv">2020</span></span>
+<span id="cb105-2"><a href="#cb105-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(set_seed_4)</span>
+<span id="cb105-3"><a href="#cb105-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb105-4"><a href="#cb105-4" aria-hidden="true" tabindex="-1"></a>lasso_rs <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">fit_resamples</span>(lasso_wf, complaints_folds, <span class="at">control =</span> tune<span class="sc">::</span><span class="fu">control_resamples</span>(<span class="at">save_pred =</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'glmnet' was built under R version 4.3.3</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb107"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a>lasso_rs_metrics <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">collect_metrics</span>(lasso_rs)</span>
+<span id="cb107-2"><a href="#cb107-2" aria-hidden="true" tabindex="-1"></a>lasso_rs_predictions <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">collect_predictions</span>(lasso_rs)</span>
+<span id="cb107-3"><a href="#cb107-3" aria-hidden="true" tabindex="-1"></a>lasso_rs_metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 6
+  .metric     .estimator  mean     n std_err .config             
+  &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+1 accuracy    binary     0.869     5 0.00292 Preprocessor1_Model1
+2 brier_class binary     0.103     5 0.00138 Preprocessor1_Model1
+3 roc_auc     binary     0.936     5 0.00184 Preprocessor1_Model1</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a>lasso_rs_predictions <span class="sc">%&gt;%</span></span>
+<span id="cb109-2"><a href="#cb109-2" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">group_by</span>(id) <span class="sc">%&gt;%</span></span>
+<span id="cb109-3"><a href="#cb109-3" aria-hidden="true" tabindex="-1"></a>    yardstick<span class="sc">::</span><span class="fu">roc_curve</span>(<span class="at">truth =</span> product, .pred_Credit) <span class="sc">%&gt;%</span></span>
+<span id="cb109-4"><a href="#cb109-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">autoplot</span>() <span class="sc">+</span></span>
+<span id="cb109-5"><a href="#cb109-5" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">labs</span>(<span class="at">color =</span> <span class="cn">NULL</span>, </span>
+<span id="cb109-6"><a href="#cb109-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">title =</span> <span class="st">"ROC curve for US Consumer Finance Complaints"</span>, </span>
+<span id="cb109-7"><a href="#cb109-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">subtitle =</span> <span class="st">"Each resample fold is shown in a different color"</span>) <span class="sc">+</span></span>
+<span id="cb109-8"><a href="#cb109-8" aria-hidden="true" tabindex="-1"></a>    ggthemes<span class="sc">::</span><span class="fu">theme_economist_white</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Lab_10_O-Malley_Grace_files/figure-html/lasso%20model%20viz%20a-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb110"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb110-1"><a href="#cb110-1" aria-hidden="true" tabindex="-1"></a>tune<span class="sc">::</span><span class="fu">conf_mat_resampled</span>(lasso_rs, <span class="at">tidy =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb110-2"><a href="#cb110-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">autoplot</span>(<span class="at">type =</span> <span class="st">"heatmap"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Lab_10_O-Malley_Grace_files/figure-html/lasso%20model%20viz%20b-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="tuning-model-hyperparameters" class="level2" data-number="2.6">
+<h2 data-number="2.6" class="anchored" data-anchor-id="tuning-model-hyperparameters"><span class="header-section-number">2.6</span> Tuning Model Hyperparameters</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb111"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a>tune_spec <span class="ot">&lt;-</span> <span class="fu">logistic_reg</span>(<span class="at">penalty =</span> <span class="fu">tune</span>(), <span class="at">mixture =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb111-2"><a href="#cb111-2" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_mode</span>(<span class="st">"classification"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb111-3"><a href="#cb111-3" aria-hidden="true" tabindex="-1"></a>    parsnip<span class="sc">::</span><span class="fu">set_engine</span>(<span class="st">"glmnet"</span>)</span>
+<span id="cb111-4"><a href="#cb111-4" aria-hidden="true" tabindex="-1"></a>tune_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Logistic Regression Model Specification (classification)
+
+Main Arguments:
+  penalty = tune()
+  mixture = 1
+
+Computational engine: glmnet </code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb113"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a>lambda_grid <span class="ot">&lt;-</span> dials<span class="sc">::</span><span class="fu">grid_regular</span>(dials<span class="sc">::</span><span class="fu">penalty</span>(), <span class="at">levels =</span> <span class="dv">15</span>)</span>
+<span id="cb113-2"><a href="#cb113-2" aria-hidden="true" tabindex="-1"></a>lambda_grid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 15 × 1
+    penalty
+      &lt;dbl&gt;
+ 1 1   e-10
+ 2 5.18e-10
+ 3 2.68e- 9
+ 4 1.39e- 8
+ 5 7.20e- 8
+ 6 3.73e- 7
+ 7 1.93e- 6
+ 8 1   e- 5
+ 9 5.18e- 5
+10 2.68e- 4
+11 1.39e- 3
+12 7.20e- 3
+13 3.73e- 2
+14 1.93e- 1
+15 1   e+ 0</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a>tune_wf <span class="ot">&lt;-</span> workflows<span class="sc">::</span><span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_recipe</span>(complaints_rec) <span class="sc">%&gt;%</span></span>
+<span id="cb115-3"><a href="#cb115-3" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">add_model</span>(tune_spec)</span>
+<span id="cb115-4"><a href="#cb115-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb115-5"><a href="#cb115-5" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(set_seed_4)</span>
+<span id="cb115-6"><a href="#cb115-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb115-7"><a href="#cb115-7" aria-hidden="true" tabindex="-1"></a>tune_rs <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">tune_grid</span>(tune_wf, complaints_folds, <span class="at">grid =</span> lambda_grid, </span>
+<span id="cb115-8"><a href="#cb115-8" aria-hidden="true" tabindex="-1"></a>                            <span class="at">control =</span> tune<span class="sc">::</span><span class="fu">control_resamples</span>(<span class="at">save_pred =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb115-9"><a href="#cb115-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb115-10"><a href="#cb115-10" aria-hidden="true" tabindex="-1"></a>tune_rs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># Tuning results
+# 5-fold cross-validation using stratification 
+# A tibble: 5 × 5
+  splits               id    .metrics          .notes           .predictions
+  &lt;list&gt;               &lt;chr&gt; &lt;list&gt;            &lt;list&gt;           &lt;list&gt;      
+1 &lt;split [14998/3751]&gt; Fold1 &lt;tibble [45 × 5]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+2 &lt;split [14999/3750]&gt; Fold2 &lt;tibble [45 × 5]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+3 &lt;split [14999/3750]&gt; Fold3 &lt;tibble [45 × 5]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+4 &lt;split [15000/3749]&gt; Fold4 &lt;tibble [45 × 5]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    
+5 &lt;split [15000/3749]&gt; Fold5 &lt;tibble [45 × 5]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble&gt;    </code></pre>
+</div>
+</div>
+</section>
+<section id="evaluating-the-lasso-model" class="level2" data-number="2.7">
+<h2 data-number="2.7" class="anchored" data-anchor-id="evaluating-the-lasso-model"><span class="header-section-number">2.7</span> Evaluating the Lasso Model</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a>tune<span class="sc">::</span><span class="fu">collect_metrics</span>(tune_rs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 45 × 7
+    penalty .metric     .estimator   mean     n  std_err .config              
+      &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;       &lt;dbl&gt; &lt;int&gt;    &lt;dbl&gt; &lt;chr&gt;                
+ 1 1   e-10 accuracy    binary     0.879      5 0.00115  Preprocessor1_Model01
+ 2 1   e-10 brier_class binary     0.0909     5 0.000769 Preprocessor1_Model01
+ 3 1   e-10 roc_auc     binary     0.941      5 0.000923 Preprocessor1_Model01
+ 4 5.18e-10 accuracy    binary     0.879      5 0.00115  Preprocessor1_Model02
+ 5 5.18e-10 brier_class binary     0.0909     5 0.000769 Preprocessor1_Model02
+ 6 5.18e-10 roc_auc     binary     0.941      5 0.000923 Preprocessor1_Model02
+ 7 2.68e- 9 accuracy    binary     0.879      5 0.00115  Preprocessor1_Model03
+ 8 2.68e- 9 brier_class binary     0.0909     5 0.000769 Preprocessor1_Model03
+ 9 2.68e- 9 roc_auc     binary     0.941      5 0.000923 Preprocessor1_Model03
+10 1.39e- 8 accuracy    binary     0.879      5 0.00115  Preprocessor1_Model04
+# ℹ 35 more rows</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(tune_rs) <span class="sc">+</span></span>
+<span id="cb119-2"><a href="#cb119-2" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">labs</span>(</span>
+<span id="cb119-3"><a href="#cb119-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">title =</span> <span class="st">"Lasso model performance across regularization penalties"</span>,</span>
+<span id="cb119-4"><a href="#cb119-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">subtitle =</span> <span class="st">"Performance metrics can be used to identity the best penalty"</span>) <span class="sc">+</span></span>
+<span id="cb119-5"><a href="#cb119-5" aria-hidden="true" tabindex="-1"></a>    ggthemes<span class="sc">::</span><span class="fu">theme_economist_white</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Lab_10_O-Malley_Grace_files/figure-html/lasso%20model%20evaluation-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb120"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a>tune_rs <span class="sc">%&gt;%</span> tune<span class="sc">::</span><span class="fu">collect_metrics</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb120-2"><a href="#cb120-2" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(.metric <span class="sc">==</span> <span class="st">"roc_auc"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb120-3"><a href="#cb120-3" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(<span class="fu">desc</span>(mean)) <span class="sc">%&gt;%</span></span>
+<span id="cb120-4"><a href="#cb120-4" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">slice</span>(<span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb120-5"><a href="#cb120-5" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">pull</span>(mean) <span class="sc">%&gt;%</span></span>
+<span id="cb120-6"><a href="#cb120-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.944</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb122"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a>chosen_auc <span class="ot">&lt;-</span> tune_rs <span class="sc">%&gt;%</span></span>
+<span id="cb122-2"><a href="#cb122-2" aria-hidden="true" tabindex="-1"></a>    tune<span class="sc">::</span><span class="fu">select_by_one_std_err</span>(<span class="at">metric =</span> <span class="st">"roc_auc"</span>, <span class="sc">-</span>penalty)</span>
+<span id="cb122-3"><a href="#cb122-3" aria-hidden="true" tabindex="-1"></a>chosen_auc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+  penalty .config              
+    &lt;dbl&gt; &lt;chr&gt;                
+1 0.00139 Preprocessor1_Model11</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb124"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a>final_lasso <span class="ot">&lt;-</span> tune<span class="sc">::</span><span class="fu">finalize_workflow</span>(tune_wf, chosen_auc)</span>
+<span id="cb124-2"><a href="#cb124-2" aria-hidden="true" tabindex="-1"></a>final_lasso</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow ════════════════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: logistic_reg()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+3 Recipe Steps
+
+• step_tokenize()
+• step_tokenfilter()
+• step_tfidf()
+
+── Model ───────────────────────────────────────────────────────────────────────
+Logistic Regression Model Specification (classification)
+
+Main Arguments:
+  penalty = 0.00138949549437314
+  mixture = 1
+
+Computational engine: glmnet </code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>fitted_lasso <span class="ot">&lt;-</span> <span class="fu">fit</span>(final_lasso, complaints_train)</span>
+<span id="cb126-2"><a href="#cb126-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb126-3"><a href="#cb126-3" aria-hidden="true" tabindex="-1"></a>fitted_lasso <span class="sc">%&gt;%</span></span>
+<span id="cb126-4"><a href="#cb126-4" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">extract_fit_parsnip</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb126-5"><a href="#cb126-5" aria-hidden="true" tabindex="-1"></a>    recipes<span class="sc">::</span><span class="fu">tidy</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb126-6"><a href="#cb126-6" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(<span class="sc">-</span>estimate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 501 × 3
+   term                                        estimate penalty
+   &lt;chr&gt;                                          &lt;dbl&gt;   &lt;dbl&gt;
+ 1 tfidf_consumer_complaint_narrative_funds        31.7 0.00139
+ 2 tfidf_consumer_complaint_narrative_debt         20.7 0.00139
+ 3 tfidf_consumer_complaint_narrative_money        20.0 0.00139
+ 4 tfidf_consumer_complaint_narrative_escrow       17.5 0.00139
+ 5 tfidf_consumer_complaint_narrative_transfer     16.9 0.00139
+ 6 tfidf_consumer_complaint_narrative_offer        16.5 0.00139
+ 7 tfidf_consumer_complaint_narrative_collect      15.5 0.00139
+ 8 tfidf_consumer_complaint_narrative_further      15.3 0.00139
+ 9 tfidf_consumer_complaint_narrative_fees         15.2 0.00139
+10 tfidf_consumer_complaint_narrative_calling      14.0 0.00139
+# ℹ 491 more rows</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb128"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>fitted_lasso <span class="sc">%&gt;%</span></span>
+<span id="cb128-2"><a href="#cb128-2" aria-hidden="true" tabindex="-1"></a>    workflows<span class="sc">::</span><span class="fu">extract_fit_parsnip</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb128-3"><a href="#cb128-3" aria-hidden="true" tabindex="-1"></a>    recipes<span class="sc">::</span><span class="fu">tidy</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb128-4"><a href="#cb128-4" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(estimate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 501 × 3
+   term                                          estimate penalty
+   &lt;chr&gt;                                            &lt;dbl&gt;   &lt;dbl&gt;
+ 1 tfidf_consumer_complaint_narrative_experian      -61.5 0.00139
+ 2 tfidf_consumer_complaint_narrative_transunion    -48.6 0.00139
+ 3 tfidf_consumer_complaint_narrative_equifax       -43.0 0.00139
+ 4 tfidf_consumer_complaint_narrative_reporting     -26.4 0.00139
+ 5 tfidf_consumer_complaint_narrative_score         -18.2 0.00139
+ 6 tfidf_consumer_complaint_narrative_inquiries     -17.1 0.00139
+ 7 tfidf_consumer_complaint_narrative_report        -17.0 0.00139
+ 8 tfidf_consumer_complaint_narrative_credit        -15.1 0.00139
+ 9 tfidf_consumer_complaint_narrative_hard          -15.0 0.00139
+10 tfidf_consumer_complaint_narrative_late          -13.6 0.00139
+# ℹ 491 more rows</code></pre>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
