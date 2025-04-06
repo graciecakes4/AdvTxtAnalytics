@@ -231,7 +231,7 @@ tune::collect_metrics(null_rs)
 
 ```{r complaints data prep}
 
-complaints <- readr::read_csv("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Lab_10/data/complaints_sample_25k.csv")
+complaints <- readr::read_csv("/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/data_files/data/complaints_sample_25k.csv")
 
 glimpse(complaints)
 
@@ -295,5 +295,13 @@ nb_spec
 nb_fit <- complaint_wf %>%
     workflows::add_model(nb_spec) %>%
     fit(data = complaints_train)
+
+```
+
+```{r complaints cv}
+
+set.seed(234)
+complaints_folds <- vfold_cv(complaints_train, v = 5)
+complaints_folds
 
 ```
