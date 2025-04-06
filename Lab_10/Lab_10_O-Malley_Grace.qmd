@@ -216,7 +216,7 @@ null_regression <- parsnip::null_model() %>%
     parsnip::set_engine("parsnip") %>%
     parsnip::set_mode("regression")
 
-null_rs <- tune::fit_resamples( scotus_wf %>% 
+null_rs <- tune::fit_resamples(scotus_wf %>% 
     workflows::add_model(null_regression), scotus_folds, metrics = yardstick::metric_set(rmse))
 
 null_rs
@@ -253,8 +253,10 @@ complaints$consumer_complaint_narrative %>%
 set.seed(set_seed)
 
 complaints2class <- complaints %>%
-    dplyr::mutate(product = factor(dplyr::if_else(
-                    product == paste0("Credit reporting, credit repair services,",
+    dplyr::mutate(
+        product = stringr::str_trim(product),
+        product = factor(dplyr::if_else(
+                    product == paste("Credit reporting, credit repair services,",
                                     "or other personal consumer reports"),
                                     "Credit", "Other")))
 
@@ -300,8 +302,196 @@ nb_fit <- complaint_wf %>%
 
 ```{r complaints cv}
 
-set.seed(234)
-complaints_folds <- vfold_cv(complaints_train, v = 5)
+set_seed_3 <- 234
+
+set.seed(set_seed_3)
+
+complaints_folds <- rsample::vfold_cv(complaints_train, v = 5, strata = product)
 complaints_folds
+
+```
+
+```{r complaints final workflow}
+
+nb_wf <- workflows::workflow() %>%
+    workflows::add_recipe(complaints_rec) %>%
+    workflows::add_model(nb_spec)
+
+nb_wf
+
+```
+
+## Evaluating the Naive Bayes Model
+
+```{r nb model evaluation}
+
+nb_rs <- tune::fit_resamples(nb_wf, complaints_folds, control = tune::control_resamples(save_pred = TRUE))
+
+nb_rs_metrics <- tune::collect_metrics(nb_rs)
+nb_rs_predictions <- tune::collect_predictions(nb_rs)
+nb_rs_metrics
+
+```
+
+```{r nb evaluation viz a}
+
+nb_rs_predictions %>%
+    dplyr::group_by(id) %>%
+    yardstick::roc_curve(truth = product, .pred_Credit) %>%
+    autoplot() +
+    ggplot2::labs(color = NULL,
+                title = "ROC curve for US Consumer Finance Complaints",
+                subtitle = "Each resample fold is shown in a different color") +
+    ggthemes::theme_economist_white()
+
+```
+
+```{r nb evaluation viz b}
+tune::conf_mat_resampled(nb_rs, tidy = FALSE) %>%
+    autoplot(type = "heatmap")
+
+```
+
+```{r complaints null model}
+
+null_classification <- parsnip::null_model() %>%
+    parsnip::set_engine("parsnip") %>%
+    parsnip::set_mode("classification")
+
+null_rs <- workflows::workflow() %>%
+    workflows::add_recipe(complaints_rec) %>%
+    workflows::add_model(null_classification) %>%
+    tune::fit_resamples(complaints_folds)
+
+null_rs %>%
+    tune::collect_metrics()
+
+```
+
+## Exploring a Lasso Model
+
+```{r lasso model}
+
+lasso_spec <- parsnip::logistic_reg(penalty = 0.01, mixture = 1) %>%
+    parsnip::set_mode("classification") %>%
+    parsnip::set_engine("glmnet")
+
+lasso_spec
+
+lasso_wf <- workflows::workflow() %>%
+    workflows::add_recipe(complaints_rec) %>%
+    workflows::add_model(lasso_spec)
+
+lasso_wf
+
+```
+
+```{r lasso model fit}
+
+set_seed_4 <- 2020
+set.seed(set_seed_4)
+
+lasso_rs <- tune::fit_resamples(lasso_wf, complaints_folds, control = tune::control_resamples(save_pred = TRUE))
+
+lasso_rs_metrics <- tune::collect_metrics(lasso_rs)
+lasso_rs_predictions <- tune::collect_predictions(lasso_rs)
+lasso_rs_metrics
+
+```
+
+```{r lasso model viz a}
+
+lasso_rs_predictions %>%
+    dplyr::group_by(id) %>%
+    yardstick::roc_curve(truth = product, .pred_Credit) %>%
+    autoplot() +
+    ggplot2::labs(color = NULL, 
+                title = "ROC curve for US Consumer Finance Complaints", 
+                subtitle = "Each resample fold is shown in a different color") +
+    ggthemes::theme_economist_white()
+
+```
+
+```{r lasso model viz b}
+tune::conf_mat_resampled(lasso_rs, tidy = FALSE) %>%
+    autoplot(type = "heatmap")
+
+```
+
+## Tuning Model Hyperparameters
+
+```{r hyperparameter tuning}
+
+tune_spec <- logistic_reg(penalty = tune(), mixture = 1) %>%
+    parsnip::set_mode("classification") %>%
+    parsnip::set_engine("glmnet")
+tune_spec
+
+lambda_grid <- dials::grid_regular(dials::penalty(), levels = 15)
+lambda_grid
+
+```
+
+```{r tuned workflow}
+
+tune_wf <- workflows::workflow() %>%
+    workflows::add_recipe(complaints_rec) %>%
+    workflows::add_model(tune_spec)
+
+set.seed(set_seed_4)
+
+tune_rs <- tune::tune_grid(tune_wf, complaints_folds, grid = lambda_grid, 
+                            control = tune::control_resamples(save_pred = TRUE))
+
+tune_rs
+
+```
+
+
+## Evaluating the Lasso Model
+
+```{r lasso model evaluation}
+
+tune::collect_metrics(tune_rs)
+
+autoplot(tune_rs) +
+    ggplot2::labs(
+                title = "Lasso model performance across regularization penalties",
+                subtitle = "Performance metrics can be used to identity the best penalty") +
+    ggthemes::theme_economist_white()
+
+```
+
+```{r final lasso tuning}
+
+tune_rs %>% tune::collect_metrics() %>%
+    dplyr::filter(.metric == "roc_auc") %>%
+    dplyr::arrange(desc(mean)) %>%
+    dplyr::slice(1) %>%
+    dplyr::pull(mean) %>%
+    round(3)
+
+chosen_auc <- tune_rs %>%
+    tune::select_by_one_std_err(metric = "roc_auc", -penalty)
+chosen_auc
+
+final_lasso <- tune::finalize_workflow(tune_wf, chosen_auc)
+final_lasso
+
+```
+
+```{r final lasso model}
+
+fitted_lasso <- fit(final_lasso, complaints_train)
+
+fitted_lasso %>%
+    workflows::extract_fit_parsnip() %>%
+    recipes::tidy() %>%
+    dplyr::arrange(-estimate)
+
+fitted_lasso %>%
+    workflows::extract_fit_parsnip() %>%
+    recipes::tidy() %>%
+    dplyr::arrange(estimate)
 
 ```
