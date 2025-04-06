@@ -37,5 +37,189 @@ python_packages <- c("pandas", "numpy", "matplotlib", "seaborn", "scikit-learn",
 
 ```
 
+## Deliverable 1: Get your working directory and paste below
 
+*/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics*
+
+# Part 1: Regression Modeling
+
+## Preparing the SCOTUS Data
+
+```{r scotus data prep}
+
+scotus_data <- scotus::scotus_filtered %>%
+    tibble::as_tibble()
+
+head(scotus_data, 5)
+
+glimpse(scotus_data)
+
+scotus_data %>%
+    dplyr::mutate(year = as.numeric(year), year = 10 * (year %/% 10)) %>%
+    dplyr::count(year) %>%
+    ggplot2::ggplot(ggplot2::aes(year, n))+
+    ggplot2::geom_col()+
+    ggplot2::labs(x="Year", y="Number of opinions per decade") +
+    ggthemes::theme_economist_white()
+
+```
+
+## Building a Predictive Regression Model
+
+```{r predictive regression model}
+
+set_seed <- 1234
+
+set.seed(set_seed)
+
+scotus_split <- scotus::scotus_filtered %>%
+    dplyr::mutate(year=as.numeric(year), text=stringr::str_remove_all(text,"'")) %>%
+    rsample::initial_split()
+
+scotus_train <- rsample::training(scotus_split)
+
+scotus_test <- rsample::testing(scotus_split)
+
+```
+
+## Exploring Text Recipes and Workflows
+
+```{r scotus data exploration}
+
+scotus_rec <- recipes::recipe(year ~ text, data = scotus_train) %>%
+    textrecipes::step_tokenize(text) %>%
+    textrecipes::step_tokenfilter(text, max_tokens = 1e3) %>%
+    textrecipes::step_tfidf(text) %>%
+    recipes::step_normalize(recipes::all_predictors())
+
+scotus_rec
+
+```
+
+
+```{r scotus bake}
+
+scotus_prep <- recipes::prep(scotus_rec)
+scotus_bake <- recipes::bake(scotus_prep, new_data=NULL)
+dim(scotus_bake)
+
+```
+
+```{r scotus workflow}
+
+scotus_wf <- workflows::workflow() %>%
+    workflows::add_recipe(scotus_rec)
+
+scotus_wf
+
+```
+
+```{r scotus svm model}
+
+svm_spec <- parsnip::svm_linear() %>%
+    parsnip::set_mode("regression") %>%
+    parsnip::set_engine("LiblineaR")
+
+svm_fit <- scotus_wf %>%
+    workflows::add_model(svm_spec) %>%
+    workflows::fit(data = scotus_train)
+
+svm_fit %>%
+    workflows::extract_fit_parsnip() %>%
+    recipes::tidy() %>%
+    dplyr::arrange(-estimate)
+
+```
+
+
+## Evaluating the Model
+
+```{r test words a}
+
+test_words1 <- svm_fit %>%
+    workflows::extract_fit_parsnip() %>%
+    recipes::tidy() %>%
+    dplyr::slice_max(estimate, n = 10) %>%
+    dplyr::mutate(term = stringr::str_remove(term, "tfidf_text_")) %>%
+    dplyr::pull(term)
+
+test_words1
+
+```
+
+```{r test words b}
+
+svm_fit %>%
+    workflows::extract_fit_parsnip() %>%
+    recipes::tidy() %>%
+    dplyr::arrange(estimate)
+
+test_words2 <- svm_fit %>%
+    workflows::extract_fit_parsnip() %>%
+    recipes::tidy() %>%
+    dplyr::slice_max(-estimate, n = 10) %>%
+    dplyr::mutate(term = stringr::str_remove(term, "tfidf_text_")) %>%
+    dplyr::pull(term)
+
+test_words2
+
+```
+
+```{r scotus cv}
+
+set_seed_2 <- 123
+
+set.seed(set_seed_2)
+
+scotus_folds <- rsample::vfold_cv(scotus_train)
+scotus_folds
+
+```
+
+```{r scotus training data performance}
+
+set.seed(set_seed_2)
+
+svm_rs <- tune::fit_resamples(scotus_wf %>% 
+    workflows::add_model(svm_spec), scotus_folds, control = control_resamples(save_pred = TRUE))
+
+svm_rs
+
+```
+
+```{r scotus rmse}
+tune::collect_metrics(svm_rs)
+
+first_attemp_rmse <- tune::collect_metrics(svm_rs) %>%
+    dplyr::filter(.metric == "rmse") %>%
+    dplyr::pull(mean) %>%
+    round(1)
+
+svm_rs %>%
+    tune::collect_predictions() %>%
+    ggplot2::ggplot(ggplot2::aes(year, .pred, color = id)) +
+    ggplot2::geom_abline(lty = 2, color = "gray80", size = 1.5) +
+    ggplot2::geom_point(alpha = 0.3) +
+    ggplot2::labs(
+            x = "Truth",
+            y = "Predicted year",
+            color = NULL,
+            title = "Predicted and true years for Supreme Court opinions",
+            subtitle = "Each cross-validation fold is shown in a different color") +
+    ggthemes::theme_economist_white()
+
+```
+
+```{r scotus null model}
+
+null_regression <- parsnip::null_model() %>%
+    parsnip::set_engine("parsnip") %>%
+    parsnip::set_mode("regression")
+
+null_rs <- tune::fit_resamples( scotus_wf %>% 
+    workflows::add_model(null_regression), scotus_folds, metrics = yardstick::metric_set(rmse))
+
+null_rs
+
+```
 
