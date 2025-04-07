@@ -462,34 +462,56 @@ During the data preprocessing phase I will take all the text data and pass it th
 
 ```{r preprocessing function}
 clean_text <- function(text_vector) {
-  # confirm conversion to UTF-8 Encoding
+  # convert text to UTF-8 encoding
   text_vector <- iconv(text_vector, to = "UTF-8")
-  # convert to lowercase
+
+  # remove Project Gutenberg headers/footers
+  text_vector <- gutenbergr::gutenberg_strip(text_vector)
+
+  # chapter headers detection
+  chapter_pattern <- "^(chapter [\\dIVXLC]|[\\dIVXLC]+\\.)"
+
+  # trim between chapter headers
+  chapter_indices <- grep(chapter_pattern, text_vector, ignore.case = TRUE)
+  if (length(chapter_indices) > 0) {
+    text_vector <- text_vector[chapter_indices[1]:chapter_indices[length(chapter_indices)]]
+  }
+
+  #cConvert all text to lowercase
   text_vector <- tolower(text_vector)
-  # remove Gutenberg boilerplate text
-  text_vector <- stringr::str_remove_all(text_vector, "(?i)\\*{3,}.*?start of this project gutenberg ebook.*?\\*{3,}")
-  text_vector <- stringr::str_remove_all(text_vector, "(?i)\\*{3,}.*?end of this project gutenberg ebook.*?\\*{3,}")
-  # normalize apostrophes and quotes
-  text_vector <- stringr::str_replace_all(text_vector, "[“”]", "\"") 
+
+  # normalize quotes
+  text_vector <- stringr::str_replace_all(text_vector, "[“”]", "\"")
   text_vector <- stringr::str_replace_all(text_vector, "[‘’]", "'")
-  # expand contractions (optional, improves accuracy in analysis)
+
+  # expand contractions
   text_vector <- textclean::replace_contraction(text_vector)
+
   # remove punctuation
   text_vector <- stringr::str_remove_all(text_vector, "[[:punct:]]")
+
   # remove numbers
   text_vector <- stringr::str_remove_all(text_vector, "\\d+")
+
   # remove special characters and symbols
   text_vector <- stringr::str_replace_all(text_vector, "[^a-zA-Z\\s]", "")
+
   # remove extra whitespace and blank lines
   text_vector <- stringr::str_squish(text_vector)
+  text_vector <- text_vector[text_vector != ""]
+
   # remove stopwords
   text_vector <- tm::removeWords(text_vector, tm::stopwords("en"))
-  # remove ultra-short words (1-character words)
+
+  # remove ultra-short words (1-character)
   text_vector <- stringr::str_remove_all(text_vector, "\\b[a-zA-Z]\\b")
-  # tokenize sentences for later bigram analysis
+
+  # tokenize sentences
   text_vector <- tokenizers::tokenize_sentences(text_vector)
-  # collapse list into string 
+
+  # collapse list into a string
   text_vector <- sapply(text_vector, function(x) paste(x, collapse = " "))
+
   return(text_vector)
 }
 ```
