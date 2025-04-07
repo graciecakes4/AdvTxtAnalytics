@@ -864,17 +864,67 @@ ggraph::ggraph(ia_bigram_graph, layout = "fr") +
 
 ### Subgroup Comparisons
 
-Left off here
+```{r shared vs unique terms}
+# create a plot of shared versus unique terms
+shared_terms <- generics::intersect(fl_tfidf$word, ia_tfidf$word)
+fl_unique <- generics::setdiff(fl_tfidf$word, ia_tfidf$word)
+ia_unique <- generics::setdiff(ia_tfidf$word, fl_tfidf$word)
+
+summary_df <- tibble::tibble(
+  Category = c("Shared", "Unique to Florida", "Unique to Iowa"),
+  Count = c(length(shared_terms), length(fl_unique), length(ia_unique))
+)
+
+ggplot2::ggplot(summary_df, ggplot2::aes(x = Category, y = Count, fill = Category)) +
+  ggthemes::theme_wsj() +
+  ggplot2::geom_col(show.legend = FALSE) +
+  ggplot2::labs(title = "Vocabulary Overlap Between Florida and Iowa Books")
+```
+
+```{r comparison cloud}
+# use region label and count tf
+fl_tf_region <- fl_tfidf %>%
+  dplyr::select(word, n) %>%
+  dplyr::mutate(region = "Florida")
+
+ia_tf_region <- ia_tfidf %>%
+  dplyr::select(word, n) %>%
+  dplyr::mutate(region = "Iowa")
+
+# combine and group
+fl_ia_tf <- dplyr::bind_rows(fl_tf_region, ia_tf_region) %>%
+  dplyr::group_by(region, word) %>%
+  dplyr::summarise(freq = sum(n), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = region, values_from = freq, values_fill = 0)
+
+# set rownames
+fl_ia_matrix <- fl_ia_tf %>%
+  tibble::column_to_rownames("word") %>%
+  as.matrix()
+
+# plot
+wordcloud::comparison.cloud(
+  fl_ia_matrix,
+  colors = c("blue", "darkgreen"),
+  title.size = 1.2,
+  max.words = 100,
+  scale = c(3, 0.8),
+  random.order = FALSE
+)
+```
 
 
 ### Dictionary-Based Analysis
 
+Left off here - need to do some sort of analysis with the themes and the descriptions
 
 ### Classification Model
 
 
 ### Sentiment Analysis
 
+
 ## Findings
+
 
 ## Conclusion
