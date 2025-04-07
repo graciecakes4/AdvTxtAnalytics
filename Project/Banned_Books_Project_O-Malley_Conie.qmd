@@ -460,6 +460,8 @@ During the data preprocessing phase I will take all the text data and pass it th
 - Remove numbers
 - Tokenize sentences
 
+### Custom Functions
+
 ```{r preprocessing function}
 clean_text <- function(text_vector) {
   # convert text to UTF-8 encoding
@@ -477,7 +479,7 @@ clean_text <- function(text_vector) {
     text_vector <- text_vector[chapter_indices[1]:chapter_indices[length(chapter_indices)]]
   }
 
-  #cConvert all text to lowercase
+  #convert all text to lowercase
   text_vector <- tolower(text_vector)
 
   # normalize quotes
@@ -516,6 +518,43 @@ clean_text <- function(text_vector) {
 }
 ```
 
+```{r text re-preprocessing}
+clean_text_headers <- function(text) {
+  # Split the text into lines and then combine into a single string
+  text_vector <- unlist(strsplit(text, "\r\n|\n"))
+  complete_text <- paste(text_vector, collapse = " ")
+  
+  # Define a regex pattern to capture the Gutenberg header
+  header_start_pattern <- "(?i)\\*{3,}\\s*start of the project gutenberg ebook\\s*\\d+\\s*\\*{3,}"
+
+  # Find the match for the header using str_locate to handle string matching
+  header_match <- stringr::str_locate(complete_text, header_start_pattern)
+  
+  # If a match is found, remove that part of the text
+  if (!is.na(header_match[1])) {
+    # Calculate the position after the matched header
+    header_end_pos <- header_match[2]
+    # Remove text up to immediately after the header
+    trimmed_text <- substring(complete_text, header_end_pos + 1)
+  } else {
+    # Return original text if no header is detected
+    trimmed_text <- complete_text
+  }
+
+  return(trimmed_text)
+}
+```
+
+```{r punctuation function}
+# custom punctuation removal
+remove_punctuation_custom <- function(text) {
+  # remove punctuation including single and double quotes
+  return(gsub("[[:punct:]\"']", "", text))
+}
+```
+
+### Function Application 
+
 ```{r preprocess data}
 # apply preprocessing function to each data set
 fl_book_texts_df$cleaned_text <- sapply(fl_book_texts_df$text, clean_text)
@@ -533,30 +572,50 @@ ia_book_texts_df <- ia_book_texts_df %>%
     dplyr::filter(!is.na(cleaned_text))
 ```
 
-The novel `Redeemed` is giving me data preprocessing issues which I will work out in the future.
+```{r upload preprocessed data}
+# removing additional stopwords from texts
+enhanced_stopwords <- c(
+  stopwords::stopwords("en", source = "stopwords-iso"),
+  quanteda::stopwords("en"),
+  tidytext::stop_words$word,
+  "the", "and", "but"
+)
+
+# this is for working on data that has already been saved
+fl_book_texts_df <- readr::read_csv("Project/data/fl_book_texts.csv")
+fl_book_texts_df <- fl_book_texts_df %>% 
+  dplyr::select(-...1) %>%
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id)) %>% 
+  dplyr::mutate(text = lapply(text, clean_text_headers)) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removeWords(t, enhanced_stopwords))) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removePunctuation(t))) %>% 
+  dplyr::mutate(text = lapply(text, remove_punctuation_custom))
+
+ia_book_texts_df <- readr::read_csv("Project/data/ia_book_texts.csv")
+ia_book_texts_df <- ia_book_texts_df %>% 
+  dplyr::select(-...1) %>%
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id)) %>% 
+  dplyr::mutate(text = lapply(text, clean_text_headers)) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removeWords(t, enhanced_stopwords))) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removePunctuation(t))) %>% 
+  dplyr::mutate(text = lapply(text, remove_punctuation_custom))
+```
 
 ## Data Analysis and Visualization 
 
 ```{r florida tfidf}
-# unnest tokens from the cleaned text column
-fl_term_freq_df <- fl_book_texts_df %>%
-  tidytext::unnest_tokens(word, cleaned_text) %>%  # Tokenize words
-  dplyr::count(word, sort = TRUE)   # Count occurrences
+# create a corpus and clean text a final time
+fl_corpus <- tm::Corpus(tm::VectorSource(fl_book_texts_df$text))
+fl_corpus <- tm::tm_map(fl_corpus, tm::removePunctuation)
+fl_corpus <- tm::tm_map(fl_corpus, tm::removeWords, enhanced_stopwords)
 
-# view the top terms by frequency
-utils::head(fl_term_freq_df, 10)
+# create a document term matrix
+fl_dtm <- tm::DocumentTermMatrix(fl_corpus)
 
-# convert cleaned text into a document-term matrix (DTM) and compute TF-IDF
-fl_doc_term_matrix <- fl_book_texts_df %>%
-  dplyr::select(gutenberg_id, cleaned_text) %>%
-  tidytext::unnest_tokens(word, cleaned_text) %>%
-  dplyr::count(gutenberg_id, word, sort = TRUE) %>%
-  dplyr::mutate(n = ifelse(is.na(n), 0, n)) %>%
-  tidytext::bind_tf_idf(word, gutenberg_id, n) %>% 
-  dplyr::filter(!is.na(tf_idf))
-
-# view TF-IDF scores
-head(fl_doc_term_matrix, 10)
+# create a frequency matrix dataframe
+fl_dtm_matrix <- as.matrix(fl_dtm)
+fl_term_freq <- colSums(fl_dtm_matrix)
+fl_term_freq_df <- data.frame(term = names(fl_term_freq), freq = fl_term_freq)
 
 # workaround to remove na value tfidf - compute the 99th percentile TF-IDF value
 fl_tfidf_threshold <- stats::quantile(fl_doc_term_matrix$tf_idf, 0.99, na.rm = TRUE)
@@ -568,25 +627,18 @@ fl_doc_term_matrix <- fl_doc_term_matrix %>%
 
 
 ```{r iowa tfidf}
-# unnest tokens from the cleaned text column
-ia_term_freq_df <- ia_book_texts_df %>%
-  tidytext::unnest_tokens(word, cleaned_text) %>%  # Tokenize words
-  dplyr::count(word, sort = TRUE)   # Count occurrences
+# create a corpus and clean text a final time
+ia_corpus <- tm::Corpus(tm::VectorSource(ia_book_texts_df$text))
+ia_corpus <- tm::tm_map(ia_corpus, tm::removePunctuation)
+ia_corpus <- tm::tm_map(ia_corpus, tm::removeWords, enhanced_stopwords)
 
-# view the top terms by frequency
-utils::head(ia_term_freq_df, 10)
+# create a document term matrix
+ia_dtm <- tm::DocumentTermMatrix(ia_corpus)
 
-# convert cleaned text into a document-term matrix (DTM) and compute TF-IDF
-ia_doc_term_matrix <- ia_book_texts_df %>%
-  dplyr::select(gutenberg_id, cleaned_text) %>%
-  tidytext::unnest_tokens(word, cleaned_text) %>%
-  dplyr::count(gutenberg_id, word, sort = TRUE) %>%
-  dplyr::mutate(n = ifelse(is.na(n), 0, n)) %>%
-  tidytext::bind_tf_idf(word, gutenberg_id, n) %>% 
-  dplyr::filter(!is.na(tf_idf))
-
-# view TF-IDF scores
-head(ia_doc_term_matrix, 10)
+# create a frequency matrix dataframe
+ia_dtm_matrix <- as.matrix(ia_dtm)
+ia_term_freq <- colSums(ia_dtm_matrix)
+ia_term_freq_df <- data.frame(term = names(ia_term_freq), freq = ia_term_freq)
 
 # workaround to remove na value tfidf - compute the 99th percentile TF-IDF value
 ia_tfidf_threshold <- stats::quantile(ia_doc_term_matrix$tf_idf, 0.99, na.rm = TRUE)
@@ -596,27 +648,51 @@ ia_doc_term_matrix <- ia_doc_term_matrix %>%
   dplyr::filter(tf_idf < ia_tfidf_threshold)
 ```
 
-```{r florida data visualization}
+### Florida Data Visualization {.tabset}
+
+```{r florida tf viz}
 # Select top 20 most frequent words
 fl_top_term_freq <- fl_term_freq_df %>%
-  dplyr::top_n(20, n)  # Select top 20 words by frequency
+  dplyr::arrange(desc(freq)) %>% 
+  dplyr::top_n(20, wt = freq)
 
 # Plot
-ggplot2::ggplot(fl_top_term_freq, ggplot2::aes(x = stats::reorder(word, n), y = n)) +
+ggplot2::ggplot(fl_top_term_freq, ggplot2::aes(x = stats::reorder(term, freq), y = freq)) +
   ggplot2::geom_col(fill = "steelblue") +
   ggplot2::coord_flip() +
   ggplot2::labs(title = "Top 20 Most Frequent Words - Florida",
                 x = "Words",
                 y = "Frequency") +
   ggthemes::theme_wsj()
+```
 
-# Select top 20 words by TF-IDF score
-fl_top_tfidf <- fl_doc_term_matrix %>%
+
+
+
+This is where I left off - need to figure out what is wrong with TF-IDF Scores why is it giving me numbers instead of words?
+
+
+
+
+
+
+```{r fl tfidf viz}
+# convert DTM to tibble
+fl_dtm_tidy <- tidytext::tidy(fl_dtm)  # returns columns: document, term, count
+
+# compute TF-IDF
+fl_tfidf <- fl_dtm_tidy %>%
+  dplyr::group_by(term) %>%
+  dplyr::summarise(freq = sum(count)) %>%
+  tidytext::bind_tf_idf(term, document = term, n = freq) 
+
+# select top 20
+fl_top_tfidf <- fl_tfidf %>%
   dplyr::arrange(dplyr::desc(tf_idf)) %>%
-  dplyr::top_n(20, tf_idf)
+  dplyr::slice_head(n = 20)
 
-# Plot TF-IDF
-ggplot2::ggplot(fl_top_tfidf, ggplot2::aes(x = stats::reorder(word, tf_idf), y = tf_idf)) +
+# plot TF-IDF
+ggplot2::ggplot(fl_top_tfidf, ggplot2::aes(x = stats::reorder(term, tf_idf), y = tf_idf)) +
   ggplot2::geom_col(fill = "darkred") +
   ggplot2::geom_text(ggplot2::aes(label = round(tf_idf, 8)),  
                      vjust = 0.5,  
@@ -634,7 +710,8 @@ ggplot2::ggplot(fl_top_tfidf, ggplot2::aes(x = stats::reorder(word, tf_idf), y =
 ```{r iowa data visualization}
 # Select top 20 most frequent words
 ia_top_term_freq <- ia_term_freq_df %>%
-  dplyr::top_n(20, n)  # Select top 20 words by frequency
+  dplyr::arrange(desc(freq)) %>% 
+  dplyr::top_n(20, wt = freq)
 
 # Plot
 ggplot2::ggplot(ia_top_term_freq, ggplot2::aes(x = stats::reorder(word, n), y = n)) +
@@ -646,7 +723,7 @@ ggplot2::ggplot(ia_top_term_freq, ggplot2::aes(x = stats::reorder(word, n), y = 
   ggthemes::theme_wsj()
 
 # Select top 20 words by TF-IDF score
-ia_top_tfidf <- ia_doc_term_matrix %>%
+ia_top_tfidf <- ia_dtm %>%
   dplyr::arrange(dplyr::desc(tf_idf)) %>%
   dplyr::top_n(20, tf_idf)
 
