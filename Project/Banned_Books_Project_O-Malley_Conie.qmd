@@ -462,6 +462,8 @@ During the data preprocessing phase I will take all the text data and pass it th
 
 ### Custom Functions
 
+Normally, I would structure this as a package and these functions would be in a separate directory where you could load them, but since I am submitting this as a stand alone qmd, I am including them in the body.
+
 ```{r preprocessing function}
 clean_text <- function(text_vector) {
   # convert text to UTF-8 encoding
@@ -550,6 +552,14 @@ clean_text_headers <- function(text) {
 remove_punctuation_custom <- function(text) {
   # remove punctuation including single and double quotes
   return(gsub("[[:punct:]\"']", "", text))
+}
+```
+
+```{r theme detection function}
+# theme detection function
+detect_theme <- function(text, keywords) {
+  pattern <- paste0("\\b(", paste(keywords, collapse = "|"), ")\\b")
+  stringr::str_detect(tolower(text), pattern)
 }
 ```
 
@@ -916,7 +926,95 @@ wordcloud::comparison.cloud(
 
 ### Dictionary-Based Analysis
 
-Left off here - need to do some sort of analysis with the themes and the descriptions
+```{r dictionary creation}
+theme_dictionary <- list(
+  gender = c("woman", "man", "trans", "nonbinary", "gender", "female", "male", "girls", "boys", "identity"),
+  race = c("race", "racism", "black", "white", "asian", "latinx", "african american", "ethnicity", "heritage"),
+  sexuality = c("lgbt", "queer", "gay", "lesbian", "bisexual", "homosexual", "transgender", "asexual", "sexuality"),
+  violence = c("abuse", "violence", "murder", "kill", "assault", "trauma", "war", "fight", "weapon", "death"),
+  politics = c("government", "democracy", "election", "law", "rights", "justice", "politics", "civil", "freedom")
+)
+```
+
+
+```{r fl theme flags}
+# standardize column type
+fl_theme_flags <- fl_theme_flags %>%
+  dplyr::mutate(text = as.character(text))
+
+# use dictionary to compare themes
+fl_theme_flags <- fl_book_texts_df %>%
+  dplyr::mutate(
+    across(
+      .cols = tidyselect::everything(),
+      .fns = ~ as.character(.)
+    )
+  ) %>%
+  dplyr::mutate(
+    dplyr::across(
+      .cols = dplyr::everything(),
+      .fns = ~ stringr::str_to_lower(.)
+    )
+  ) %>%
+  dplyr::mutate(
+    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$gender)),
+    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$race)),
+    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$sexuality)),
+    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$violence)),
+    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$politics))
+  )
+```
+
+```{r ia theme flags}
+# standardize column type
+ia_theme_flags <- ia_theme_flags %>%
+  dplyr::mutate(text = as.character(text))
+
+# use dictionary to compare themes
+ia_theme_flags <- ia_book_texts_df %>%
+  dplyr::mutate(
+    across(
+      .cols = tidyselect::everything(),
+      .fns = ~ as.character(.)
+    )
+  ) %>%
+  dplyr::mutate(
+    dplyr::across(
+      .cols = dplyr::everything(),
+      .fns = ~ stringr::str_to_lower(.)
+    )
+  ) %>%
+  dplyr::mutate(
+    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$gender)),
+    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$race)),
+    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$sexuality)),
+    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$violence)),
+    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$politics))
+  )
+```
+
+```{r regional theme comparison}
+# combine data sets
+fl_ia_theme_counts <- dplyr::bind_rows(
+  fl_theme_flags %>% dplyr::mutate(region = "Florida"),
+  ia_theme_flags %>% dplyr::mutate(region = "Iowa")
+)
+
+# create a summary table
+theme_summary <- fl_ia_theme_counts %>%
+  tidyr::pivot_longer(cols = dplyr::starts_with("has_"), names_to = "theme", values_to = "present") %>%
+  dplyr::group_by(region, theme) %>%
+  dplyr::summarise(count = sum(present), .groups = "drop")
+
+# plot
+ggplot2::ggplot(theme_summary, ggplot2::aes(x = theme, y = count, fill = region)) +
+  ggplot2::geom_col(position = "dodge") +
+  ggplot2::labs(title = "Theme Prevalence in Book Descriptions by Region",
+                x = "Theme", y = "Number of Books") +
+  ggthemes::theme_wsj()
+```
+
+Need to finish this section (dictionary)
 
 ### Classification Model
 
