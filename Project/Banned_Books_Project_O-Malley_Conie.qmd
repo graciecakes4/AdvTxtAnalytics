@@ -19,18 +19,16 @@ python:
 ---
 
 ```{r library chunk}
-library(jsonlite)
-library(httr)
-library(stringdist)
-library(quanteda)
-library(gutenbergr)
-library(tm)
-library(stringr)
-library(textclean)
-library(tokenizers)
-library(tidytext)
-library(wordcloud)
-library(RColorBrewer)
+required_packages <- c("jsonlite", "httr", "stringdist", "quanteda", "gutenbergr", "tm", "stringr", "textclean",
+                        "tokenizers", "tidytext", "wordcloud", "RColorBrewer", "ggplot2", "ggthemes", "ggraph")
+
+# Check if all required packages are installed and install them if not
+for (pkg in required_packages) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+        renv::install(pkg)
+    }
+        library(pkg, character.only = TRUE)
+}
 data("gutenberg_metadata", package = "gutenbergr")
 ```
 
@@ -653,7 +651,7 @@ top_ia_tfidf <- ia_tfidf %>%
 ```
 
 
-### Florida Data Visualization {.tabset}
+### Term Frequency Analysis {.tabset}
 
 ```{r florida tf viz}
 # calculate top fl tf
@@ -765,6 +763,118 @@ ggplot2::ggplot(top_ia_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf
   ) 
 ```
 
+### Phrase Frequency Analysis
+
+```{r fl phrase analysis}
+# tokenize fl bigrams
+fl_bigrams <- fl_book_texts_df %>%
+  tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 2)
+
+# split and filter
+fl_bigrams_filtered <- fl_bigrams %>%
+  tidyr::separate(bigram, into = c("word1", "word2"), sep = " ") %>%
+  dplyr::filter(!word1 %in% enhanced_stopwords, !word2 %in% enhanced_stopwords) %>%
+  tidyr::unite(bigram, word1, word2, sep = " ")
+
+# calculate fl tf
+fl_bigram_tf <- fl_bigrams_filtered %>%
+  dplyr::count(gutenberg_id, bigram, sort = TRUE)
+
+# calculate fl tfidf
+fl_bigram_tfidf <- fl_bigram_tf %>%
+  tidytext::bind_tf_idf(term = bigram, document = gutenberg_id, n = n) %>%
+  dplyr::left_join(
+    fl_book_texts_df %>% dplyr::select(gutenberg_id, title),
+    by = "gutenberg_id"
+  )
+
+# top bigrams per doc
+top_fl_bigram_tfidf <- fl_bigram_tfidf %>%
+  dplyr::group_by(gutenberg_id) %>%
+  dplyr::slice_max(order_by = tf_idf, n = 10) %>%
+  dplyr::ungroup()
+```
+
+```{r fl phrase analysis viz}
+# split bigrams into related adjacent columns
+fl_bigram_pairs <- fl_bigrams_filtered %>%
+  tidyr::separate(bigram, into = c("word1", "word2"), sep = " ") %>%
+  dplyr::count(word1, word2, sort = TRUE) %>%
+  dplyr::filter(n >= 15)
+
+fl_bigram_graph <- igraph::graph_from_data_frame(fl_bigram_pairs)
+
+# plot bigram network
+ggraph::ggraph(fl_bigram_graph, layout = "fr") +
+  ggthemes::theme_wsj() +
+  ggraph::geom_edge_link(ggplot2::aes(edge_alpha = n), show.legend = FALSE) +
+  ggraph::geom_node_point(color = "lightblue", size = 5) +
+  ggraph::geom_node_text(ggplot2::aes(label = name), vjust = 1, hjust = 1) +
+  ggplot2::labs(title = "Bigram Word Network (TF ≥ 15)")
+```
 
 
+```{r ia phrase analysis}
+# tokenize ia bigrams
+ia_bigrams <- ia_book_texts_df %>%
+  tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 2)
 
+# split and filter
+ia_bigrams_filtered <- ia_bigrams %>%
+  tidyr::separate(bigram, into = c("word1", "word2"), sep = " ") %>%
+  dplyr::filter(!word1 %in% enhanced_stopwords, !word2 %in% enhanced_stopwords) %>%
+  tidyr::unite(bigram, word1, word2, sep = " ")
+
+# calculate ia tf
+ia_bigram_tf <- ia_bigrams_filtered %>%
+  dplyr::count(gutenberg_id, bigram, sort = TRUE)
+
+# calculate ia tfidf
+ia_bigram_tfidf <- ia_bigram_tf %>%
+  tidytext::bind_tf_idf(term = bigram, document = gutenberg_id, n = n) %>%
+  dplyr::left_join(
+    fl_book_texts_df %>% dplyr::select(gutenberg_id, title),
+    by = "gutenberg_id"
+  )
+
+# top bigrams per doc
+top_ia_bigram_tfidf <- ia_bigram_tfidf %>%
+  dplyr::group_by(gutenberg_id) %>%
+  dplyr::slice_max(order_by = tf_idf, n = 10) %>%
+  dplyr::ungroup()
+```
+
+```{r ia phrase analysis viz}
+# split bigrams into related adjacent columns
+ia_bigram_pairs <- ia_bigrams_filtered %>%
+  tidyr::separate(bigram, into = c("word1", "word2"), sep = " ") %>%
+  dplyr::count(word1, word2, sort = TRUE) %>%
+  dplyr::filter(n >= 15)
+
+ia_bigram_graph <- igraph::graph_from_data_frame(ia_bigram_pairs)
+
+# plot bigram network
+ggraph::ggraph(ia_bigram_graph, layout = "fr") +
+  ggthemes::theme_wsj() +
+  ggraph::geom_edge_link(ggplot2::aes(edge_alpha = n), show.legend = FALSE) +
+  ggraph::geom_node_point(color = "lightblue", size = 5) +
+  ggraph::geom_node_text(ggplot2::aes(label = name), vjust = 1, hjust = 1) +
+  ggplot2::labs(title = "Bigram Word Network (TF ≥ 15)")
+```
+
+### Subgroup Comparisons
+
+Left off here
+
+
+### Dictionary-Based Analysis
+
+
+### Classification Model
+
+
+### Sentiment Analysis
+
+## Findings
+
+## Conclusion
