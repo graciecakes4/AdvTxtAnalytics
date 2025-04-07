@@ -29,6 +29,8 @@ library(stringr)
 library(textclean)
 library(tokenizers)
 library(tidytext)
+library(wordcloud)
+library(RColorBrewer)
 data("gutenberg_metadata", package = "gutenbergr")
 ```
 
@@ -579,7 +581,7 @@ enhanced_stopwords <- c(
   quanteda::stopwords("en"),
   tidytext::stop_words$word,
   "the", "and", "but"
-)
+) %>% unique()
 
 # this is for working on data that has already been saved
 fl_book_texts_df <- readr::read_csv("Project/data/fl_book_texts.csv")
@@ -589,7 +591,9 @@ fl_book_texts_df <- fl_book_texts_df %>%
   dplyr::mutate(text = lapply(text, clean_text_headers)) %>% 
   dplyr::mutate(text = lapply(text, function(t) tm::removeWords(t, enhanced_stopwords))) %>% 
   dplyr::mutate(text = lapply(text, function(t) tm::removePunctuation(t))) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removeNumbers(t))) %>% 
   dplyr::mutate(text = lapply(text, remove_punctuation_custom))
+  
 
 ia_book_texts_df <- readr::read_csv("Project/data/ia_book_texts.csv")
 ia_book_texts_df <- ia_book_texts_df %>% 
@@ -598,149 +602,167 @@ ia_book_texts_df <- ia_book_texts_df %>%
   dplyr::mutate(text = lapply(text, clean_text_headers)) %>% 
   dplyr::mutate(text = lapply(text, function(t) tm::removeWords(t, enhanced_stopwords))) %>% 
   dplyr::mutate(text = lapply(text, function(t) tm::removePunctuation(t))) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removeNumbers(t))) %>% 
   dplyr::mutate(text = lapply(text, remove_punctuation_custom))
 ```
 
 ## Data Analysis and Visualization 
 
 ```{r florida tfidf}
-# create a corpus and clean text a final time
-fl_corpus <- tm::Corpus(tm::VectorSource(fl_book_texts_df$text))
-fl_corpus <- tm::tm_map(fl_corpus, tm::removePunctuation)
-fl_corpus <- tm::tm_map(fl_corpus, tm::removeWords, enhanced_stopwords)
+# calculate fl tf
+fl_tf <- fl_book_texts_df %>%
+  tidytext::unnest_tokens(word, text) %>%
+  dplyr::filter(!word %in% enhanced_stopwords) %>%
+  dplyr::count(gutenberg_id, word, sort = TRUE)
 
-# create a document term matrix
-fl_dtm <- tm::DocumentTermMatrix(fl_corpus)
+# calculate fl tfidf
+fl_tfidf <- fl_tf %>%
+  tidytext::bind_tf_idf(term = word, document = gutenberg_id, n = n) %>% 
+  dplyr::left_join(
+    fl_book_texts_df %>% dplyr::select(gutenberg_id, title),
+    by = "gutenberg_id"
+  )
 
-# create a frequency matrix dataframe
-fl_dtm_matrix <- as.matrix(fl_dtm)
-fl_term_freq <- colSums(fl_dtm_matrix)
-fl_term_freq_df <- data.frame(term = names(fl_term_freq), freq = fl_term_freq)
-
-# workaround to remove na value tfidf - compute the 99th percentile TF-IDF value
-fl_tfidf_threshold <- stats::quantile(fl_doc_term_matrix$tf_idf, 0.99, na.rm = TRUE)
-
-# remove TF-IDF values above this threshold
-fl_doc_term_matrix <- fl_doc_term_matrix %>%
-  dplyr::filter(tf_idf < fl_tfidf_threshold)
+# calculate top fl tfidf
+top_fl_tfidf <- fl_tfidf %>%
+  dplyr::group_by(gutenberg_id) %>%
+  dplyr::arrange(dplyr::desc(tf_idf)) %>%
+  dplyr::slice_head(n = 20)
 ```
-
 
 ```{r iowa tfidf}
-# create a corpus and clean text a final time
-ia_corpus <- tm::Corpus(tm::VectorSource(ia_book_texts_df$text))
-ia_corpus <- tm::tm_map(ia_corpus, tm::removePunctuation)
-ia_corpus <- tm::tm_map(ia_corpus, tm::removeWords, enhanced_stopwords)
+# calculate ia tf
+ia_tf <- ia_book_texts_df %>%
+  tidytext::unnest_tokens(word, text) %>%
+  dplyr::filter(!word %in% enhanced_stopwords) %>%
+  dplyr::count(gutenberg_id, word, sort = TRUE)
 
-# create a document term matrix
-ia_dtm <- tm::DocumentTermMatrix(ia_corpus)
+# calculate ia tfidf
+ia_tfidf <- ia_tf %>%
+  tidytext::bind_tf_idf(term = word, document = gutenberg_id, n = n) %>% 
+  dplyr::left_join(
+    ia_book_texts_df %>% dplyr::select(gutenberg_id, title),
+    by = "gutenberg_id"
+  )
 
-# create a frequency matrix dataframe
-ia_dtm_matrix <- as.matrix(ia_dtm)
-ia_term_freq <- colSums(ia_dtm_matrix)
-ia_term_freq_df <- data.frame(term = names(ia_term_freq), freq = ia_term_freq)
-
-# workaround to remove na value tfidf - compute the 99th percentile TF-IDF value
-ia_tfidf_threshold <- stats::quantile(ia_doc_term_matrix$tf_idf, 0.99, na.rm = TRUE)
-
-# remove TF-IDF values above this threshold
-ia_doc_term_matrix <- ia_doc_term_matrix %>%
-  dplyr::filter(tf_idf < ia_tfidf_threshold)
+# calculate top ia tfidf
+top_ia_tfidf <- ia_tfidf %>%
+  dplyr::group_by(gutenberg_id) %>%
+  dplyr::arrange(dplyr::desc(tf_idf)) %>%
+  dplyr::slice_head(n = 20)
 ```
+
 
 ### Florida Data Visualization {.tabset}
 
 ```{r florida tf viz}
-# Select top 20 most frequent words
-fl_top_term_freq <- fl_term_freq_df %>%
-  dplyr::arrange(desc(freq)) %>% 
-  dplyr::top_n(20, wt = freq)
+# calculate top fl tf
+top_fl_tf <- fl_tf %>% 
+  dplyr::group_by(word) %>%
+  dplyr::summarise(total = sum(n)) %>%
+  dplyr::slice_max(order_by = total, n = 20)
+
+# heatmap
+fl_tf_heatmap <- fl_tfidf %>%
+  dplyr::filter(word %in% top_fl_tf$word) %>%
+  dplyr::select(gutenberg_id, title, word, n) %>% 
+  tidyr::pivot_wider(names_from = word, values_from = n, values_fill = 0) %>%
+  tidyr::pivot_longer(cols = -c(gutenberg_id, title), names_to = "word", values_to = "freq")
 
 # Plot
-ggplot2::ggplot(fl_top_term_freq, ggplot2::aes(x = stats::reorder(term, freq), y = freq)) +
-  ggplot2::geom_col(fill = "steelblue") +
-  ggplot2::coord_flip() +
-  ggplot2::labs(title = "Top 20 Most Frequent Words - Florida",
-                x = "Words",
-                y = "Frequency") +
-  ggthemes::theme_wsj()
+ggplot2::ggplot(fl_tf_heatmap, ggplot2::aes(x = word, y = title, fill = freq)) +
+  ggthemes::theme_wsj() +
+  ggplot2::geom_tile() +
+  ggplot2::scale_fill_viridis_c() +
+  ggplot2::labs(title = "Florida: Heatmap of Top Term Frequencies",
+                x = "Term", y = "Book Title") +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+```
+
+```{r ia tf viz}
+# calculate top ia tf
+top_ia_tf <- ia_tf %>% 
+  dplyr::group_by(word) %>%
+  dplyr::summarise(total = sum(n)) %>%
+  dplyr::slice_max(order_by = total, n = 20)
+
+# heatmap
+ia_tf_heatmap <- ia_tfidf %>%
+  dplyr::filter(word %in% top_ia_tf$word) %>%
+  dplyr::select(gutenberg_id, title, word, n) %>% 
+  tidyr::pivot_wider(names_from = word, values_from = n, values_fill = 0) %>%
+  tidyr::pivot_longer(cols = -c(gutenberg_id, title), names_to = "word", values_to = "freq")
+
+# plot
+ggplot2::ggplot(ia_tf_heatmap, ggplot2::aes(x = word, y = title, fill = freq)) +
+  ggthemes::theme_wsj() +
+  ggplot2::geom_tile() +
+  ggplot2::scale_fill_viridis_c() +
+  ggplot2::labs(title = "Iowa: Heatmap of Top Term Frequencies",
+                x = "Term", y = "Book Title") +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 ```
 
 
+```{r fl wordcloud}
+# build wordcloud
+wordcloud::wordcloud(
+  words = fl_tfidf$word,
+  freq = fl_tfidf$n,
+  min.freq = 5,
+  max.words = 100,
+  colors = RColorBrewer::brewer.pal(8, "Dark2"),
+  random.order = FALSE
+)
+```
 
 
-This is where I left off - need to figure out what is wrong with TF-IDF Scores why is it giving me numbers instead of words?
-
-
-
-
-
+```{r iowa wordcloud}
+wordcloud::wordcloud(
+  words = ia_tfidf$word,
+  freq = ia_tfidf$n,
+  min.freq = 5,
+  max.words = 100,
+  colors = RColorBrewer::brewer.pal(8, "Dark2"),
+  random.order = FALSE
+)
+```
 
 ```{r fl tfidf viz}
-# convert DTM to tibble
-fl_dtm_tidy <- tidytext::tidy(fl_dtm)  # returns columns: document, term, count
-
-# compute TF-IDF
-fl_tfidf <- fl_dtm_tidy %>%
-  dplyr::group_by(term) %>%
-  dplyr::summarise(freq = sum(count)) %>%
-  tidytext::bind_tf_idf(term, document = term, n = freq) 
-
-# select top 20
+# calculate top tf-idf
 fl_top_tfidf <- fl_tfidf %>%
-  dplyr::arrange(dplyr::desc(tf_idf)) %>%
-  dplyr::slice_head(n = 20)
+  dplyr::group_by(gutenberg_id) %>%
+  dplyr::slice_max(order_by = tf_idf, n = 10) %>%
+  dplyr::ungroup()
 
-# plot TF-IDF
-ggplot2::ggplot(fl_top_tfidf, ggplot2::aes(x = stats::reorder(term, tf_idf), y = tf_idf)) +
-  ggplot2::geom_col(fill = "darkred") +
-  ggplot2::geom_text(ggplot2::aes(label = round(tf_idf, 8)),  
-                     vjust = 0.5,  
-                     hjust = 1.5, 
-                     color = "black", 
-                     size = 4) +
+# plot tf-idf
+ggplot2::ggplot(fl_top_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf)) +
+  ggthemes::theme_wsj() +
+  ggplot2::geom_col(fill = "steelblue") +
+  ggplot2::facet_wrap(~ title, scales = "free_y") +
   ggplot2::coord_flip() +
-  ggplot2::labs(title = "Top 20 Words by TF-IDF Score - Florida",
-                x = "Words",
-                y = "TF-IDF Score") +
-  ggthemes::theme_wsj()
+  ggplot2::labs(title = "Top 10 TF-IDF Terms per Florida Document",
+                x = "Term", y = "TF-IDF Score")
 ```
 
 
 ```{r iowa data visualization}
-# Select top 20 most frequent words
-ia_top_term_freq <- ia_term_freq_df %>%
-  dplyr::arrange(desc(freq)) %>% 
-  dplyr::top_n(20, wt = freq)
+# calculate top ia tf
+top_ia_tfidf <- ia_tfidf %>%
+  dplyr::group_by(gutenberg_id) %>%
+  dplyr::slice_max(order_by = tf_idf, n = 10) %>%
+  dplyr::ungroup()
 
 # Plot
-ggplot2::ggplot(ia_top_term_freq, ggplot2::aes(x = stats::reorder(word, n), y = n)) +
-  ggplot2::geom_col(fill = "steelblue") +
+ggplot2::ggplot(top_ia_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf)) +
+  ggthemes::theme_wsj() +
+  ggplot2::geom_col(fill = "darkgreen") +
+  ggplot2::facet_wrap(~ title, scales = "free_y") +
   ggplot2::coord_flip() +
-  ggplot2::labs(title = "Top 20 Most Frequent Words - Iowa",
-                x = "Words",
-                y = "Frequency") +
-  ggthemes::theme_wsj()
-
-# Select top 20 words by TF-IDF score
-ia_top_tfidf <- ia_dtm %>%
-  dplyr::arrange(dplyr::desc(tf_idf)) %>%
-  dplyr::top_n(20, tf_idf)
-
-# Plot TF-IDF
-ggplot2::ggplot(ia_top_tfidf, ggplot2::aes(x = stats::reorder(word, tf_idf), y = tf_idf)) +
-  ggplot2::geom_col(fill = "darkred") +
-  ggplot2::geom_text(ggplot2::aes(label = round(tf_idf, 8)),  
-                     vjust = 0.5,  
-                     hjust = 1.5, 
-                     color = "black", 
-                     size = 4) +
-  ggplot2::coord_flip() +
-  ggplot2::scale_y_continuous(labels = scales::comma) +
-  ggplot2::labs(title = "Top 20 Words by TF-IDF Score - Iowa",
-                x = "Words",
-                y = "TF-IDF Score") +
-  ggthemes::theme_wsj()
+  ggplot2::labs(
+    title = "Top 10 TF-IDF Terms per Iowa Book",
+    x = "Term", y = "TF-IDF Score"
+  ) 
 ```
 
 
