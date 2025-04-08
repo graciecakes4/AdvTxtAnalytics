@@ -582,7 +582,7 @@ ia_book_texts_df <- ia_book_texts_df %>%
     dplyr::filter(!is.na(cleaned_text))
 ```
 
-```{r upload preprocessed data}
+```{r final data preprocessing}
 # removing additional stopwords from texts
 enhanced_stopwords <- c(
   stopwords::stopwords("en", source = "stopwords-iso"),
@@ -601,7 +601,13 @@ fl_book_texts_df <- fl_book_texts_df %>%
   dplyr::mutate(text = lapply(text, function(t) tm::removePunctuation(t))) %>% 
   dplyr::mutate(text = lapply(text, function(t) tm::removeNumbers(t))) %>% 
   dplyr::mutate(text = lapply(text, remove_punctuation_custom))
-  
+
+# flatten lists to save csv
+fl_book_texts_df <- fl_book_texts_df %>%
+  dplyr::mutate(text = purrr::map_chr(text, paste, collapse = " "))
+
+# write to csv
+readr::write_csv(fl_book_texts_df, "Project/data/fl_book_texts_cleaned.csv")
 
 ia_book_texts_df <- readr::read_csv("Project/data/ia_book_texts.csv")
 ia_book_texts_df <- ia_book_texts_df %>% 
@@ -612,13 +618,34 @@ ia_book_texts_df <- ia_book_texts_df %>%
   dplyr::mutate(text = lapply(text, function(t) tm::removePunctuation(t))) %>% 
   dplyr::mutate(text = lapply(text, function(t) tm::removeNumbers(t))) %>% 
   dplyr::mutate(text = lapply(text, remove_punctuation_custom))
+
+# flatten lists to save csv
+ia_book_texts_df <- ia_book_texts_df %>%
+  dplyr::mutate(text = purrr::map_chr(text, paste, collapse = " "))
+
+# write to csv
+readr::write_csv(ia_book_texts_df, "Project/data/ia_book_texts_cleaned.csv")
 ```
 
 ## Data Analysis and Visualization 
 
+```{r load preprocessed data}
+# load cleaned text
+fl_book_texts_cleaned_df <- readr::read_csv("Project/data/fl_book_texts_cleaned.csv") 
+fl_book_texts_cleaned_df <- fl_book_texts_cleaned_df %>%
+  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
+
+ia_book_texts_cleaned_df <- readr::read_csv("Project/data/ia_book_texts_cleaned.csv")
+ia_book_texts_cleaned_df <- ia_book_texts_cleaned_df %>%
+  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
+```
+
+
 ```{r florida tfidf}
 # calculate fl tf
-fl_tf <- fl_book_texts_df %>%
+fl_tf <- fl_book_texts_cleaned_df %>%
   tidytext::unnest_tokens(word, text) %>%
   dplyr::filter(!word %in% enhanced_stopwords) %>%
   dplyr::count(gutenberg_id, word, sort = TRUE)
@@ -640,7 +667,7 @@ top_fl_tfidf <- fl_tfidf %>%
 
 ```{r iowa tfidf}
 # calculate ia tf
-ia_tf <- ia_book_texts_df %>%
+ia_tf <- ia_book_texts_cleaned_df %>%
   tidytext::unnest_tokens(word, text) %>%
   dplyr::filter(!word %in% enhanced_stopwords) %>%
   dplyr::count(gutenberg_id, word, sort = TRUE)
