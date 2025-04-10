@@ -558,6 +558,20 @@ remove_punctuation_custom <- function(text) {
 ```{r theme detection function}
 # theme detection function
 detect_theme <- function(text, keywords) {
+  words <- keywords[nchar(keywords) == nchar(gsub(" ", "", keywords))]  # no spaces = single word
+  phrases <- setdiff(keywords, words)
+
+  pattern <- paste0("\\b(", paste(words, collapse = "|"), ")\\b")
+
+  word_match <- stringr::str_detect(text, pattern)
+  phrase_match <- any(sapply(phrases, function(p) stringr::str_detect(text, stringr::fixed(p))))
+
+  return(word_match | phrase_match)
+}
+```
+
+```{r theme detect orig}
+detect_theme <- function(text, keywords) {
   pattern <- paste0("\\b(", paste(keywords, collapse = "|"), ")\\b")
   stringr::str_detect(tolower(text), pattern)
 }
@@ -642,6 +656,9 @@ ia_book_texts_df <- ia_book_texts_df %>%
   dplyr::mutate(text = lapply(text, function(t) tm::removePunctuation(t))) %>% 
   dplyr::mutate(text = lapply(text, function(t) tm::removeNumbers(t))) %>% 
   dplyr::mutate(text = lapply(text, remove_punctuation_custom))
+
+ia_book_texts_df <- ia_book_texts_df %>%
+  dplyr::mutate(text = ifelse(title == "Redeemed", redeemed_text_cleaned$text_cleaned, text))
 
 # flatten lists to save csv
 ia_book_texts_df <- ia_book_texts_df %>%
@@ -828,7 +845,7 @@ ggplot2::ggplot(top_ia_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf
 
 ```{r fl phrase analysis}
 # tokenize fl bigrams
-fl_bigrams <- fl_book_texts_df %>%
+fl_bigrams <- fl_book_texts_cleaned_df %>%
   tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 2)
 
 # split and filter
@@ -845,7 +862,7 @@ fl_bigram_tf <- fl_bigrams_filtered %>%
 fl_bigram_tfidf <- fl_bigram_tf %>%
   tidytext::bind_tf_idf(term = bigram, document = gutenberg_id, n = n) %>%
   dplyr::left_join(
-    fl_book_texts_df %>% dplyr::select(gutenberg_id, title),
+    fl_book_texts_cleaned_df %>% dplyr::select(gutenberg_id, title),
     by = "gutenberg_id"
   )
 
@@ -877,7 +894,7 @@ ggraph::ggraph(fl_bigram_graph, layout = "fr") +
 
 ```{r ia phrase analysis}
 # tokenize ia bigrams
-ia_bigrams <- ia_book_texts_df %>%
+ia_bigrams <- ia_book_texts_cleaned_df %>%
   tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 2)
 
 # split and filter
@@ -894,7 +911,7 @@ ia_bigram_tf <- ia_bigrams_filtered %>%
 ia_bigram_tfidf <- ia_bigram_tf %>%
   tidytext::bind_tf_idf(term = bigram, document = gutenberg_id, n = n) %>%
   dplyr::left_join(
-    fl_book_texts_df %>% dplyr::select(gutenberg_id, title),
+    fl_book_texts_cleaned_df %>% dplyr::select(gutenberg_id, title),
     by = "gutenberg_id"
   )
 
@@ -979,6 +996,33 @@ wordcloud::comparison.cloud(
 
 ```{r dictionary creation}
 theme_dictionary <- list(
+  gender = c("trans", "nonbinary", "gender", "female", "male", "identity", "cisgender", "transition",
+            "genderfluid", "pronoun", "gender identity", "transphobia", "cis"),
+  race = c("race", "racism", "black", "white", "asian", "latinx", "african american", "ethnicity", "heritage",
+           "people of color", "indigenous", "slavery", "colonialism", "racial", "justice", "segregation"),
+  sexuality = c("lgbt", "queer", "gay", "lesbian", "bisexual", "homosexual", "transgender", "asexual", "sexuality",
+                "coming out", "homophobia", "same-sex", "drag", "gender expression", "mistress", "sex"),
+  violence = c("abuse", "violence", "murder", "kill", "assault", "trauma", "war", "fight", "weapon", "death",
+               "self-harm", "suicide", "domestic violence", "bullying", "gun", "terrorism"),
+  politics = c("government", "democracy", "election", "law", "rights", "justice", "politics", "civil", "freedom",
+               "protest", "activism", "policy", "authoritarian", "legislation", "civil rights"),
+  history = c("slavery", "civil war", "holocaust", "segregation", "reconstruction", "colonialism", "founding fathers",
+              "historical trauma", "revisionism", "slaves", "slave"),
+  religion = c("religion", "christianity", "bible", "faith", "spiritual", "church", "islam", "jewish", "atheist",
+               "religious freedom", "indoctrination", "christian", "catholic", "protestant", "church", "temple", "synagogue"),
+  education = c("school", "teacher", "curriculum", "learning", "classroom", "academic", "students", 
+                "textbook", "critical thinking", "pedagogy", "literacy"),
+  identity = c("identity", "self", "belonging", "expression", "individuality", "personhood", "labels", 
+               "cultural identity", "intersectionality"),
+  anti_intellectualism = c("censorship", "ban", "banned", "ignorance", "indoctrination", "misinformation", 
+                           "truth", "knowledge", "propaganda", "book ban", "thought control"),
+  family = c("family", "parent", "mother", "father", "sibling", "home", "household", "adoption", 
+             "dysfunctional", "foster", "domestic", "upbringing")
+)
+```
+
+```{r short dictionary}
+theme_dictionary_short <- list(
   gender = c("woman", "man", "trans", "nonbinary", "gender", "female", "male", "girls", "boys", "identity"),
   race = c("race", "racism", "black", "white", "asian", "latinx", "african american", "ethnicity", "heritage"),
   sexuality = c("lgbt", "queer", "gay", "lesbian", "bisexual", "homosexual", "transgender", "asexual", "sexuality"),
@@ -989,12 +1033,8 @@ theme_dictionary <- list(
 
 
 ```{r fl theme flags}
-# standardize column type
-fl_theme_flags <- fl_theme_flags %>%
-  dplyr::mutate(text = as.character(text))
-
 # use dictionary to compare themes
-fl_theme_flags <- fl_book_texts_df %>%
+fl_theme_flags <- fl_book_texts_cleaned_df %>%
   dplyr::mutate(
     across(
       .cols = tidyselect::everything(),
@@ -1008,21 +1048,17 @@ fl_theme_flags <- fl_book_texts_df %>%
     )
   ) %>%
   dplyr::mutate(
-    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$gender)),
-    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$race)),
-    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$sexuality)),
-    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$violence)),
-    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$politics))
+    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$gender)),
+    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$race)),
+    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$sexuality)),
+    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$violence)),
+    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$politics))
   )
 ```
 
 ```{r ia theme flags}
-# standardize column type
-ia_theme_flags <- ia_theme_flags %>%
-  dplyr::mutate(text = as.character(text))
-
 # use dictionary to compare themes
-ia_theme_flags <- ia_book_texts_df %>%
+ia_theme_flags <- ia_book_texts_cleaned_df %>%
   dplyr::mutate(
     across(
       .cols = tidyselect::everything(),
@@ -1036,15 +1072,23 @@ ia_theme_flags <- ia_book_texts_df %>%
     )
   ) %>%
   dplyr::mutate(
-    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$gender)),
-    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$race)),
-    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$sexuality)),
-    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$violence)),
-    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary$politics))
+    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$gender)),
+    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$race)),
+    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$sexuality)),
+    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$violence)),
+    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$politics))
   )
 ```
 
 ```{r regional theme comparison}
+# standardize column type
+fl_theme_flags <- fl_theme_flags %>%
+  dplyr::mutate(text = as.character(text))
+
+# standardize column type
+ia_theme_flags <- ia_theme_flags %>%
+  dplyr::mutate(text = as.character(text))
+
 # combine data sets
 fl_ia_theme_counts <- dplyr::bind_rows(
   fl_theme_flags %>% dplyr::mutate(region = "Florida"),
