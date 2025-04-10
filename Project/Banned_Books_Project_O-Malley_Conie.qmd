@@ -602,6 +602,30 @@ fl_book_texts_df <- fl_book_texts_df %>%
   dplyr::mutate(text = lapply(text, function(t) tm::removeNumbers(t))) %>% 
   dplyr::mutate(text = lapply(text, remove_punctuation_custom))
 
+# redeemed text did not properly preprocess
+redeemed_text_uncleaned <- readr::read_csv("Project/data/fl_book_texts.csv")
+redeemed_text_uncleaned <- redeemed_text_uncleaned %>% 
+  dplyr::filter(title == "Redeemed") 
+
+redeemed_text_cleaned <- redeemed_text_uncleaned %>% 
+  dplyr::select(-...1) %>% 
+  dplyr::mutate(text = as.character(text)) %>% 
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id)) %>% 
+  dplyr::mutate(text = iconv(text, to = "UTF-8", sub = "byte")) %>% 
+  dplyr::mutate(text_cleaned = tm::removeWords(text, enhanced_stopwords)) %>% 
+  dplyr::mutate(text_cleaned = tm::removePunctuation(text_cleaned)) %>% 
+  dplyr::mutate(text_cleaned = tm::removeNumbers(text_cleaned)) %>% 
+  dplyr::mutate(text_cleaned = remove_punctuation_custom(text_cleaned))
+
+start_phrase <- "Two lives that once part are as ships that divide, When, moment on moment, there rushes between"
+
+# remove everything before the start_phrase
+redeemed_text_cleaned$text <- sub(paste0(".*(?=", start_phrase, ")"), "", redeemed_text_cleaned$text, perl = TRUE)
+
+# Ensure `fl_book_text_df` is updated with the new text
+fl_book_texts_df <- fl_book_texts_df %>%
+  dplyr::mutate(text = ifelse(title == "Redeemed", redeemed_text_cleaned$text_cleaned, text))
+
 # flatten lists to save csv
 fl_book_texts_df <- fl_book_texts_df %>%
   dplyr::mutate(text = purrr::map_chr(text, paste, collapse = " "))
@@ -654,7 +678,7 @@ fl_tf <- fl_book_texts_cleaned_df %>%
 fl_tfidf <- fl_tf %>%
   tidytext::bind_tf_idf(term = word, document = gutenberg_id, n = n) %>% 
   dplyr::left_join(
-    fl_book_texts_df %>% dplyr::select(gutenberg_id, title),
+    fl_book_texts_cleaned_df %>% dplyr::select(gutenberg_id, title),
     by = "gutenberg_id"
   )
 
@@ -676,7 +700,7 @@ ia_tf <- ia_book_texts_cleaned_df %>%
 ia_tfidf <- ia_tf %>%
   tidytext::bind_tf_idf(term = word, document = gutenberg_id, n = n) %>% 
   dplyr::left_join(
-    ia_book_texts_df %>% dplyr::select(gutenberg_id, title),
+    ia_book_texts_cleaned_df %>% dplyr::select(gutenberg_id, title),
     by = "gutenberg_id"
   )
 
