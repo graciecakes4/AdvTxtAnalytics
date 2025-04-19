@@ -19,8 +19,10 @@ python:
 ---
 
 ```{r library chunk}
+
 required_packages <- c("jsonlite", "httr", "stringdist", "quanteda", "gutenbergr", "tm", "stringr", "textclean",
-                        "tokenizers", "tidytext", "wordcloud", "RColorBrewer", "ggplot2", "ggthemes", "ggraph")
+                        "tokenizers", "tidytext", "wordcloud", "RColorBrewer", "ggplot2", "ggthemes", "ggraph",
+                        "openNLP")
 
 # Check if all required packages are installed and install them if not
 for (pkg in required_packages) {
@@ -30,17 +32,21 @@ for (pkg in required_packages) {
         library(pkg, character.only = TRUE)
 }
 data("gutenberg_metadata", package = "gutenbergr")
+
 ```
 
 ```{r data import}
+
 banned_books_file_path <- "/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Project/data/PEN America's Index of School Book Bans (July 1, 2023 - June 30, 2024).xlsx" # assign file path to variable
 
 banned_books_list <- readxl::read_excel(banned_books_file_path, sheet = "Sorted by Author & Title", skip = 2) # import banned books list
 
 utils::head(banned_books_list, 10) # sanity check to make sure data was read in properly
+
 ```
 
 ```{r data preparation}
+
 colnames(banned_books_list) <- c("Title", "Author", "Secondary_Author", "Illustrator", "Translator", 
                                 "Series_Name", "State", "District", "Date_Removed", "Ban_Status", "Initiating_Action") # assign new column titles
 
@@ -64,6 +70,7 @@ md_banned_books_list <- banned_books_cleaned %>%
 ia_banned_books_list <- banned_books_cleaned %>% 
     dplyr::filter(State == "Iowa") %>% 
     dplyr::distinct(Title, .keep_all = TRUE)
+
 ```
 
 ## Data Sampling
@@ -71,6 +78,7 @@ ia_banned_books_list <- banned_books_cleaned %>%
 I sampled 10 book titles from the state of Florida's banned books list. I originally wanted to use New York for comparison, but they only had 6 titles, so I selected Maryland as my subgroup comparison.
 
 ```{r data sampling}
+
 seed <- 245 # select random seed
 set.seed(seed) # set seed for reproducibility
 
@@ -84,6 +92,7 @@ md_books_sample <- md_banned_books_list %>%
 # print sampled books
 print(fl_books_sample)
 print(md_books_sample)
+
 ```
 
 ## Data Collection
@@ -93,6 +102,7 @@ print(md_books_sample)
 I began to search for data online. I cleaned the book titles from the Florida sample and cleaned the titles from the Gutenberg library (`gutenbergr`) to ensure they matched. I then compared the two lists and found that none of the Florida titles were also in the Gutenberg library. This caused me to pivot to search for any ISBNs from the Florida banned books list sample to attempt to search them in other libraries.
 
 ```{r data collection}
+
 # search for titles in gutenberg library
 fl_sample_books_titles_cleaned <- fl_books_sample %>% 
     dplyr::select(Title) %>% 
@@ -115,6 +125,7 @@ for(i in fl_sample_books_titles_cleaned) {
 }
 
 in_gutenberg
+
 ```
 
 ### ISBN Search
@@ -122,6 +133,7 @@ in_gutenberg
 I could not obtain any ISBNs from the below function I wrote. I spent a few hours on this, then decided to move on to another method of searching.
 
 ```{r isbn search function}
+
 # create isbn search function
 get_isbn_google <- function(title) {
     search_url <- paste0("https://www.googleapis.com/books/v1/volumes?q=intitle:", gsub(" ", "+", title))
@@ -164,6 +176,7 @@ get_isbn_google <- function(title) {
 # function test
 isbn_example <- get_isbn_google("Slaughterhouse-Five")
 print(isbn_example)
+
 ```
 
 ### Gutenberg Search - Pt. 2
@@ -171,16 +184,19 @@ print(isbn_example)
 I cleaned all book titles from the Florida banned books list and compared them to the Gutenberg library. My goal is to find a suitable sample of texts here that I can use before reverting to my original plan of using themes and descriptions from the Google Books API.
 
 ```{r full gutenberg search}
+
 # create a function to search for titles in a library
 full_gutenberg_search <- function(banned_books, gutenberg_titles) {
     matched_books <- banned_books[banned_books %in% gutenberg_titles]
     return(matched_books)
 }
+
 ```
 
 I have identified titles that I can pull from the Gutenberg library for my project. I am going to take a sample of 10 texts from each, Florida and Iowa, and use them as my sample texts. I ended up getting matches for 16 books from the Iowa banned books list and 53 from Florida. After matching the titles, I will see how many I can downloand and I may need to revise my sample numbers.
 
 ```{r full title search}
+
 fl_books_titles_cleaned <- fl_banned_books_list %>% # cleaned fl titles list
     dplyr::select(Title) %>% 
     dplyr::pull() %>% 
@@ -207,11 +223,13 @@ md_match_list
 
 ia_match_list <- full_gutenberg_search(ia_books_titles_cleaned, gutenberg_titles_cleaned) # ia match list
 ia_match_list
+
 ```
 
 Here I created a fuzzy title search function to allow proper title matching and minimizing the effects of grammar differences.
 
 ```{r title search function}
+
 fuzzy_title_search <- function(book_list) {
     gutenberg_metadata <- gutenbergr::gutenberg_works()
     matched_books <- book_list %>% 
@@ -222,22 +240,26 @@ fuzzy_title_search <- function(book_list) {
         })
         return(matched_books)
 }
+
 ```
 
 Here I actually pull the sample of my data that I will use in the following steps.
 
 ```{r data re-sampling}
+
 ia_sample <- sample(ia_match_list, 10)
 fl_sample <- sample(fl_match_list, 10)
 
 cat("IA Sample:\n",{ia_sample}, sep="\n")
 cat("\nFL Sample:\n",{fl_sample}, sep="\n")
+
 ```
 
 
 Here I ran my fuzzy matching title search. I was able to match all but one of the sampled titles, which I've identified and will add in by hand later on.
 
 ```{r fuzzy matching}
+
 # Iowa fuzzy matching
 ia_fuzzy_matches <- fuzzy_title_search(ia_sample) # incorrectly selected 1 title
 ia_fuzzy_matches
@@ -249,11 +271,13 @@ fl_fuzzy_matches <- fuzzy_title_search(fl_sample)
 fl_fuzzy_matches
 
 fl_fuzzy_matches_full <- fuzzy_title_search(fl_match_list)
+
 ```
 
 I ran into a lot of problems downloading books. After my first pass, I was only able to get 6 / 20, and on my second pass I was only able to get 10/26. I am going to try and download directly from gutenberg's website, but I may need to adjust my sample sizes for subgroup comparison.
 
 ```{r download texts}
+
 # retrieve Iowa text ids
 ia_gutenberg_ids <- gutenbergr::gutenberg_works() %>%
   dplyr::filter(title %in% ia_fuzzy_matches) %>%
@@ -278,11 +302,13 @@ fl_gutenberg_ids <- gutenbergr::gutenberg_works() %>%
 fl_gutenberg_ids_full <- gutenbergr::gutenberg_works() %>%
   dplyr::filter(title %in% fl_fuzzy_matches_full) %>%
   dplyr::select(gutenberg_id, title)
+
 ```
 
 Now I am attempting to download the balance of books from the gutenberg website directly.
 
 ```{r gutenberg web search function}
+
 load_gutenberg_text <- function(book_id) {
     url <- paste0("https://www.gutenberg.org/files/", book_id, "/", book_id, "-0.txt")
     response <- httr::GET(url)
@@ -294,11 +320,13 @@ load_gutenberg_text <- function(book_id) {
         return(NULL)
     }
 }
+
 ```
 
 I was able to pull in all of the texts necessary for the Florida banned books list - both through dowload from `gutenbergr` and the Project Gutenberg website. I've assigned it to a data frame `fl_book_texts_df`. 
 
 ```{r Florida texts}
+
 # download Florida texts and set up corpus
 fl_book_texts <- gutenbergr::gutenberg_download(fl_gutenberg_ids$gutenberg_id)
 fl_book_texts <- fl_book_texts %>% 
@@ -324,11 +352,13 @@ for (i in seq_along(fl_missing_books$gutenberg_id)) {
 fl_missing_book_texts_df <- dplyr::bind_rows(fl_missing_book_texts_list)
 fl_book_texts_df <- dplyr::bind_rows(fl_book_texts, fl_missing_book_texts_df) # florida books data frame
 #utils::write.csv(fl_book_texts_df, "Project/data/fl_book_texts.csv") # write to csv so I don't have to do this again
+
 ```
 
 I pulled the book title, id, and text for the Iowa sample and added in the missing book title from the fuzzy matching. I had a number of issues downloading book texts so I had to do some exta work obtaining the data. Ultimately, I ended up with `ia_book_texts_df`.
 
 ```{r iowa books data download}
+
 ia_books_text_list <- list()
 for (i in seq_along(ia_gutenberg_ids$gutenberg_id)) {
     book_id <- ia_gutenberg_ids$gutenberg_id[i]
@@ -398,6 +428,7 @@ ia_book_texts_df <- ia_book_texts_df %>%
   filter(gutenberg_id != 68179) # iowa banned books list
 
 #utils::write.csv(ia_book_texts_df, "Project/data/ia_book_texts.csv") # write to csv so I don't have to do this again
+
 ```
 
 ### Title Additions
@@ -405,6 +436,7 @@ ia_book_texts_df <- ia_book_texts_df %>%
 I needed to correct the title and author names for further processing. This is an ugly way to do it, but it was easier than trying to loop through the previous code to pull the data. On a larger data set, the time spent generating a loop or function to do this would be worth it, but it was not a beneficial use of time in this case. I added in the book titles and authors and rearragned the columns.
 
 ```{r title function}
+
 fl_book_titles <- c("Wuthering Heights", "Leonardo Da Vinci", "The Pirate", "The Dark Tower", "Native Son", "Redeemed", "The Taming of the Shrew",
                     "The Road", "Chain Reaction", "The Heir")
 fl_book_authors <- c("Emily Brontë", "Maurice W. Brockwell", "Captain Frederick Marryat", "Phyllis Bottome", "T. D. Hamm", "George Sheldon Downs",
@@ -437,11 +469,13 @@ This was an interesting issue - I ran into troubles trying to write functions to
 - `ia_book_texts_df`
 
 ```{r metadata}
+
 fl_book_metadata <- readr::read_csv("Project/data/fl_book_metadata.csv")
 ia_book_metadata <- readr::read_csv("Project/data/ia_book_metadata.csv")
 
 fl_book_texts_df %>% dplyr::left_join(fl_book_metadata, by = "title") -> fl_book_texts_df
 ia_book_texts_df %>% dplyr::left_join(ia_book_metadata, by = "title") -> ia_book_texts_df
+
 ```
 
 ## Data Preprocessing
@@ -460,102 +494,70 @@ During the data preprocessing phase I will take all the text data and pass it th
 - Remove numbers
 - Tokenize sentences
 
-### Custom Functions
+### Custom Data Pre-processing Functions
 
 Normally, I would structure this as a package and these functions would be in a separate directory where you could load them, but since I am submitting this as a stand alone qmd, I am including them in the body.
 
 ```{r preprocessing function}
+
 clean_text <- function(text_vector) {
-  # convert text to UTF-8 encoding
   text_vector <- iconv(text_vector, to = "UTF-8")
-
-  # remove Project Gutenberg headers/footers
   text_vector <- gutenbergr::gutenberg_strip(text_vector)
-
-  # chapter headers detection
   chapter_pattern <- "^(chapter [\\dIVXLC]|[\\dIVXLC]+\\.)"
-
-  # trim between chapter headers
   chapter_indices <- grep(chapter_pattern, text_vector, ignore.case = TRUE)
   if (length(chapter_indices) > 0) {
     text_vector <- text_vector[chapter_indices[1]:chapter_indices[length(chapter_indices)]]
   }
-
-  #convert all text to lowercase
   text_vector <- tolower(text_vector)
-
-  # normalize quotes
   text_vector <- stringr::str_replace_all(text_vector, "[“”]", "\"")
   text_vector <- stringr::str_replace_all(text_vector, "[‘’]", "'")
-
-  # expand contractions
   text_vector <- textclean::replace_contraction(text_vector)
-
-  # remove punctuation
   text_vector <- stringr::str_remove_all(text_vector, "[[:punct:]]")
-
-  # remove numbers
   text_vector <- stringr::str_remove_all(text_vector, "\\d+")
-
-  # remove special characters and symbols
   text_vector <- stringr::str_replace_all(text_vector, "[^a-zA-Z\\s]", "")
-
-  # remove extra whitespace and blank lines
   text_vector <- stringr::str_squish(text_vector)
   text_vector <- text_vector[text_vector != ""]
-
-  # remove stopwords
   text_vector <- tm::removeWords(text_vector, tm::stopwords("en"))
-
-  # remove ultra-short words (1-character)
   text_vector <- stringr::str_remove_all(text_vector, "\\b[a-zA-Z]\\b")
-
-  # tokenize sentences
   text_vector <- tokenizers::tokenize_sentences(text_vector)
-
-  # collapse list into a string
   text_vector <- sapply(text_vector, function(x) paste(x, collapse = " "))
 
   return(text_vector)
 }
+
 ```
 
 ```{r text re-preprocessing}
+
 clean_text_headers <- function(text) {
-  # Split the text into lines and then combine into a single string
   text_vector <- unlist(strsplit(text, "\r\n|\n"))
   complete_text <- paste(text_vector, collapse = " ")
-  
-  # Define a regex pattern to capture the Gutenberg header
   header_start_pattern <- "(?i)\\*{3,}\\s*start of the project gutenberg ebook\\s*\\d+\\s*\\*{3,}"
-
-  # Find the match for the header using str_locate to handle string matching
   header_match <- stringr::str_locate(complete_text, header_start_pattern)
-  
-  # If a match is found, remove that part of the text
   if (!is.na(header_match[1])) {
-    # Calculate the position after the matched header
     header_end_pos <- header_match[2]
-    # Remove text up to immediately after the header
     trimmed_text <- substring(complete_text, header_end_pos + 1)
   } else {
-    # Return original text if no header is detected
     trimmed_text <- complete_text
   }
 
   return(trimmed_text)
 }
+
 ```
 
 ```{r punctuation function}
+
 # custom punctuation removal
 remove_punctuation_custom <- function(text) {
   # remove punctuation including single and double quotes
   return(gsub("[[:punct:]\"']", "", text))
 }
+
 ```
 
 ```{r theme detection function}
+
 # theme detection function
 detect_theme <- function(text, keywords) {
   words <- keywords[nchar(keywords) == nchar(gsub(" ", "", keywords))]  # no spaces = single word
@@ -568,18 +570,22 @@ detect_theme <- function(text, keywords) {
 
   return(word_match | phrase_match)
 }
+
 ```
 
 ```{r theme detect orig}
+
 detect_theme <- function(text, keywords) {
   pattern <- paste0("\\b(", paste(keywords, collapse = "|"), ")\\b")
   stringr::str_detect(tolower(text), pattern)
 }
+
 ```
 
 ### Function Application 
 
 ```{r preprocess data}
+
 # apply preprocessing function to each data set
 fl_book_texts_df$cleaned_text <- sapply(fl_book_texts_df$text, clean_text)
 ia_book_texts_df$cleaned_text <- sapply(ia_book_texts_df$text, clean_text)
@@ -594,16 +600,10 @@ fl_book_texts_df <- fl_book_texts_df %>%
 ia_book_texts_df <- ia_book_texts_df %>% 
     dplyr::filter(!is.na(cleaned_description)) %>% 
     dplyr::filter(!is.na(cleaned_text))
+
 ```
 
 ```{r final data preprocessing}
-# removing additional stopwords from texts
-enhanced_stopwords <- c(
-  stopwords::stopwords("en", source = "stopwords-iso"),
-  quanteda::stopwords("en"),
-  tidytext::stop_words$word,
-  "the", "and", "but"
-) %>% unique()
 
 # this is for working on data that has already been saved
 fl_book_texts_df <- readr::read_csv("Project/data/fl_book_texts.csv")
@@ -645,7 +645,7 @@ fl_book_texts_df <- fl_book_texts_df %>%
   dplyr::mutate(text = purrr::map_chr(text, paste, collapse = " "))
 
 # write to csv
-readr::write_csv(fl_book_texts_df, "Project/data/fl_book_texts_cleaned.csv")
+#readr::write_csv(fl_book_texts_df, "Project/data/fl_book_texts_cleaned.csv")
 
 ia_book_texts_df <- readr::read_csv("Project/data/ia_book_texts.csv")
 ia_book_texts_df <- ia_book_texts_df %>% 
@@ -665,12 +665,14 @@ ia_book_texts_df <- ia_book_texts_df %>%
   dplyr::mutate(text = purrr::map_chr(text, paste, collapse = " "))
 
 # write to csv
-readr::write_csv(ia_book_texts_df, "Project/data/ia_book_texts_cleaned.csv")
+#readr::write_csv(ia_book_texts_df, "Project/data/ia_book_texts_cleaned.csv")
+
 ```
 
 ## Data Analysis and Visualization 
 
 ```{r load preprocessed data}
+
 # load cleaned text
 fl_book_texts_cleaned_df <- readr::read_csv("Project/data/fl_book_texts_cleaned.csv") 
 fl_book_texts_cleaned_df <- fl_book_texts_cleaned_df %>%
@@ -681,10 +683,57 @@ ia_book_texts_cleaned_df <- readr::read_csv("Project/data/ia_book_texts_cleaned.
 ia_book_texts_cleaned_df <- ia_book_texts_cleaned_df %>%
   dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
   dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
+
 ```
 
+### Name Entity Recognition
+
+```{r NER Function}
+
+cleanNLP::cnlp_init_udpipe(model_path = "Project/english-ud-2.1-20180111.udpipe")
+
+extract_character_names <- function(text) {
+  annotations <- cleanNLP::cnlp_annotate(text)
+
+  name_candidates <- annotations$token %>%
+    dplyr::filter(xpos == "NNP") %>%
+    dplyr::filter(relation == "nsubj") %>%
+    dplyr::filter(stringr::str_detect(token, "^[A-Z]")) %>%
+    dplyr::filter(stringr::str_length(token) >= 3) %>%
+    dplyr::filter(!token %in% tolower(c("God", "Satan", "Angel", "Saint", "Miss", "Mrs", "Lord", "Bible"))) %>%
+    dplyr::pull(tolower(lemma)) %>%
+    unique()
+
+  return(name_candidates)
+}
+
+```
+
+```{r NER}
+
+fl_name_candidates <- purrr::map(fl_book_texts_cleaned_df$text, extract_character_names)
+ia_name_candidates <- purrr::map(ia_book_texts_cleaned_df$text, extract_character_names)
+
+name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates))))
+
+
+# removing additional stopwords from texts
+enhanced_stopwords <- c(
+  stopwords::stopwords("en", source = "stopwords-iso"),
+  quanteda::stopwords("en"),
+  name_stopwords,
+  tidytext::stop_words$word,
+  "the", "and", "but", "gutenberg"
+) %>% unique()
+
+```
+
+### Term Frequency and Term Frequency Inverse Document Frequency Analysis{.tabset}
+
+#### Florida
 
 ```{r florida tfidf}
+
 # calculate fl tf
 fl_tf <- fl_book_texts_cleaned_df %>%
   tidytext::unnest_tokens(word, text) %>%
@@ -704,34 +753,11 @@ top_fl_tfidf <- fl_tfidf %>%
   dplyr::group_by(gutenberg_id) %>%
   dplyr::arrange(dplyr::desc(tf_idf)) %>%
   dplyr::slice_head(n = 20)
+
 ```
-
-```{r iowa tfidf}
-# calculate ia tf
-ia_tf <- ia_book_texts_cleaned_df %>%
-  tidytext::unnest_tokens(word, text) %>%
-  dplyr::filter(!word %in% enhanced_stopwords) %>%
-  dplyr::count(gutenberg_id, word, sort = TRUE)
-
-# calculate ia tfidf
-ia_tfidf <- ia_tf %>%
-  tidytext::bind_tf_idf(term = word, document = gutenberg_id, n = n) %>% 
-  dplyr::left_join(
-    ia_book_texts_cleaned_df %>% dplyr::select(gutenberg_id, title),
-    by = "gutenberg_id"
-  )
-
-# calculate top ia tfidf
-top_ia_tfidf <- ia_tfidf %>%
-  dplyr::group_by(gutenberg_id) %>%
-  dplyr::arrange(dplyr::desc(tf_idf)) %>%
-  dplyr::slice_head(n = 20)
-```
-
-
-### Term Frequency Analysis {.tabset}
 
 ```{r florida tf viz}
+
 # calculate top fl tf
 top_fl_tf <- fl_tf %>% 
   dplyr::group_by(word) %>%
@@ -753,6 +779,68 @@ ggplot2::ggplot(fl_tf_heatmap, ggplot2::aes(x = word, y = title, fill = freq)) +
   ggplot2::labs(title = "Florida: Heatmap of Top Term Frequencies",
                 x = "Term", y = "Book Title") +
   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+
+```
+
+```{r fl wordcloud}
+
+# build wordcloud
+wordcloud::wordcloud(
+  words = fl_tfidf$word,
+  freq = fl_tfidf$n,
+  min.freq = 5,
+  max.words = 100,
+  scale = c(0.5, 1),
+  colors = RColorBrewer::brewer.pal(8, "Dark2"),
+  random.order = FALSE,
+)
+graphics::mtext("Florida Wordcloud", side = 3, line = -5, cex = 1.2)
+
+```
+
+```{r fl tfidf viz}
+
+# calculate top tf-idf
+fl_top_tfidf <- fl_tfidf %>%
+  dplyr::group_by(gutenberg_id) %>%
+  dplyr::slice_max(order_by = tf_idf, n = 10) %>%
+  dplyr::ungroup()
+
+# plot tf-idf
+ggplot2::ggplot(fl_top_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf)) +
+  ggthemes::theme_wsj() +
+  ggplot2::geom_col(fill = "steelblue") +
+  ggplot2::facet_wrap(~ title, scales = "free_y") +
+  ggplot2::coord_flip() +
+  ggplot2::labs(title = "Top 10 TF-IDF Terms per Florida Document",
+                x = "Term", y = "TF-IDF Score")
+                
+```
+
+#### Iowa
+
+```{r iowa tfidf}
+
+# calculate ia tf
+ia_tf <- ia_book_texts_cleaned_df %>%
+  tidytext::unnest_tokens(word, text) %>%
+  dplyr::filter(!word %in% enhanced_stopwords) %>%
+  dplyr::count(gutenberg_id, word, sort = TRUE)
+
+# calculate ia tfidf
+ia_tfidf <- ia_tf %>%
+  tidytext::bind_tf_idf(term = word, document = gutenberg_id, n = n) %>% 
+  dplyr::left_join(
+    ia_book_texts_cleaned_df %>% dplyr::select(gutenberg_id, title),
+    by = "gutenberg_id"
+  )
+
+# calculate top ia tfidf
+top_ia_tfidf <- ia_tfidf %>%
+  dplyr::group_by(gutenberg_id) %>%
+  dplyr::arrange(dplyr::desc(tf_idf)) %>%
+  dplyr::slice_head(n = 20)
+
 ```
 
 ```{r ia tf viz}
@@ -779,50 +867,24 @@ ggplot2::ggplot(ia_tf_heatmap, ggplot2::aes(x = word, y = title, fill = freq)) +
   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 ```
 
-
-```{r fl wordcloud}
-# build wordcloud
-wordcloud::wordcloud(
-  words = fl_tfidf$word,
-  freq = fl_tfidf$n,
-  min.freq = 5,
-  max.words = 100,
-  colors = RColorBrewer::brewer.pal(8, "Dark2"),
-  random.order = FALSE
-)
-```
-
-
 ```{r iowa wordcloud}
+
 wordcloud::wordcloud(
   words = ia_tfidf$word,
   freq = ia_tfidf$n,
   min.freq = 5,
   max.words = 100,
+  scale = c(0.5, 1),
   colors = RColorBrewer::brewer.pal(8, "Dark2"),
   random.order = FALSE
 )
-```
+graphics::mtext("Iowa Wordcloud", side = 3, line = -5, cex = 1.2)
 
-```{r fl tfidf viz}
-# calculate top tf-idf
-fl_top_tfidf <- fl_tfidf %>%
-  dplyr::group_by(gutenberg_id) %>%
-  dplyr::slice_max(order_by = tf_idf, n = 10) %>%
-  dplyr::ungroup()
-
-# plot tf-idf
-ggplot2::ggplot(fl_top_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf)) +
-  ggthemes::theme_wsj() +
-  ggplot2::geom_col(fill = "steelblue") +
-  ggplot2::facet_wrap(~ title, scales = "free_y") +
-  ggplot2::coord_flip() +
-  ggplot2::labs(title = "Top 10 TF-IDF Terms per Florida Document",
-                x = "Term", y = "TF-IDF Score")
 ```
 
 
 ```{r iowa data visualization}
+
 # calculate top ia tf
 top_ia_tfidf <- ia_tfidf %>%
   dplyr::group_by(gutenberg_id) %>%
@@ -838,12 +900,16 @@ ggplot2::ggplot(top_ia_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf
   ggplot2::labs(
     title = "Top 10 TF-IDF Terms per Iowa Book",
     x = "Term", y = "TF-IDF Score"
-  ) 
+  )
+
 ```
 
-### Phrase Frequency Analysis
+### Phrase Frequency Analysis{.tabset}
+
+#### Florida
 
 ```{r fl phrase analysis}
+
 # tokenize fl bigrams
 fl_bigrams <- fl_book_texts_cleaned_df %>%
   tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 2)
@@ -871,14 +937,16 @@ top_fl_bigram_tfidf <- fl_bigram_tfidf %>%
   dplyr::group_by(gutenberg_id) %>%
   dplyr::slice_max(order_by = tf_idf, n = 10) %>%
   dplyr::ungroup()
+
 ```
 
 ```{r fl phrase analysis viz}
+
 # split bigrams into related adjacent columns
 fl_bigram_pairs <- fl_bigrams_filtered %>%
   tidyr::separate(bigram, into = c("word1", "word2"), sep = " ") %>%
   dplyr::count(word1, word2, sort = TRUE) %>%
-  dplyr::filter(n >= 15)
+  dplyr::filter(n >= 7)
 
 fl_bigram_graph <- igraph::graph_from_data_frame(fl_bigram_pairs)
 
@@ -888,11 +956,14 @@ ggraph::ggraph(fl_bigram_graph, layout = "fr") +
   ggraph::geom_edge_link(ggplot2::aes(edge_alpha = n), show.legend = FALSE) +
   ggraph::geom_node_point(color = "lightblue", size = 5) +
   ggraph::geom_node_text(ggplot2::aes(label = name), vjust = 1, hjust = 1) +
-  ggplot2::labs(title = "Bigram Word Network (TF ≥ 15)")
+  ggplot2::labs(title = "Bigram Word Network (TF ≥ 7)")
+
 ```
 
+#### Iowa
 
 ```{r ia phrase analysis}
+
 # tokenize ia bigrams
 ia_bigrams <- ia_book_texts_cleaned_df %>%
   tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 2)
@@ -920,14 +991,16 @@ top_ia_bigram_tfidf <- ia_bigram_tfidf %>%
   dplyr::group_by(gutenberg_id) %>%
   dplyr::slice_max(order_by = tf_idf, n = 10) %>%
   dplyr::ungroup()
+
 ```
 
 ```{r ia phrase analysis viz}
+
 # split bigrams into related adjacent columns
 ia_bigram_pairs <- ia_bigrams_filtered %>%
   tidyr::separate(bigram, into = c("word1", "word2"), sep = " ") %>%
   dplyr::count(word1, word2, sort = TRUE) %>%
-  dplyr::filter(n >= 15)
+  dplyr::filter(n >= 7)
 
 ia_bigram_graph <- igraph::graph_from_data_frame(ia_bigram_pairs)
 
@@ -937,12 +1010,14 @@ ggraph::ggraph(ia_bigram_graph, layout = "fr") +
   ggraph::geom_edge_link(ggplot2::aes(edge_alpha = n), show.legend = FALSE) +
   ggraph::geom_node_point(color = "lightblue", size = 5) +
   ggraph::geom_node_text(ggplot2::aes(label = name), vjust = 1, hjust = 1) +
-  ggplot2::labs(title = "Bigram Word Network (TF ≥ 15)")
+  ggplot2::labs(title = "Bigram Word Network (TF ≥ 7)")
+
 ```
 
 ### Subgroup Comparisons
 
 ```{r shared vs unique terms}
+
 # create a plot of shared versus unique terms
 shared_terms <- generics::intersect(fl_tfidf$word, ia_tfidf$word)
 fl_unique <- generics::setdiff(fl_tfidf$word, ia_tfidf$word)
@@ -957,9 +1032,11 @@ ggplot2::ggplot(summary_df, ggplot2::aes(x = Category, y = Count, fill = Categor
   ggthemes::theme_wsj() +
   ggplot2::geom_col(show.legend = FALSE) +
   ggplot2::labs(title = "Vocabulary Overlap Between Florida and Iowa Books")
+
 ```
 
 ```{r comparison cloud}
+
 # use region label and count tf
 fl_tf_region <- fl_tfidf %>%
   dplyr::select(word, n) %>%
@@ -980,21 +1057,48 @@ fl_ia_matrix <- fl_ia_tf %>%
   tibble::column_to_rownames("word") %>%
   as.matrix()
 
-# plot
+graphics::par(mar = c(1, 2, 2, 1))
 wordcloud::comparison.cloud(
   fl_ia_matrix,
   colors = c("blue", "darkgreen"),
-  title.size = 1.2,
+  title.size = 2,
   max.words = 100,
-  scale = c(3, 0.8),
-  random.order = FALSE
+  scale = c(1,1),
+  random.order = FALSE,
+  title.colors = c("blue", "darkgreen")
 )
+
+```
+
+```{r thematic analysis}
+
+# combine subject fields from both datasets
+all_subjects <- c(fl_book_texts_cleaned_df$subject, ia_book_texts_cleaned_df$subject)
+
+# tokenize and flatten
+subject_terms <- all_subjects %>%
+  stringr::str_split(",|;|\\|") %>% 
+  unlist() %>%
+  stringr::str_trim() %>%
+  tolower() %>%
+  unique()
+
+# review subjects
+print(subject_terms)
+
+```
+
+```{r radar plot}
+
+theme_summary <- fl_ia_theme_counts
+
 ```
 
 
 ### Dictionary-Based Analysis
 
 ```{r dictionary creation}
+
 theme_dictionary <- list(
   gender = c("trans", "nonbinary", "gender", "female", "male", "identity", "cisgender", "transition",
             "genderfluid", "pronoun", "gender identity", "transphobia", "cis"),
@@ -1019,9 +1123,11 @@ theme_dictionary <- list(
   family = c("family", "parent", "mother", "father", "sibling", "home", "household", "adoption", 
              "dysfunctional", "foster", "domestic", "upbringing")
 )
+
 ```
 
 ```{r short dictionary}
+
 theme_dictionary_short <- list(
   gender = c("woman", "man", "trans", "nonbinary", "gender", "female", "male", "girls", "boys", "identity"),
   race = c("race", "racism", "black", "white", "asian", "latinx", "african american", "ethnicity", "heritage"),
@@ -1029,10 +1135,12 @@ theme_dictionary_short <- list(
   violence = c("abuse", "violence", "murder", "kill", "assault", "trauma", "war", "fight", "weapon", "death"),
   politics = c("government", "democracy", "election", "law", "rights", "justice", "politics", "civil", "freedom")
 )
+
 ```
 
 
 ```{r fl theme flags}
+
 # use dictionary to compare themes
 fl_theme_flags <- fl_book_texts_cleaned_df %>%
   dplyr::mutate(
@@ -1054,9 +1162,11 @@ fl_theme_flags <- fl_book_texts_cleaned_df %>%
     has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$violence)),
     has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$politics))
   )
+
 ```
 
 ```{r ia theme flags}
+
 # use dictionary to compare themes
 ia_theme_flags <- ia_book_texts_cleaned_df %>%
   dplyr::mutate(
@@ -1078,9 +1188,11 @@ ia_theme_flags <- ia_book_texts_cleaned_df %>%
     has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$violence)),
     has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$politics))
   )
+
 ```
 
 ```{r regional theme comparison}
+
 # standardize column type
 fl_theme_flags <- fl_theme_flags %>%
   dplyr::mutate(text = as.character(text))
@@ -1107,14 +1219,17 @@ ggplot2::ggplot(theme_summary, ggplot2::aes(x = theme, y = count, fill = region)
   ggplot2::labs(title = "Theme Prevalence in Book Descriptions by Region",
                 x = "Theme", y = "Number of Books") +
   ggthemes::theme_wsj()
+
 ```
 
 Need to finish this section (dictionary)
 
+1. compare themes from google themes to themes I've detected
+
+
 ### Classification Model
 
-
-### Sentiment Analysis
+1. build classification model
 
 
 ## Findings
