@@ -708,7 +708,8 @@ extract_character_names <- function(text) {
     dplyr::filter(stringr::str_detect(token, "^[A-Z]")) %>%
     dplyr::filter(stringr::str_length(token) >= 3) %>%
     dplyr::filter(!token %in% tolower(c("God", "Satan", "Angel", "Saint", "Miss", "Mrs", "Lord", "Bible"))) %>%
-    dplyr::pull(tolower(lemma)) %>%
+    dplyr::pull(lemma) %>%
+    tolower() %>% 
     unique()
 
   return(name_candidates)
@@ -722,6 +723,7 @@ fl_name_candidates <- purrr::map(fl_book_texts_cleaned_df$text, extract_characte
 ia_name_candidates <- purrr::map(ia_book_texts_cleaned_df$text, extract_character_names)
 
 name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates))))
+readr::write_csv(name_stopwords, name_stopwords )
 
 # removing additional stopwords from texts
 enhanced_stopwords <- c(
