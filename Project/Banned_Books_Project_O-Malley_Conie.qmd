@@ -576,23 +576,6 @@ remove_punctuation_custom <- function(text) {
 
 ```
 
-```{r theme detection function}
-
-# theme detection function
-detect_theme <- function(text, keywords) {
-  words <- keywords[nchar(keywords) == nchar(gsub(" ", "", keywords))]  # no spaces = single word
-  phrases <- setdiff(keywords, words)
-
-  pattern <- paste0("\\b(", paste(words, collapse = "|"), ")\\b")
-
-  word_match <- stringr::str_detect(text, pattern)
-  phrase_match <- any(sapply(phrases, function(p) stringr::str_detect(text, stringr::fixed(p))))
-
-  return(word_match | phrase_match)
-}
-
-```
-
 ### Function Application 
 
 ```{r preprocess data}
@@ -1224,6 +1207,23 @@ detect_theme <- function(text, keywords) {
 
 ```
 
+```{r theme detection function}
+
+# theme detection function
+detect_theme <- function(text, keywords) {
+  words <- keywords[nchar(keywords) == nchar(gsub(" ", "", keywords))]  # no spaces = single word
+  phrases <- setdiff(keywords, words)
+
+  pattern <- paste0("\\b(", paste(words, collapse = "|"), ")\\b")
+
+  word_match <- stringr::str_detect(text, pattern)
+  phrase_match <- any(sapply(phrases, function(p) stringr::str_detect(text, stringr::fixed(p))))
+
+  return(word_match | phrase_match)
+}
+
+```
+
 ```{r fl theme flags}
 
 # use dictionary to compare themes
@@ -1300,10 +1300,11 @@ theme_summary <- fl_ia_theme_counts %>%
 
 # plot
 ggplot2::ggplot(theme_summary, ggplot2::aes(x = theme, y = count, fill = region)) +
+  ggthemes::theme_wsj() +
   ggplot2::geom_col(position = "dodge") +
-  ggplot2::labs(title = "Theme Prevalence in Book Descriptions by Region",
-                x = "Theme", y = "Number of Books") +
-  ggthemes::theme_wsj()
+  ggplot2::labs(title = "Theme Prevalence in Book Texts by Region",
+                x = "Theme", y = "Number of Books") 
+  
 
 ```
 
