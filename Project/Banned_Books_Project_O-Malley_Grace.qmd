@@ -22,7 +22,7 @@ python:
 
 required_packages <- c("jsonlite", "httr", "stringdist", "quanteda", "gutenbergr", "tm", "stringr", "textclean",
                         "tokenizers", "tidytext", "wordcloud", "RColorBrewer", "ggplot2", "ggthemes", "ggraph",
-                        "openNLP", "ggsci")
+                        "openNLP", "ggsci", "glmnet", "xgboost", "yardstick", "pROC")
 
 # Check if all required packages are installed and install them if not
 for (pkg in required_packages) {
@@ -663,22 +663,21 @@ ia_book_texts_df <- ia_book_texts_df %>%
 
 ```
 
-## Data Analysis and Visualization 
-
 ```{r load preprocessed data}
 
 # load cleaned text
-fl_book_texts_cleaned_df <- readr::read_csv("Project/data/fl_book_texts_cleaned.csv") 
-fl_book_texts_cleaned_df <- fl_book_texts_cleaned_df %>%
-  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
-  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
+#fl_book_texts_cleaned_df <- readr::read_csv("Project/data/fl_book_texts_cleaned.csv") 
+#fl_book_texts_cleaned_df <- fl_book_texts_cleaned_df %>%
+#  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
+#  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
 
-ia_book_texts_cleaned_df <- readr::read_csv("Project/data/ia_book_texts_cleaned.csv")
-ia_book_texts_cleaned_df <- ia_book_texts_cleaned_df %>%
-  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
-  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
+#ia_book_texts_cleaned_df <- readr::read_csv("Project/data/ia_book_texts_cleaned.csv")
+#ia_book_texts_cleaned_df <- ia_book_texts_cleaned_df %>%
+#  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
+#  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
 
 ```
+
 
 ### Name Entity Recognition
 
@@ -711,6 +710,48 @@ ia_name_candidates <- purrr::map(ia_book_texts_cleaned_df$text, extract_characte
 
 name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates))))
 #readr::write_csv(data.frame(name_stopwords = name_stopwords), "Project/data/name_stopwords.csv")
+#name_stopwords <- readr::read_csv("Project/data/name_stopwords.csv")$name_stopwords
+
+# removing additional stopwords from texts
+enhanced_stopwords <- c(
+  stopwords::stopwords("en", source = "stopwords-iso"),
+  quanteda::stopwords("en"),
+  name_stopwords,
+  tidytext::stop_words$word,
+  "the", "and", "but", "gutenberg"
+) %>% unique()
+
+```
+
+### Non Banned Books
+
+```{r model}
+
+books_not_banned_df <- readr::read_csv("Project/data/books_not_banned_df.csv")
+
+#  clean text
+books_not_banned_df <- books_not_banned_df %>% 
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id)) %>% 
+  dplyr::mutate(text = lapply(text, clean_text)) %>% 
+  dplyr::mutate(text = lapply(text, clean_text_headers)) %>% 
+  dplyr::mutate(text = lapply(text, remove_punctuation_custom)) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removeWords(t, enhanced_stopwords))) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removePunctuation(t))) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removeNumbers(t)))
+
+# clean descriptions
+books_not_banned_df <- books_not_banned_df %>%
+  dplyr::mutate(description = lapply(description, clean_descriptions)) %>% 
+  dplyr::mutate(description = lapply(description, remove_punctuation_custom)) %>% 
+  dplyr::mutate(description = lapply(description, function(t) tm::removeWords(t, enhanced_stopwords))) %>% 
+  dplyr::mutate(description = lapply(description, function(t) tm::removePunctuation(t))) %>% 
+  dplyr::mutate(description = lapply(description, function(t) tm::removeNumbers(t)))
+
+# NER
+new_name_candidates <- purrr::map(books_not_banned_df$text, extract_character_names)
+
+name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates, new_name_candidates))))
+readr::write_csv(data.frame(name_stopwords = name_stopwords), "Project/data/name_stopwords.csv")
 name_stopwords <- readr::read_csv("Project/data/name_stopwords.csv")$name_stopwords
 
 # removing additional stopwords from texts
@@ -721,6 +762,64 @@ enhanced_stopwords <- c(
   tidytext::stop_words$word,
   "the", "and", "but", "gutenberg"
 ) %>% unique()
+
+# final cleaning to remove NER entities
+
+books_not_banned_text_cleaned_df <- books_not_banned_df %>%
+  tidytext::unnest_tokens(word, text) %>%
+  dplyr::filter(!word %in% enhanced_stopwords) %>%
+  dplyr::group_by(gutenberg_id) %>% 
+  dplyr::summarise(text = paste(word, collapse = " ")) 
+
+books_not_banned_text_cleaned_df <- books_not_banned_text_cleaned_df %>%
+  mutate(
+    text = sapply(text, toString),
+    description = sapply(description, toString)
+  )
+
+#readr::write_csv(books_not_banned_text_cleaned_df, "Project/data/books_not_banned_text_cleaned_df.csv")
+
+#readr::read_csv("Project/data/books_not_banned_text_cleaned_df.csv") -> books_not_banned_text_cleaned_df
+#books_not_banned_text_cleaned_df <- books_not_banned_text_cleaned_df %>%
+#  dplyr::mutate(text = purrr::map(text, ~ .x)) %>% 
+#  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
+
+```
+
+```{r combined data set}
+
+# Label and combine datasets
+fl_books_labeled <- fl_book_texts_cleaned_df %>%
+  dplyr::mutate(region = "Florida", banned = 1)
+
+ia_books_labeled <- ia_book_texts_cleaned_df %>%
+  dplyr::mutate(region = "Iowa", banned = 1)
+
+nonbanned_books_labeled <- books_not_banned_text_cleaned_df %>%
+  dplyr::mutate(region = "Other", banned = 0)
+
+# Merge into one master dataset
+complete_book_texts_cleaned_df <- dplyr::bind_rows(fl_books_labeled, ia_books_labeled, nonbanned_books_labeled)
+
+#readr::write_csv(complete_book_texts_cleaned_df, "Project/data/complete_book_texts_cleaned_df.csv")
+
+```
+
+
+## Data Analysis and Visualization
+
+```{r load preprocessed data}
+
+# load cleaned text
+fl_book_texts_cleaned_df <- readr::read_csv("Project/data/fl_book_texts_cleaned.csv") 
+fl_book_texts_cleaned_df <- fl_book_texts_cleaned_df %>%
+  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
+
+ia_book_texts_cleaned_df <- readr::read_csv("Project/data/ia_book_texts_cleaned.csv")
+ia_book_texts_cleaned_df <- ia_book_texts_cleaned_df %>%
+  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
 
 ```
 
@@ -1519,59 +1618,223 @@ ggplot2::ggplot(description_theme_summary, ggplot2::aes(x = theme, y = count, fi
 
 ### Classification Model
 
+```{r create theme flags mapping function}
 
-```{r model}
-
-books_not_banned_df <- readr::read_csv("Project/data/books_not_banned_df.csv")
-
-#  clean text
-books_not_banned_df <- books_not_banned_df %>% 
-  dplyr::mutate(gutenberg_id = as.character(gutenberg_id)) %>% 
-  dplyr::mutate(text = lapply(text, clean_text)) %>% 
-  dplyr::mutate(text = lapply(text, clean_text_headers)) %>% 
-  dplyr::mutate(text = lapply(text, remove_punctuation_custom)) %>% 
-  dplyr::mutate(text = lapply(text, function(t) tm::removeWords(t, enhanced_stopwords))) %>% 
-  dplyr::mutate(text = lapply(text, function(t) tm::removePunctuation(t))) %>% 
-  dplyr::mutate(text = lapply(text, function(t) tm::removeNumbers(t)))
-
-# clean descriptions
-books_not_banned_df <- books_not_banned_df %>%
-  dplyr::mutate(description = lapply(description, clean_descriptions)) %>% 
-  dplyr::mutate(description = lapply(description, remove_punctuation_custom)) %>% 
-  dplyr::mutate(description = lapply(description, function(t) tm::removeWords(t, enhanced_stopwords))) %>% 
-  dplyr::mutate(description = lapply(description, function(t) tm::removePunctuation(t))) %>% 
-  dplyr::mutate(description = lapply(description, function(t) tm::removeNumbers(t)))
-
-# NER
-new_name_candidates <- purrr::map(books_not_banned_df$text, extract_character_names)
-
-name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates, new_name_candidates))))
-readr::write_csv(data.frame(name_stopwords = name_stopwords), "Project/data/name_stopwords.csv")
-name_stopwords <- readr::read_csv("Project/data/name_stopwords.csv")$name_stopwords
-
-# removing additional stopwords from texts
-enhanced_stopwords <- c(
-  stopwords::stopwords("en", source = "stopwords-iso"),
-  quanteda::stopwords("en"),
-  name_stopwords,
-  tidytext::stop_words$word,
-  "the", "and", "but", "gutenberg"
-) %>% unique()
-
-# final cleaning
-
-books_not_banned_text_cleaned_df <- books_not_banned_df %>%
-  tidytext::unnest_tokens(word, text) %>%
-  dplyr::filter(!word %in% enhanced_stopwords) %>%
-  dplyr::group_by(gutenberg_id) %>% 
-  dplyr::summarise(text = paste(word, collapse = " ")) 
-
-readr::write_csv(books_not_banned_text_cleaned_df, "Project/data/books_not_banned_text_cleaned_df.csv")
+# function to apply theme detection per source
+create_theme_flags <- function(df, field, prefix) {
+  for (theme_name in names(theme_dictionary_long)) {
+    column_name <- paste0(prefix, "_has_", theme_name)
+    df[[column_name]] <- purrr::map_lgl(df[[field]], ~ detect_theme(.x, theme_dictionary_long[[theme_name]]))
+  }
+  return(df)
+}
 
 ```
 
-1. build classification model
+```{r apply theme detection full dataset}
 
+# apply new theme detection function
+complete_book_texts_cleaned_df <- create_theme_flags(complete_book_texts_cleaned_df, field = "text", prefix = "text")
+complete_book_texts_cleaned_df <- create_theme_flags(complete_book_texts_cleaned_df, field = "description", prefix = "desc")
+complete_book_texts_cleaned_df <- create_theme_flags(complete_book_texts_cleaned_df, field = "subject", prefix = "subj")
+
+theme_cols <- grep("^text_has_|^desc_has_|^pub_has_", names(complete_book_texts_cleaned_df), value = TRUE)
+
+feature_matrix <- complete_book_texts_cleaned_df %>%
+  dplyr::select(gutenberg_id, title, author, region, banned, dplyr::all_of(theme_cols))
+
+
+```
+
+
+#### Model Functions
+
+```{r model preprocess text function}
+
+# lightweight preprocessing function
+preprocess_text <- function(x) {
+  x <- stringr::str_to_lower(x)
+  x <- stringr::str_replace_all(x, "[^a-z\\s]", " ")
+  x <- stringr::str_squish(x)
+  return(x)
+}
+
+```
+
+```{r ban risk function}
+
+# core prediction function
+predict_ban_risk <- function(title, author, text, description, published_themes) {
+  # clean text
+  text_clean <- preprocess_text(text)
+  desc_clean <- preprocess_text(description)
+  pub_clean <- preprocess_text(published_themes)
+  # detect themes
+  feature_vector <- tibble::tibble(title = title, author = author)
+  
+  for (theme_name in names(theme_dictionary_long)) {
+    feature_vector[[paste0("text_has_", theme_name)]] <- detect_theme(text_clean, theme_dictionary_long[[theme_name]])
+    feature_vector[[paste0("desc_has_", theme_name)]] <- detect_theme(desc_clean, theme_dictionary_long[[theme_name]])
+    feature_vector[[paste0("pub_has_", theme_name)]]  <- detect_theme(pub_clean, theme_dictionary_long[[theme_name]])
+  }
+
+  return(feature_vector)
+}
+
+```
+
+```{r ridge model}
+
+# create input matrix
+X <- feature_matrix %>%
+  dplyr::select(dplyr::starts_with("text_has_"), 
+                dplyr::starts_with("desc_has_"), 
+                dplyr::starts_with("pub_has_")) %>%
+  as.matrix()
+
+# response vector
+y <- feature_matrix$banned
+
+# fit ridge logistic regression
+ridge_model <- glmnet::cv.glmnet(
+  x = X,
+  y = y,
+  alpha = 0,
+  family = "binomial",
+  type.measure = "auc" # Can also use "class" or "deviance"
+)
+
+# get minimized coefficient
+ridge_coef <- coef(ridge_model, s = "lambda.min")
+print(ridge_coef)
+
+# performance
+plot(ridge_model)
+print(ridge_model$cvm)
+print(ridge_model$lambda.min)
+
+```
+
+```{r xgboost model}
+
+X_xgm <- X %>%
+  as.data.frame() %>%
+  dplyr::mutate(dplyr::across(dplyr::everything(), as.numeric)) %>%
+  as.matrix()
+
+# Convert to DMatrix
+dtrain <- xgboost::xgb.DMatrix(data = X_xgm, label = y)
+
+# Set parameters
+params <- list(
+  objective = "binary:logistic",
+  eval_metric = "auc",
+  max_depth = 4,
+  eta = 0.1,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Train model with CV
+xgb_model <- xgboost::xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 100,
+  watchlist = list(train = dtrain),
+  verbose = 1
+)
+
+xgboost::xgb.importance(model = xgb_model) %>%
+  xgboost::xgb.plot.importance(top_n = 20)
+
+```
+
+```{r model comparison}
+
+# calculate prediction probabilities 
+ridge_probs <- stats::predict(ridge_model, newx = X, s = "lambda.min", type = "response")
+xgb_probs <- stats::predict(xgb_model, newdata = X_xgm)
+
+eval_df <- tibble::tibble(
+  truth = as.factor(y),
+  ridge = as.numeric(ridge_probs),
+  xgb = as.numeric(xgb_probs),
+  ridge_pred = ifelse(ridge_probs > 0.5, 1, 0),
+  xgb_pred = ifelse(xgb_probs > 0.5, 1, 0)
+)
+
+# convert to factors
+eval_df <- eval_df %>%
+  dplyr::mutate(
+    ridge_pred = factor(ridge_pred, levels = c(0, 1)),
+    xgb_pred = factor(xgb_pred,   levels = c(0, 1))
+  )
+
+# label metrics for analysis
+my_metrics <- yardstick::metric_set(
+  yardstick::accuracy,
+  yardstick::sensitivity,
+  yardstick::specificity,
+  yardstick::f_meas
+)
+ridge_metrics_all <- my_metrics(eval_df, truth = truth, estimate = ridge_pred)
+xgb_metrics_all   <- my_metrics(eval_df, truth = truth, estimate = xgb_pred)
+
+
+# Reshape from long to wide
+ridge_metrics_wide <- ridge_metrics_all %>%
+  dplyr::select(.metric, .estimate) %>%
+  tidyr::pivot_wider(names_from = .metric, values_from = .estimate)
+
+xgb_metrics_wide <- xgb_metrics_all %>%
+  dplyr::select(.metric, .estimate) %>%
+  tidyr::pivot_wider(names_from = .metric, values_from = .estimate)
+
+summary_table <- dplyr::bind_rows(
+  cbind(Model = "Ridge", ridge_metrics_wide),
+  cbind(Model = "XGBoost", xgb_metrics_wide)
+)
+
+summary_table
+
+```
+
+
+```{r roc curves}
+
+roc_ridge <- pROC::roc(eval_df$truth, eval_df$ridge)
+roc_xgb   <- pROC::roc(eval_df$truth, eval_df$xgb)
+
+# Extract TPR/FPR as data frames
+ridge_df <- data.frame(
+  fpr = roc_ridge$specificities,
+  tpr = 1 - roc_ridge$sensitivities,
+  model = "Ridge"
+)
+
+xgb_df <- data.frame(
+  fpr = roc_xgb$specificities,
+  tpr = 1 - roc_xgb$sensitivities,
+  model = "XGBoost"
+)
+
+# Combine for ggplot
+roc_data <- dplyr::bind_rows(ridge_df, xgb_df)
+
+roc_comparison <- ggplot2::ggplot(roc_data, ggplot2::aes(x = tpr, y = fpr, color = model)) +
+  ggplot2::geom_line(size = 1.2) +
+  ggplot2::geom_abline(linetype = "dashed", color = "gray") +
+  ggthemes::theme_wsj() +
+  ggplot2::labs(
+    title = "ROC Curve Comparison",
+    subtitle = paste0("Ridge AUC = ", round(pROC::auc(roc_ridge), 3),
+                      " | XGBoost AUC = ", round(pROC::auc(roc_xgb), 3)),
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)",
+    color = "Model"
+  )
+
+```
 
 ## Findings
 
@@ -1585,6 +1848,8 @@ readr::write_csv(books_not_banned_text_cleaned_df, "Project/data/books_not_banne
 - Need to save all visuals
 - add `ggsci::scale_fill_jama()`to all visuals
 - remove unnecessary code
+- make xgboost output prettier
+- create table with model comparison
 
 
 
