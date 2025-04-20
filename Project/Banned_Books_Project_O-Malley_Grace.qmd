@@ -18,6 +18,14 @@ python:
   version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
 ---
 
+# Introduction
+
+All code chunks that are part of preprocessing have been marked as 'eval=FALSE' for rendering purposes. Any data that is included will be read in with readr::read_csv for rendering. I have noted the save points where data is read into the document for your convenience. If you wish to test any of the code, simply remove the 'eval=FALSE' tag and run the chunk. This is very linear in terms of how it's set up, but it allows for a lot of flexibility in terms of what can be done with the data, but bear that in mind if you are trying to test code that relies on previous steps being completed.
+
+## Required Packages
+
+This is the listing of required packages to run the code below. There is a for loop that can be run to install and library any that are needed.
+
 ```{r library chunk}
 
 required_packages <- c("jsonlite", "httr", "stringdist", "quanteda", "gutenbergr", "tm", "stringr", "textclean",
@@ -35,7 +43,11 @@ data("gutenberg_metadata", package = "gutenbergr")
 
 ```
 
-```{r data import}
+## Data Collection
+
+The banned books list was downloaded from PEN America's website ([link](https://pen.org/book-bans/pen-america-index-of-school-book-bans-2023-2024/)).
+
+```{r data import, eval=FALSE}
 
 # assign file path to variable
 banned_books_file_path <- "/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Project/data/PEN America's Index of School Book Bans (July 1, 2023 - June 30, 2024).xlsx" 
@@ -46,7 +58,11 @@ utils::head(banned_books_list, 10)
 
 ```
 
-```{r data preparation}
+## Exploratory Data Analysis
+
+I reviewed the data set and removed unnecessary data and focused on my intended target regions of Florida and Maryland. After viewing the number of available banned books from Maryland, I selected Iowa as an alternative region because Maryland had a limited amount of texts available.
+
+```{r data preparation, eval=FALSE}
 
 colnames(banned_books_list) <- c("Title", "Author", "Secondary_Author", "Illustrator", "Translator", 
                                 "Series_Name", "State", "District", "Date_Removed", "Ban_Status", "Initiating_Action") 
@@ -76,9 +92,9 @@ ia_banned_books_list <- banned_books_cleaned %>%
 
 ## Data Sampling
 
-I sampled 10 book titles from the state of Florida's banned books list. I originally wanted to use New York for comparison, but they only had 6 titles, so I selected Maryland as my subgroup comparison.
+I sampled 10 book titles from the state of Florida's banned books list. I originally wanted to use Maryland for comparison, but they only had 6 titles, so I selected Maryland as my subgroup comparison.
 
-```{r data sampling}
+```{r data sampling, eval=FALSE}
 
 # select random seed
 seed <- 245 
@@ -103,7 +119,7 @@ print(md_books_sample)
 
 I began to search for data online. I cleaned the book titles from the Florida sample and cleaned the titles from the Gutenberg library (`gutenbergr`) to ensure they matched. I then compared the two lists and found that none of the Florida titles were also in the Gutenberg library. This caused me to pivot to search for any ISBNs from the Florida banned books list sample to attempt to search them in other libraries.
 
-```{r data collection}
+```{r data collection, eval=FALSE}
 
 # search for titles in gutenberg library
 fl_sample_books_titles_cleaned <- fl_books_sample %>% 
@@ -130,14 +146,13 @@ in_gutenberg
 
 ```
 
-### ISBN Search
+**ISBN Search**
 
-I could not obtain any ISBNs from the below function I wrote. I spent a few hours on this, then decided to move on to another method of searching.
+I attempted to search by ISBN, but could not write a function that would effectively locate the ISBNs of the texts I needed to find (see appendices for unused code). Since the ISBN search was unsuccessful, I needed to pivot my search techniques.
 
+**Title Search**
 
-### Gutenberg Search - Pt. 2
-
-I cleaned all book titles from the Florida banned books list and compared them to the Gutenberg library. My goal is to find a suitable sample of texts here that I can use before reverting to my original plan of using themes and descriptions from the Google Books API.
+The next course of action leveraged the book titles in classic text searches. I cleaned all book titles from the Florida banned books list and compared them to the Gutenberg library. My goal is to find a suitable sample of texts here that I can use before having to find alternative methods to obtain these texts. I wrote a function to return the matched books based on the gutenberg library titles.
 
 ```{r full gutenberg search}
 
@@ -149,9 +164,9 @@ full_gutenberg_search <- function(banned_books, gutenberg_titles) {
 
 ```
 
-I have identified titles that I can pull from the Gutenberg library for my project. I am going to take a sample of 10 texts from each, Florida and Iowa, and use them as my sample texts. I ended up getting matches for 16 books from the Iowa banned books list and 53 from Florida. After matching the titles, I will see how many I can downloand and I may need to revise my sample numbers.
+I identified titles that I can pull from the Gutenberg library for my project - however I will have to pivot since there are less than 10 books available from the Maryland banned books list. The intended sample size is 10 texts, which are readily available from Florida (53) and a sufficient number from Iowa (16).  After matching the titles, I will see how many I can downloand uncorrupted - if there is any data corruption, I may need to revise my sample numbers or find alternative data sources.
 
-```{r full title search}
+```{r full title search}, eval=FALSE
 
 fl_books_titles_cleaned <- fl_banned_books_list %>% # cleaned fl titles list
     dplyr::select(Title) %>% 
@@ -182,7 +197,7 @@ ia_match_list
 
 ```
 
-Here I created a fuzzy title search function to allow proper title matching and minimizing the effects of grammar differences.
+To maximize my search returns, I created a fuzzy title search function to allow proper title matching and minimizing the effects of grammar differences.
 
 ```{r title search function}
 
@@ -199,9 +214,9 @@ fuzzy_title_search <- function(book_list) {
 
 ```
 
-Here I actually pull the sample of my data that I will use in the following steps.
+I pulled the random sample of book titles from the complete pool of available book titles from Florida and Iowa, respectively.
 
-```{r data re-sampling}
+```{r data re-sampling, eval=FALSE}
 
 ia_sample <- sample(ia_match_list, 10)
 fl_sample <- sample(fl_match_list, 10)
@@ -211,10 +226,9 @@ cat("\nFL Sample:\n",{fl_sample}, sep="\n")
 
 ```
 
+The fuzzy matching title search yielded matches for all but one of the sampled titles, which I've identified and will add in manually by matching the gutenberg id number.
 
-Here I ran my fuzzy matching title search. I was able to match all but one of the sampled titles, which I've identified and will add in by hand later on.
-
-```{r fuzzy matching}
+```{r fuzzy matching, eval=FALSE}
 
 # Iowa fuzzy matching
 ia_fuzzy_matches <- fuzzy_title_search(ia_sample) # incorrectly selected 1 title
@@ -230,9 +244,9 @@ fl_fuzzy_matches_full <- fuzzy_title_search(fl_match_list)
 
 ```
 
-I ran into a lot of problems downloading books. After my first pass, I was only able to get 6 / 20, and on my second pass I was only able to get 10/26. I am going to try and download directly from gutenberg's website, but I may need to adjust my sample sizes for subgroup comparison.
+I ran into a lot of problems downloading books. After my first pass, I was only able to get 6 / 20. I adjusted to search for the 10 books from Florida and all 16 books from Iowa to see if that produced any additional downloads, but there was only a marginal improvement on my second pass - I was only able to retrieve 10/26. The next step is to download them directly from Project Gutenberg's website, which should be more reliable. If I cannot obtain enough texts, I may need to adjust my sample sizes for subgroup comparison.
 
-```{r download texts}
+```{r download texts, eval=FALSE}
 
 # retrieve Iowa text ids
 ia_gutenberg_ids <- gutenbergr::gutenberg_works() %>%
@@ -261,7 +275,7 @@ fl_gutenberg_ids_full <- gutenbergr::gutenberg_works() %>%
 
 ```
 
-Now I am attempting to download the balance of books from the gutenberg website directly.
+To pull texts directly from Project Gutenberg's website, I wrote a short function to download texts and identify any texts that were not downloaded in the process.
 
 ```{r gutenberg web search function}
 
@@ -279,9 +293,9 @@ load_gutenberg_text <- function(book_id) {
 
 ```
 
-I was able to pull in all of the texts necessary for the Florida banned books list - both through dowload from `gutenbergr` and the Project Gutenberg website. I've assigned it to a data frame `fl_book_texts_df`. 
+I was able to pull in all of the texts necessary for the Florida banned books list - both through dowload from `gutenbergr` and the Project Gutenberg website. I've assigned it to a data frame `fl_book_texts_df`.
 
-```{r Florida texts}
+```{r Florida texts, eval=FALSE}
 
 # download Florida texts and set up corpus
 fl_book_texts <- gutenbergr::gutenberg_download(fl_gutenberg_ids$gutenberg_id)
@@ -307,13 +321,12 @@ for (i in seq_along(fl_missing_books$gutenberg_id)) {
 }
 fl_missing_book_texts_df <- dplyr::bind_rows(fl_missing_book_texts_list)
 fl_book_texts_df <- dplyr::bind_rows(fl_book_texts, fl_missing_book_texts_df) # florida books data frame
-#utils::write.csv(fl_book_texts_df, "Project/data/fl_book_texts.csv") # write to csv so I don't have to do this again
 
 ```
 
 I pulled the book title, id, and text for the Iowa sample and added in the missing book title from the fuzzy matching. I had a number of issues downloading book texts so I had to do some exta work obtaining the data. Ultimately, I ended up with `ia_book_texts_df`.
 
-```{r iowa books data download}
+```{r iowa books data download, eval=FALSE}
 
 ia_books_text_list <- list()
 for (i in seq_along(ia_gutenberg_ids$gutenberg_id)) {
@@ -383,15 +396,13 @@ ia_book_texts_df <- ia_book_texts_df[-c(9,10),]
 ia_book_texts_df <- ia_book_texts_df %>%
   filter(gutenberg_id != 68179) # iowa banned books list
 
-#utils::write.csv(ia_book_texts_df, "Project/data/ia_book_texts.csv") # write to csv so I don't have to do this again
-
 ```
 
 ### Title Additions
 
 I needed to correct the title and author names for further processing. This is an ugly way to do it, but it was easier than trying to loop through the previous code to pull the data. On a larger data set, the time spent generating a loop or function to do this would be worth it, but it was not a beneficial use of time in this case. I added in the book titles and authors and rearragned the columns.
 
-```{r title function}
+```{r title function, eval=FALSE}
 
 fl_book_titles <- c("Wuthering Heights", "Leonardo Da Vinci", "The Pirate", "The Dark Tower", "Native Son", "Redeemed", "The Taming of the Shrew",
                     "The Road", "Chain Reaction", "The Heir")
@@ -416,15 +427,16 @@ ia_book_texts_df <- ia_book_texts_df %>%
 
 ```
 
-
 ### Google Books Metadata Collection
 
-This was an interesting issue - I ran into troubles trying to write functions to return the metadata from google books, even with the API. I ended up using ChatGPT to return a csv of the titles, subjects, and descriptions, which I was able to read into a variable and left join to my texts data frames to have the complete data set required to begin data preprocessing. I now have my final data sets ready for preproccessing and analysis:
+This was an interesting issue - I ran into troubles trying to write functions to return the metadata from google books, even trying to leverage the google books API did not work. I ended up using ChatGPT to query and return a csv of the titles, subjects, and descriptions, which I was able to read into a variable and left join to my texts data frames to have the complete data set required to begin data preprocessing. I selected 3 texts at random from each list and validated that they were correct, by direct comparison with the google books website for each text - a measure to assure hallucination had not entered the chat. I now have my final data sets ready for preproccessing and analysis:
 
-- `fl_book_texts_df`
-- `ia_book_texts_df`
+-   `fl_book_texts_df`
+-   `ia_book_texts_df`
 
-```{r metadata}
+*Note - After this point, I will be saving (readr::write_csv) and reading in (readr::read_csv) my data so that I am not constantly re-preprocessing data.*
+
+```{r metadata, eval=FALSE}
 
 fl_book_metadata <- readr::read_csv("Project/data/fl_book_metadata.csv")
 ia_book_metadata <- readr::read_csv("Project/data/ia_book_metadata.csv")
@@ -434,10 +446,11 @@ ia_book_texts_df %>% dplyr::left_join(ia_book_metadata, by = "title") -> ia_book
 
 ```
 
-
 ### Data Collection for Books Not Banned
 
-```{r books not banned}
+To build a successful classification model, I needed to obtain text of books that were not banned. I selected 20 books at random from the Project Gutenberg website to use for my model training. The texts will be cleaned and preprocessed in the same manner as the Florida and Iowa texts before being used in the model training process (section 5).
+
+```{r books not banned, eval=FALSE}
 
 books_not_banned <- data.frame(
   gutenberg_id = c(13996, 56415, 145, 5200, 1342, 2554, 4300, 219, 730, 161, 55, 1399, 1080, 1661, 514, 23, 50150, 408, 26184, 1513), 
@@ -466,29 +479,27 @@ books_not_banned_metadata <- books_not_banned_metadata %>%
 books_not_banned_df <- books_not_banned %>% 
   dplyr::left_join(., books_not_banned_metadata, by = "title")
 
-#readr::write_csv(books_not_banned_df, "Project/data/books_not_banned_df.csv")
-
 ```
 
 ## Data Preprocessing
 
-During the data preprocessing phase I will take all the text data and pass it through a function to:
+During the data preprocessing phase I will take all the text data and pass it through several functions to:
 
-- Assure UTF-8 enconding of text data
-- Make all letters lowercase
-- Remove Gutenberg boilerplate text
-- Normalize quotation marks for accuracy
-- Expand contractions
-- Remove punctuation
-- Remove special characters
-- Remove extra white space and formatting
-- Remove stopwords
-- Remove numbers
-- Tokenize sentences
+-   Assure UTF-8 enconding of text data
+-   Make all letters lowercase
+-   Remove Gutenberg boilerplate text
+-   Normalize quotation marks for accuracy
+-   Expand contractions
+-   Remove punctuation
+-   Remove special characters
+-   Remove extra white space and formatting
+-   Remove stopwords
+-   Remove numbers
+-   Tokenize sentences
 
 ### Custom Data Pre-processing Functions
 
-Normally, I would structure this as a package and these functions would be in a separate directory where you could load them, but since I am submitting this as a stand alone qmd, I am including them in the body.
+Normally, I would structure this as a package and these functions would be in a separate directory where you could load them, but since I am submitting this as a stand alone QMD, I am including them in the body.
 
 ```{r preprocessing function}
 
@@ -514,6 +525,7 @@ clean_text <- function(text_input) {
 
 ```
 
+
 ```{r description preprocessing function}
 
 # create a lightweight function to clean google books descriptions
@@ -534,6 +546,7 @@ clean_descriptions <- function(text_vector) {
 
 ```
 
+
 ```{r text re-preprocessing}
 
 clean_text_headers <- function(text) {
@@ -553,6 +566,7 @@ clean_text_headers <- function(text) {
 
 ```
 
+
 ```{r punctuation function}
 
 # custom punctuation removal
@@ -563,9 +577,12 @@ remove_punctuation_custom <- function(text) {
 
 ```
 
-### Function Application 
 
-```{r preprocess data}
+### Function Application
+
+*First Preprocessing Run*
+
+```{r preprocess data, eval=FALSE}
 
 # apply preprocessing function to each data set
 fl_book_texts_df$cleaned_text <- sapply(fl_book_texts_df$text, clean_text)
@@ -584,7 +601,10 @@ ia_book_texts_df <- ia_book_texts_df %>%
 
 ```
 
-```{r final data preprocessing}
+
+*Second Preprocessing Run*
+
+```{r final data preprocessing, eval=FALSE}
 
 # this is for working on data that has already been saved
 fl_book_texts_df <- readr::read_csv("Project/data/fl_book_texts.csv")
@@ -625,9 +645,6 @@ fl_book_texts_df <- fl_book_texts_df %>%
 fl_book_texts_df <- fl_book_texts_df %>%
   dplyr::mutate(text = purrr::map_chr(text, paste, collapse = " "))
 
-# write to csv
-#readr::write_csv(fl_book_texts_df, "Project/data/fl_book_texts_cleaned.csv")
-
 ia_book_texts_df <- readr::read_csv("Project/data/ia_book_texts.csv")
 ia_book_texts_df <- ia_book_texts_df %>% 
   dplyr::select(-...1) %>%
@@ -645,41 +662,42 @@ ia_book_texts_df <- ia_book_texts_df %>%
 ia_book_texts_df <- ia_book_texts_df %>%
   dplyr::mutate(text = purrr::map_chr(text, paste, collapse = " "))
 
-# write to csv
-#readr::write_csv(ia_book_texts_df, "Project/data/ia_book_texts_cleaned.csv")
 
 ```
 
-```{r google books description preprocessing}
+*Google Books Description Preprocessing*
+
+```{r google books description preprocessing, eval=FALSE}
 
 # preprocess book descriptions
 fl_book_texts_df <- fl_book_texts_df %>%
   dplyr::mutate(description = clean_descriptions(description))
-#readr::write_csv(fl_book_texts_cleaned_df, "Project/data/fl_book_texts_cleaned.csv")
 
 ia_book_texts_df <- ia_book_texts_df %>% 
   dplyr::mutate(description = clean_descriptions(description))
-#readr::write_csv(ia_book_texts_cleaned_df, "Project/data/ia_book_texts_cleaned.csv")
 
 ```
+
+*Note - This is another save point. After preprocessing, I save the text to csv's for easy access later on - after this point they will be read in*
 
 ```{r load preprocessed data}
 
 # load cleaned text
-#fl_book_texts_cleaned_df <- readr::read_csv("Project/data/fl_book_texts_cleaned.csv") 
-#fl_book_texts_cleaned_df <- fl_book_texts_cleaned_df %>%
-#  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
-#  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
+fl_book_texts_cleaned_df <- readr::read_csv("Project/data/fl_book_texts_cleaned.csv") 
+fl_book_texts_cleaned_df <- fl_book_texts_cleaned_df %>%
+  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
 
-#ia_book_texts_cleaned_df <- readr::read_csv("Project/data/ia_book_texts_cleaned.csv")
-#ia_book_texts_cleaned_df <- ia_book_texts_cleaned_df %>%
-#  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
-#  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
+ia_book_texts_cleaned_df <- readr::read_csv("Project/data/ia_book_texts_cleaned.csv")
+ia_book_texts_cleaned_df <- ia_book_texts_cleaned_df %>%
+  dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
 
 ```
 
-
 ### Name Entity Recognition
+
+After running my initial analysis, I realized that names were heavily skewing my data. I returned to this point in my code and completed Name Entity Recognition filtering to remove names from my data. This made the outputs much cleaner, meaningful, and productive. I added the names to my stopwords list for future use.
 
 ```{r NER Function}
 
@@ -703,14 +721,20 @@ extract_character_names <- function(text) {
 
 ```
 
-```{r NER}
+
+```{r NER, eval=FALSE}
 
 fl_name_candidates <- purrr::map(fl_book_texts_cleaned_df$text, extract_character_names)
 ia_name_candidates <- purrr::map(ia_book_texts_cleaned_df$text, extract_character_names)
 
 name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates))))
-#readr::write_csv(data.frame(name_stopwords = name_stopwords), "Project/data/name_stopwords.csv")
-#name_stopwords <- readr::read_csv("Project/data/name_stopwords.csv")$name_stopwords
+
+``` 
+
+*Note - This is another save point. The `name_stopwords` list was expansive so I wrote it to a csv. Here it is read back in for convenience.*
+
+```{r ner read in}
+name_stopwords <- readr::read_csv("Project/data/name_stopwords.csv")$name_stopwords
 
 # removing additional stopwords from texts
 enhanced_stopwords <- c(
@@ -725,7 +749,9 @@ enhanced_stopwords <- c(
 
 ### Non Banned Books
 
-```{r model}
+*Note - This is another point where previously saved data is read in. The `books_not_banned_df` is the data frame of books not banned for training. Here it is read back in for convenience. This cell is still tagged as eval=FALSE because the final completed and cleaned data sets will be read in later.*
+
+```{r data preprocessing not banned, eval=FALSE}
 
 books_not_banned_df <- readr::read_csv("Project/data/books_not_banned_df.csv")
 
@@ -777,36 +803,9 @@ books_not_banned_text_cleaned_df <- books_not_banned_text_cleaned_df %>%
     description = sapply(description, toString)
   )
 
-#readr::write_csv(books_not_banned_text_cleaned_df, "Project/data/books_not_banned_text_cleaned_df.csv")
-
-#readr::read_csv("Project/data/books_not_banned_text_cleaned_df.csv") -> books_not_banned_text_cleaned_df
-#books_not_banned_text_cleaned_df <- books_not_banned_text_cleaned_df %>%
-#  dplyr::mutate(text = purrr::map(text, ~ .x)) %>% 
-#  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
-
 ```
 
-```{r combined data set}
-
-# Label and combine datasets
-fl_books_labeled <- fl_book_texts_cleaned_df %>%
-  dplyr::mutate(region = "Florida", banned = 1)
-
-ia_books_labeled <- ia_book_texts_cleaned_df %>%
-  dplyr::mutate(region = "Iowa", banned = 1)
-
-nonbanned_books_labeled <- books_not_banned_text_cleaned_df %>%
-  dplyr::mutate(region = "Other", banned = 0)
-
-# Merge into one master dataset
-complete_book_texts_cleaned_df <- dplyr::bind_rows(fl_books_labeled, ia_books_labeled, nonbanned_books_labeled)
-
-#readr::write_csv(complete_book_texts_cleaned_df, "Project/data/complete_book_texts_cleaned_df.csv")
-
-```
-
-
-## Data Analysis and Visualization
+*Note - this is the final point where I will read in data directly to variables. From here on out, code can be run without having to change any eval=FALSE flags.*
 
 ```{r load preprocessed data}
 
@@ -821,9 +820,42 @@ ia_book_texts_cleaned_df <- ia_book_texts_cleaned_df %>%
   dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
   dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
 
+books_not_banned_text_cleaned_df <- readr::read_csv("Project/data/books_not_banned_text_cleaned_df.csv") 
+books_not_banned_text_cleaned_df <- books_not_banned_text_cleaned_df %>%
+  dplyr::mutate(text = purrr::map(text, ~ .x)) %>% 
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
+
 ```
 
-### Term Frequency and Term Frequency Inverse Document Frequency Analysis{.tabset}
+
+This is the point where I have completed my data preprocessing and I join all data together to create my final training data set `complete_book_texts_cleaned_df`. After this point, all  
+
+```{r combined data set, eval=FALSE}
+
+# Label and combine datasets
+fl_books_labeled <- fl_book_texts_cleaned_df %>%
+  dplyr::mutate(region = "Florida", banned = 1)
+
+ia_books_labeled <- ia_book_texts_cleaned_df %>%
+  dplyr::mutate(region = "Iowa", banned = 1)
+
+nonbanned_books_labeled <- books_not_banned_text_cleaned_df %>%
+  dplyr::mutate(region = "Other", banned = 0)
+
+# Merge into one master dataset
+complete_book_texts_cleaned_df <- dplyr::bind_rows(fl_books_labeled, ia_books_labeled, nonbanned_books_labeled)
+
+```
+
+## Data Analysis and Visualization
+
+```{r full data set read in}
+
+complete_book_texts_cleaned_df <- readr::read_csv("Project/data/complete_book_texts_cleaned_df.csv")
+
+```
+
+### Term Frequency and Term Frequency Inverse Document Frequency Analysis {.tabset}
 
 #### Florida
 
@@ -977,7 +1009,6 @@ graphics::mtext("Iowa Wordcloud", side = 3, line = -5, cex = 1.2)
 
 ```
 
-
 ```{r iowa data visualization}
 
 # calculate top ia tf
@@ -999,7 +1030,7 @@ ggplot2::ggplot(top_ia_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf
 
 ```
 
-### Phrase Frequency Analysis{.tabset}
+### Phrase Frequency Analysis {.tabset}
 
 #### Florida
 
@@ -1615,7 +1646,6 @@ ggplot2::ggplot(description_theme_summary, ggplot2::aes(x = theme, y = count, fi
   
 ```
 
-
 ### Classification Model
 
 ```{r create theme flags mapping function}
@@ -1645,7 +1675,6 @@ feature_matrix <- complete_book_texts_cleaned_df %>%
 
 
 ```
-
 
 #### Model Functions
 
@@ -1795,10 +1824,16 @@ summary_table <- dplyr::bind_rows(
   cbind(Model = "XGBoost", xgb_metrics_wide)
 )
 
-summary_table
-
 ```
 
+| Model   | AUC   | Accuracy | Sensitivity | Specificity | F1 Score |
+|---------|-------|----------|-------------|-------------|----------|
+| Ridge   | 0.890 | 0.775    | 0.750       | 0.800       | 0.769    |
+| XGBoost | 0.859 | 0.750    | 0.700       | 0.800       | 0.737    |
+
+: Model Comparison Summary Table
+
+The ridge model outperforms the XGBoost model. The simplicity and interpretability of the ridge model also support choosing this model for our testing analysis.
 
 ```{r roc curves}
 
@@ -1833,26 +1868,23 @@ roc_comparison <- ggplot2::ggplot(roc_data, ggplot2::aes(x = tpr, y = fpr, color
     y = "True Positive Rate (Sensitivity)",
     color = "Model"
   )
+  
+roc_comparison
 
 ```
 
 ## Findings
 
-1. Write
-  - conclusions
-  - limitations
-  - way forward
+1.  Write
+
+-   conclusions
+-   limitations
+-   way forward
 
 ## Conclusion
 
-- Need to save all visuals
-- add `ggsci::scale_fill_jama()`to all visuals
-- remove unnecessary code
-- make xgboost output prettier
-- create table with model comparison
-
-
-
-
-
-
+-   Need to save all visuals
+-   add `ggsci::scale_fill_jama()`to all visuals
+-   remove unnecessary code
+-   make xgboost output prettier
+-   create table with model comparison
