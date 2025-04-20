@@ -527,6 +527,26 @@ clean_text <- function(text_vector) {
 
 ```
 
+```{r description preprocessing function}
+
+# create a lightweight function to clean google books descriptions
+clean_descriptions <- function(text_vector) {
+  text_vector <- iconv(text_vector, to = "UTF-8")
+  text_vector <- tolower(text_vector)
+  text_vector <- stringr::str_remove_all(text_vector, "[[:punct:]]")
+  text_vector <- stringr::str_remove_all(text_vector, "\\d+")
+  text_vector <- stringr::str_replace_all(text_vector, "[^a-zA-Z\\s]", "")
+  text_vector <- stringr::str_squish(text_vector)
+  text_vector <- tm::removeWords(text_vector, tm::stopwords("en"))
+  text_vector <- stringr::str_remove_all(text_vector, "\\b[a-zA-Z]\\b")
+  text_vector <- tokenizers::tokenize_sentences(text_vector)
+  text_vector <- sapply(text_vector, function(x) paste(x, collapse = " "))
+
+  return(text_vector)
+}
+
+```
+
 ```{r text re-preprocessing}
 
 clean_text_headers <- function(text) {
@@ -569,15 +589,6 @@ detect_theme <- function(text, keywords) {
   phrase_match <- any(sapply(phrases, function(p) stringr::str_detect(text, stringr::fixed(p))))
 
   return(word_match | phrase_match)
-}
-
-```
-
-```{r theme detect orig}
-
-detect_theme <- function(text, keywords) {
-  pattern <- paste0("\\b(", paste(keywords, collapse = "|"), ")\\b")
-  stringr::str_detect(tolower(text), pattern)
 }
 
 ```
@@ -669,6 +680,19 @@ ia_book_texts_df <- ia_book_texts_df %>%
 
 ```
 
+```{r google books description preprocessing}
+
+# preprocess book descriptions
+fl_book_texts_df <- fl_book_texts_df %>%
+  dplyr::mutate(description = clean_descriptions(description))
+#readr::write_csv(fl_book_texts_cleaned_df, "Project/data/fl_book_texts_cleaned.csv")
+
+ia_book_texts_df <- ia_book_texts_df %>% 
+  dplyr::mutate(description = clean_descriptions(description))
+#readr::write_csv(ia_book_texts_cleaned_df, "Project/data/ia_book_texts_cleaned.csv")
+
+```
+
 ## Data Analysis and Visualization 
 
 ```{r load preprocessed data}
@@ -715,7 +739,6 @@ fl_name_candidates <- purrr::map(fl_book_texts_cleaned_df$text, extract_characte
 ia_name_candidates <- purrr::map(ia_book_texts_cleaned_df$text, extract_character_names)
 
 name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates))))
-
 
 # removing additional stopwords from texts
 enhanced_stopwords <- c(
@@ -1090,10 +1113,64 @@ print(subject_terms)
 
 ```{r radar plot}
 
-theme_summary <- fl_ia_theme_counts
+# create subjects list
+fl_subjects <- fl_book_texts_cleaned_df %>% 
+  dplyr::select(-c(text, description, gutenberg_id)) %>% 
+  dplyr::mutate(region = "Florida")
+
+ia_subjects <- ia_book_texts_cleaned_df %>% 
+  dplyr::select(-c(text, description, gutenberg_id)) %>% 
+  dplyr::mutate(region = "Iowa")
+
+combined_subjects <- dplyr::bind_rows(fl_subjects, ia_subjects)
+
+# clean subjects
+combined_subjects_long <- combined_subjects %>% 
+  dplyr::select(region, subject) %>%
+  tidyr::separate_rows(subject, sep = ",|;|\\|") %>%
+  dplyr::mutate(subject = stringr::str_trim(subject)) %>%
+  dplyr::mutate(subject = stringr::str_to_lower(subject)) %>%
+  dplyr::filter(!is.na(subject) & subject != "")
+
+theme_summary <- combined_subjects_long %>% 
+  dplyr::group_by(region, subject) %>% 
+  dplyr::summarise(count = dplyr::n(), .groups = "drop")
+
+theme_props <- theme_summary %>%
+  tidyr::pivot_wider(names_from = subject, values_from = count, values_fill = 0) %>%
+  tibble::column_to_rownames("region")
+
+max_value <- max(theme_props, na.rm = TRUE)
+
+theme_radar <- rbind(
+  rep(max_value, ncol(theme_props)), 
+  rep(0, ncol(theme_props)), 
+  theme_props
+)
+
+fmsb::radarchart(
+  theme_radar,
+  axistype = 1,
+  pcol = c("blue", "darkgreen"),
+  plwd = 2,
+  plty = 1,
+  cglcol = "gray",
+  cglty = 1,
+  axislabcol = "black",
+  caxislabels = c("0", "0.25", "0.5", "0.75", "1.0"),
+  vlcex = 0.8,
+  title = "Thematic Emphasis by Region (from Subject Metadata)"
+)
+graphics::legend("topright", 
+                  legend = rownames(theme_props), 
+                  col = c("blue", "darkgreen"), 
+                  lty = 1, 
+                  lwd = 2,
+                  cex = 0.5, 
+                  xjust = 5, 
+                  yjust = 5)
 
 ```
-
 
 ### Dictionary-Based Analysis
 
@@ -1138,6 +1215,14 @@ theme_dictionary_short <- list(
 
 ```
 
+```{r theme detect orig}
+
+detect_theme <- function(text, keywords) {
+  pattern <- paste0("\\b(", paste(keywords, collapse = "|"), ")\\b")
+  stringr::str_detect(tolower(text), pattern)
+}
+
+```
 
 ```{r fl theme flags}
 
@@ -1221,6 +1306,86 @@ ggplot2::ggplot(theme_summary, ggplot2::aes(x = theme, y = count, fill = region)
   ggthemes::theme_wsj()
 
 ```
+
+```{r fl description theme flags}
+
+# comparing themes from the descriptions
+fl_description_theme_flags <- fl_book_texts_cleaned_df %>%
+  dplyr::mutate(
+    across(dplyr::everything(), as.character)
+  ) %>%
+  dplyr::mutate(
+    across(dplyr::everything(), stringr::str_to_lower)
+  ) %>%
+  dplyr::mutate(
+    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$gender)),
+    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$race)),
+    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$sexuality)),
+    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$violence)),
+    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$politics))
+  )
+
+```
+
+```{r ia description theme flags}
+
+# comparing themes from the descriptions
+ia_description_theme_flags <- ia_book_texts_cleaned_df %>%
+  dplyr::mutate(
+    across(dplyr::everything(), as.character)
+  ) %>%
+  dplyr::mutate(
+    across(dplyr::everything(), stringr::str_to_lower)
+  ) %>%
+  dplyr::mutate(
+    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$gender)),
+    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$race)),
+    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$sexuality)),
+    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$violence)),
+    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$politics))
+  )
+
+```
+
+```{r}
+
+# standardize column type
+fl_description_theme_flags <- fl_description_theme_flags %>%
+  dplyr::mutate(region = "Florida")
+
+ia_description_theme_flags <- ia_description_theme_flags %>%
+  dplyr::mutate(region = "Iowa")
+
+# combine data sets
+description_theme_flags <- dplyr::bind_rows(
+  fl_description_theme_flags,
+  ia_description_theme_flags
+)
+
+# create a summary table
+description_theme_summary <- description_theme_flags %>%
+  tidyr::pivot_longer(
+    cols = dplyr::starts_with("has_"),
+    names_to = "theme",
+    values_to = "present"
+  ) %>%
+  dplyr::group_by(region, theme) %>%
+  dplyr::summarise(count = sum(present), .groups = "drop")
+
+# plot
+ggplot2::ggplot(description_theme_summary, ggplot2::aes(x = theme, y = count, fill = region)) +
+  ggthemes::theme_wsj() +
+  ggplot2::geom_col(position = "dodge") +
+  ggplot2::labs(
+    title = "Theme Prevalence in Book Descriptions by Region",
+    x = "Theme", y = "Number of Books"
+  )
+  
+```
+
+
+
+
 
 Need to finish this section (dictionary)
 
