@@ -13,9 +13,6 @@ execute:
   echo: true
   freeze: false
   error: false
-  jupyter: python3
-python:
-  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
 ---
 
 # Introduction
@@ -883,6 +880,8 @@ top_fl_tfidf <- fl_tfidf %>%
 
 ```
 
+**Florida Heatmap of Term Frequencies**
+
 ```{r florida tf viz}
 
 # calculate top fl tf
@@ -909,6 +908,8 @@ ggplot2::ggplot(fl_tf_heatmap, ggplot2::aes(x = word, y = title, fill = freq)) +
 
 ```
 
+**Florida Wordcloud of Term Frequencies**
+
 ```{r fl wordcloud}
 
 # build wordcloud
@@ -921,9 +922,11 @@ wordcloud::wordcloud(
   colors = RColorBrewer::brewer.pal(8, "Dark2"),
   random.order = FALSE,
 )
-graphics::mtext("Florida Wordcloud", side = 3, line = -5, cex = 1.2)
+graphics::mtext("Florida Wordcloud", side = 3, cex = 1.2)
 
 ```
+
+**Florida Top 10 TF-IDF Terms**
 
 ```{r fl tfidf viz}
 
@@ -970,6 +973,8 @@ top_ia_tfidf <- ia_tfidf %>%
 
 ```
 
+**Iowa Heatmap of Term Frequencies**
+
 ```{r ia tf viz}
 # calculate top ia tf
 top_ia_tf <- ia_tf %>% 
@@ -994,6 +999,8 @@ ggplot2::ggplot(ia_tf_heatmap, ggplot2::aes(x = word, y = title, fill = freq)) +
   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 ```
 
+**Iowa of Term Frequencies**
+
 ```{r iowa wordcloud}
 
 wordcloud::wordcloud(
@@ -1005,9 +1012,11 @@ wordcloud::wordcloud(
   colors = RColorBrewer::brewer.pal(8, "Dark2"),
   random.order = FALSE
 )
-graphics::mtext("Iowa Wordcloud", side = 3, line = -5, cex = 1.2)
+graphics::mtext("Iowa Wordcloud", side = 3, line = .5, cex = 1.2)
 
 ```
+
+**Iowa Top 10 TF-IDF Terms**
 
 ```{r iowa data visualization}
 
@@ -1030,7 +1039,9 @@ ggplot2::ggplot(top_ia_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf
 
 ```
 
-### Phrase Frequency Analysis {.tabset}
+### Phrase Frequency Analysis
+
+Next point of analysis is phrase frequency analysis - specifically bigrams.
 
 #### Florida
 
@@ -1065,6 +1076,8 @@ top_fl_bigram_tfidf <- fl_bigram_tfidf %>%
   dplyr::ungroup()
 
 ```
+
+**Florida Bigram Network**
 
 ```{r fl phrase analysis viz}
 
@@ -1120,6 +1133,8 @@ top_ia_bigram_tfidf <- ia_bigram_tfidf %>%
 
 ```
 
+**Iowa Bigram Network**
+
 ```{r ia phrase analysis viz}
 
 # split bigrams into related adjacent columns
@@ -1142,6 +1157,10 @@ ggraph::ggraph(ia_bigram_graph, layout = "fr") +
 
 ### Subgroup Comparisons
 
+Now the data is brought back together for subgroup comparisons. This will also introduce thematic analysis using the google books themes and descriptions.
+
+**Common Terms Bar Plot**
+
 ```{r shared vs unique terms}
 
 # create a plot of shared versus unique terms
@@ -1160,6 +1179,8 @@ ggplot2::ggplot(summary_df, ggplot2::aes(x = Category, y = Count, fill = Categor
   ggplot2::labs(title = "Vocabulary Overlap Between Florida and Iowa Books")
 
 ```
+
+**Comparison Cloud**
 
 ```{r comparison cloud}
 
@@ -1213,6 +1234,8 @@ subject_terms <- all_subjects %>%
 print(subject_terms)
 
 ```
+
+**Thematic Emphasis Radar Plot (Google Books Themes)**
 
 ```{r radar plot}
 
@@ -1276,6 +1299,8 @@ graphics::legend("topright",
 ```
 
 ### Dictionary-Based Analysis
+
+Next is dictionary based analysis. I spent an extensive amount of time researching terms and fine tuning this dictionary (all references are in my paper references section). This part was tricky because I could not include certain terms that appeared in books for benign purposes. For example, if I tried to use "race" as a term in the dictionary as a keyword indicator of race being involved in the book as a theme, then a book about horseracing may feature prominently in the "race" category, when, in fact, it was not at all about race.
 
 ```{r dictionary creation}
 
@@ -1437,6 +1462,8 @@ detect_theme <- function(text, keywords) {
 
 ```
 
+After writing a function to detect themes, I applied it to all of my data (text and google books descriptions) to begin my thematic analysis.
+
 ```{r fl theme flags}
 
 # use dictionary to compare themes
@@ -1513,12 +1540,14 @@ theme_label_map <- c(
   has_history = "History",
   has_religion = "Religion",
   has_identity = "Identity",
-  has_anti_intellectualism = "Anti-Intellectualism",
+  has_anti_intellectualism = "Anti-\nIntellectualism",
   has_family = "Family",
   has_education = "Education"
 )
 
 ```
+
+**Theme Prevalance in Book Texts**
 
 ```{r regional theme comparison}
 
@@ -1550,10 +1579,12 @@ ggplot2::ggplot(theme_summary, ggplot2::aes(x = theme, y = count, fill = region)
   ggsci::scale_fill_jama() +
   ggplot2::scale_y_continuous(labels = scales::number_format(accuracy = 1), limits = c(0, 10)) +
   ggplot2::labs(title = "Theme Prevalence in Book Texts by Region",
-                x = "Theme", y = "Number of Books") 
+                x = "Theme", y = "Number of Books")
+
   
 
 ```
+
 
 ```{r fl description theme flags}
 
@@ -1607,6 +1638,8 @@ ia_description_theme_flags <- ia_book_texts_cleaned_df %>%
 
 ```
 
+**Theme Prevalance in Book Descriptions**
+
 ```{r description theme prevalence}
 
 # standardize column type
@@ -1648,6 +1681,8 @@ ggplot2::ggplot(description_theme_summary, ggplot2::aes(x = theme, y = count, fi
 
 ### Classification Model
 
+Finally we move on to our classification model. Here we train two separate models - one Ridge Regression and one XGMBoost model. Ridge was chosen to make a more robust logistic regression model - this allows for reducing the impact of ceratin variables while not eliminating them (as is what happens if we used a LASSO model). The XGMBoost model serves as the opposing model - a nonlinear model that will hopefully capture underlying trends that would otherwise be lost to the introduced bias that results from the simplicity of a linear model.
+
 ```{r create theme flags mapping function}
 
 # function to apply theme detection per source
@@ -1661,7 +1696,7 @@ create_theme_flags <- function(df, field, prefix) {
 
 ```
 
-```{r apply theme detection full dataset}
+```{r apply theme detection full dataset, eval=FALSE}
 
 # apply new theme detection function
 complete_book_texts_cleaned_df <- create_theme_flags(complete_book_texts_cleaned_df, field = "text", prefix = "text")
@@ -1673,6 +1708,13 @@ theme_cols <- grep("^text_has_|^desc_has_|^pub_has_", names(complete_book_texts_
 feature_matrix <- complete_book_texts_cleaned_df %>%
   dplyr::select(gutenberg_id, title, author, region, banned, dplyr::all_of(theme_cols))
 
+```
+
+*Note - here is a save point for the feature matrix created above for convenience*
+
+```{r feature matrix read in}
+
+feature_matrix <- readr::read_csv("Project/data/feature_matrix.csv")
 
 ```
 
@@ -1712,6 +1754,8 @@ predict_ban_risk <- function(title, author, text, description, published_themes)
 
 ```
 
+**Ridge Model**
+
 ```{r ridge model}
 
 # create input matrix
@@ -1744,6 +1788,8 @@ print(ridge_model$lambda.min)
 
 ```
 
+**XGMBoost Model**
+
 ```{r xgboost model}
 
 X_xgm <- X %>%
@@ -1773,8 +1819,67 @@ xgb_model <- xgboost::xgb.train(
   verbose = 1
 )
 
+```
+
+```{r variable importance plot}
+
+# created mapping labels for visualizations
+category_theme_label_map <- c(
+  text_has_gender = "Text Contains Gender Themes",
+  text_has_race = "Text Contains Race Themes",
+  text_has_sexuality = "Text Contains Sexuality Themes",
+  text_has_violence = "Text Contains Violence Themes",
+  text_has_politics = "Text Contains Politics Themes",
+  text_has_history = "Text Contains History Themes",
+  text_has_religion = "Text Contains Religion Themes",
+  text_has_identity = "Text Contains Identity Themes",
+  text_has_anti_intellectualism = "Text Contains \nAnti-Intellectualism Themes",
+  text_has_family = "Text Contains Family Themes",
+  text_has_education = "Text Contains Education Themes",
+  description_has_gender = "Description Contains Gender Themes",
+  description_has_race = "Description Contains Race Themes",
+  description_has_sexuality = "Description Contains Sexuality Themes",
+  description_has_violence = "Description Contains Violence Themes",
+  description_has_politics = "Description Contains Politics Themes",
+  description_has_history = "Description Contains History Themes",
+  description_has_religion = "Description Contains Religion Themes",
+  description_has_identity = "Description Contains Identity Themes",
+  description_has_anti_intellectualism = "Description Contains \nAnti-Intellectualism Themes",
+  description_has_family = "Description Contains Family Themes",
+  description_has_education = "Description Contains Education Themes"
+)
+
 xgboost::xgb.importance(model = xgb_model) %>%
   xgboost::xgb.plot.importance(top_n = 20)
+
+importance_df <- xgboost::xgb.importance(model = xgb_model)
+
+importance_df$Feature <- recode(importance_df$Feature, !!!category_theme_label_map)
+
+importance_plot <- xgboost::xgb.plot.importance(importance_matrix = importance_df, top_n = 20)
+
+importance_df <- xgboost::xgb.importance(model = xgb_model)
+
+importance_df$Feature <- recode(importance_df$Feature, !!!category_theme_label_map)
+importance_df$Feature <- reorder(importance_df$Feature, importance_df$Gain)
+
+# Subset top_n important features
+top_importance_df <- importance_df %>% 
+  slice_max(Gain, n = 20) %>% 
+  mutate(Feature = reorder(Feature, Gain))
+
+# Create importance plot using ggplot2
+ggplot2::ggplot(data = importance_df, ggplot2::aes(x = Feature, y = Gain)) +
+  ggthemes::theme_wsj() +
+  ggplot2::geom_bar(stat = "identity") +
+  ggplot2::coord_flip() +
+  ggplot2::scale_y_continuous("Gain", expand = c(0, 0), limits = c(0, 0.28)) +
+  ggplot2::labs(title = "Feature Importance",
+       x = "Features",
+       y = "Importance Score") +
+  ggplot2::geom_text(ggplot2::aes(label = round(Gain, 2)), 
+                hjust = 1.25, 
+                size = 3)
 
 ```
 
