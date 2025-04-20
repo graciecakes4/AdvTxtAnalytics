@@ -133,7 +133,7 @@ gutenberg_titles_cleaned <- gutenbergr::gutenberg_works() %>%
 
 in_gutenberg <- c()
 
-for(i in fl_sample_books_titles_cleaned) {
+for(i in fl_banned_books_list_cleaned ) {
   if (i %in% gutenberg_titles_cleaned) {
     in_gutenberg <- c(in_gutenberg, i)
   }
@@ -475,6 +475,33 @@ books_not_banned_metadata <- books_not_banned_metadata %>%
 
 books_not_banned_df <- books_not_banned %>% 
   dplyr::left_join(., books_not_banned_metadata, by = "title")
+
+```
+
+### Test Data
+
+After selecting the training data, we will select a subset of books for testing our model.
+
+```{r test data}
+
+labeled_test_data <- data.frame(
+  gutenberg_id = c(2759, 67138, 20, 40539, 23005, 42914, 48258, 49745, 4497, 25060),
+  title = c("The Man in the Iron Mask", "The Sun Also Rises", "Paradise Lost", "A Lost Cause", "Eli", "Gladiator", "The Old Dominion", "The Young Deliverers of Pleasant Cove", "The Sentimentalists", "Officer and Man"),
+  author = c("Alexandre Dumas", "Ernest Hemingway", "John Milton", "Guy Thorne", "Heman White Chaplin", "Philip Wylie", "Mary Johnston",
+  "Elijah Kellogg", "George Meredith", "Louis Becke"),
+  label = c("banned", "banned", "banned", "not banned", "not banned", "not banned", "not banned", "not banned", "not banned", 
+  "not banned")
+)
+
+labeled_test_data$text <- sapply(labeled_test_data$gutenberg_id, load_gutenberg_text)
+
+test_data_metadata <- readr::read_csv("Project/data/test_data_metadata.csv")
+
+labeled_test_data <- labeled_test_data %>% 
+  dplyr::left_join(., test_data_metadata, by = "title")
+
+labeled_test_data <- labeled_test_data %>% 
+  dplyr::select(gutenberg_id, title, author, text, subject, description, label)
 
 ```
 
@@ -1945,7 +1972,6 @@ The ridge model outperforms the XGBoost model. The simplicity and interpretabili
 roc_ridge <- pROC::roc(eval_df$truth, eval_df$ridge)
 roc_xgb   <- pROC::roc(eval_df$truth, eval_df$xgb)
 
-# Extract TPR/FPR as data frames
 ridge_df <- data.frame(
   fpr = roc_ridge$specificities,
   tpr = 1 - roc_ridge$sensitivities,
@@ -1978,18 +2004,177 @@ roc_comparison
 
 ```
 
-## Findings
+#### Model Testing
 
-1.  Write
+Now the model will be tested against new data.
 
--   conclusions
--   limitations
--   way forward
+```{r test data read in}
 
-## Conclusion
+labeled_test_data <- readr::read_csv("Project/data/labeled_test_data.csv")
 
--   Need to save all visuals
--   add `ggsci::scale_fill_jama()`to all visuals
--   remove unnecessary code
--   make xgboost output prettier
--   create table with model comparison
+labeled_test_data <- labeled_test_data %>%
+  dplyr::mutate(label = ifelse(label == "banned", 1, 0))
+
+```
+
+```{r model data cleaning function}
+
+# this is a wrapper function specifically designed to be added into the model pipeline
+clean_test_text <- function(text) {
+  if (is.na(text)) return("")
+  text <- preprocess_text(text)
+  text <- clean_text(text)
+  text <- remove_punctuation_custom(text)
+  text <- tm::removeWords(text, enhanced_stopwords)
+  text <- tm::removePunctuation(text)
+  return(text)
+}
+
+```
+
+```{r model testing function}
+
+run_model_on_test_data <- function(test_df, ridge_model, xgb_model) {
+  
+  # clean text fields
+  test_df <- test_df %>%
+    dplyr::mutate(
+      gutenberg_id = as.character(gutenberg_id),
+      text = preprocess_text(text),
+      description = preprocess_text(description),
+      subject = preprocess_text(subject)
+    )
+
+  # generate theme flags
+  test_df <- create_theme_flags(test_df, field = "text", prefix = "text")
+  test_df <- create_theme_flags(test_df, field = "description", prefix = "desc")
+  test_df <- create_theme_flags(test_df, field = "subject", prefix = "pub")
+
+  # select feature columns
+  theme_cols <- grep("^text_has_|^desc_has_|^pub_has_", names(test_df), value = TRUE)
+  X_test <- test_df %>%
+    dplyr::select(dplyr::all_of(theme_cols)) %>%
+    dplyr::mutate(dplyr::across(everything(), as.numeric)) %>%
+    as.matrix()
+
+  expected_cols <- colnames(X)  # X from your training block
+  missing_cols <- setdiff(expected_cols, colnames(X_test))
+  if (length(missing_cols) > 0) {
+    for (col in missing_cols) {
+      X_test <- cbind(X_test, setNames(rep(0, nrow(X_test)), col))
+    }
+  }
+  X_test <- X_test[, expected_cols]
+  
+  # generate predictions
+  ridge_probs <- predict(ridge_model, newx = X_test, s = "lambda.min", type = "response")
+  xgb_probs <- predict(xgb_model, newdata = xgboost::xgb.DMatrix(X_test))
+
+  # build results dataframe
+  test_results <- test_df %>%
+    dplyr::select(title, author, label) %>%
+    dplyr::mutate(
+      ridge_prob = as.numeric(ridge_probs),
+      xgb_prob   = as.numeric(xgb_probs),
+      ridge_pred = ifelse(ridge_prob > 0.5, 1, 0),
+      xgb_pred   = ifelse(xgb_prob > 0.5, 1, 0)
+    )
+  
+  return(test_results)
+}
+
+```
+
+```{r oh girl here we go}
+
+test_results <- run_model_on_test_data(labeled_test_data, ridge_model, xgb_model)
+View(test_results)
+
+```
+
+```{r testing evaluation}
+
+test_eval_df <- test_results %>%
+  dplyr::mutate(
+    truth = factor(label, levels = c(0, 1)),
+    ridge_pred = factor(ridge_pred, levels = c(0, 1)),
+    xgb_pred = factor(xgb_pred, levels = c(0, 1))
+  )
+
+# Define metric set
+my_test_metrics <- yardstick::metric_set(
+  yardstick::accuracy,
+  yardstick::sensitivity,
+  yardstick::specificity,
+  yardstick::f_meas
+)
+
+# Evaluate ridge model
+ridge_test_metrics <- my_test_metrics(test_eval_df, truth = truth, estimate = ridge_pred)
+
+# Evaluate XGBoost model
+xgb_test_metrics <- my_test_metrics(test_eval_df, truth = truth, estimate = xgb_pred)
+
+ridge_metrics_table <- ridge_test_metrics %>%
+  dplyr::select(.metric, .estimate) %>%
+  tidyr::pivot_wider(names_from = .metric, values_from = .estimate) %>%
+  dplyr::mutate(Model = "Ridge")
+
+xgb_metrics_table <- xgb_test_metrics %>%
+  dplyr::select(.metric, .estimate) %>%
+  tidyr::pivot_wider(names_from = .metric, values_from = .estimate) %>%
+  dplyr::mutate(Model = "XGBoost")
+
+test_summary_table <- dplyr::bind_rows(ridge_metrics_table, xgb_metrics_table) %>%
+  dplyr::select(Model, accuracy, sensitivity, specificity, f_meas)
+
+
+test_roc_ridge <- pROC::roc(test_eval_df$truth, test_results$ridge_prob)
+test_roc_xgb   <- pROC::roc(test_eval_df$truth, test_results$xgb_prob)
+
+test_auc_ridge <- pROC::auc(test_roc_ridge)
+test_auc_xgb   <- pROC::auc(test_roc_xgb)
+
+```
+
+| Model   | AUC   | Accuracy | Sensitivity | Specificity | F1 Score |
+|---------|-------|----------|-------------|-------------|----------|
+| Ridge   | 0.524 | 0.600    | 0.714       | 0.333       | 0.714    |
+| XGBoost | 0.571 | 0.700    | 0.857       | 0.333       | 0.800    |
+
+: Model Comparison Summary Table
+
+
+```{r test roc curves}
+
+test_ridge_df <- data.frame(
+  fpr = test_roc_ridge$specificities,
+  tpr = 1 - test_roc_ridge$sensitivities,
+  model = "Ridge"
+)
+
+test_xgb_df <- data.frame(
+  fpr = test_roc_xgb$specificities,
+  tpr = 1 - test_roc_xgb$sensitivities,
+  model = "XGBoost"
+)
+
+# Combine for ggplot
+test_roc_data <- dplyr::bind_rows(test_ridge_df, test_xgb_df)
+
+test_roc_comparison <- ggplot2::ggplot(test_roc_data, ggplot2::aes(x = tpr, y = fpr, color = model)) +
+  ggplot2::geom_line(size = 1.2) +
+  ggplot2::geom_abline(linetype = "dashed", color = "gray") +
+  ggthemes::theme_wsj() +
+  ggplot2::labs(
+    title = "Model Test ROC Curve Comparison",
+    subtitle = paste0("Ridge AUC = ", round(test_auc_ridge, 3),
+                      " | XGBoost AUC = ", round(test_auc_xgb, 3)),
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)",
+    color = "Model"
+  )
+  
+test_roc_comparison
+
+```
