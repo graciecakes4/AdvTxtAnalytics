@@ -37,27 +37,28 @@ data("gutenberg_metadata", package = "gutenbergr")
 
 ```{r data import}
 
-banned_books_file_path <- "/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Project/data/PEN America's Index of School Book Bans (July 1, 2023 - June 30, 2024).xlsx" # assign file path to variable
+# assign file path to variable
+banned_books_file_path <- "/Users/coniecakes/Library/CloudStorage/OneDrive-Personal/001. Documents - Main/023. Programming Tools/R Studio/AdvTxtAnalytics/Project/data/PEN America's Index of School Book Bans (July 1, 2023 - June 30, 2024).xlsx" 
 
-banned_books_list <- readxl::read_excel(banned_books_file_path, sheet = "Sorted by Author & Title", skip = 2) # import banned books list
+banned_books_list <- readxl::read_excel(banned_books_file_path, sheet = "Sorted by Author & Title", skip = 2)
 
-utils::head(banned_books_list, 10) # sanity check to make sure data was read in properly
+utils::head(banned_books_list, 10)
 
 ```
 
 ```{r data preparation}
 
 colnames(banned_books_list) <- c("Title", "Author", "Secondary_Author", "Illustrator", "Translator", 
-                                "Series_Name", "State", "District", "Date_Removed", "Ban_Status", "Initiating_Action") # assign new column titles
+                                "Series_Name", "State", "District", "Date_Removed", "Ban_Status", "Initiating_Action") 
 
 banned_books_cleaned <- banned_books_list %>% 
-    dplyr::select(Title, Author, State, District, Date_Removed, Ban_Status, Initiating_Action) %>% # select only relevant columns
-    dplyr::mutate(Date_Removed = as.Date(lubridate::my(Date_Removed))) # convert date column to Date class
+    dplyr::select(Title, Author, State, District, Date_Removed, Ban_Status, Initiating_Action) %>% 
+    dplyr::mutate(Date_Removed = as.Date(lubridate::my(Date_Removed)))
 
-head(banned_books_cleaned,10) # sanity check
+head(banned_books_cleaned,10)
 
 banned_books_cleaned %>% 
-    dplyr::summarise(dplyr::across(dplyr::everything(), ~ sum(is.na(.)), .names = "NA_count_{.col}")) # check for NA values in the date column
+    dplyr::summarise(dplyr::across(dplyr::everything(), ~ sum(is.na(.)), .names = "NA_count_{.col}")) 
 
 fl_banned_books_list <- banned_books_cleaned %>% 
     dplyr::filter(State == "Florida") %>% 
@@ -79,8 +80,9 @@ I sampled 10 book titles from the state of Florida's banned books list. I origin
 
 ```{r data sampling}
 
-seed <- 245 # select random seed
-set.seed(seed) # set seed for reproducibility
+# select random seed
+seed <- 245 
+set.seed(seed)
 
 # sample books from Florida & New York
 fl_books_sample <- fl_banned_books_list %>% 
@@ -132,52 +134,6 @@ in_gutenberg
 
 I could not obtain any ISBNs from the below function I wrote. I spent a few hours on this, then decided to move on to another method of searching.
 
-```{r isbn search function}
-
-# create isbn search function
-get_isbn_google <- function(title) {
-    search_url <- paste0("https://www.googleapis.com/books/v1/volumes?q=intitle:", gsub(" ", "+", title))
-    response <- httr::GET(search_url)
-    if (httr::status_code(response) != 200){
-        return("Search unsuccessful")
-    }
-    book_data <- tryCatch({
-        httr::content(response, "text", encoding = "UTF-8") %>% jsonlite::fromJSON()
-    }, error = function(e) return(NA))
-    if (!"items" %in% names(book_data) || length(book_data$items) == 0) {
-        return("No Results Found")
-    }
-    if (!"items" %in% names(book_data) || !is.list(book_data$items) || length(book_data$items) == 0) {
-        return("No Item Exists")
-    }
-    first_item <- book_data$items[[1]]
-
-    if (!"volumeInfo" %in% names(first_item) || !is.list(first_item$volumeInfo)) {
-        return("No Volume Exists")
-    }
-    volume_info <- first_item$volumeInfo
-    if (!"industryIdentifiers" %in% names(volume_info) || !is.list(volume_info$industryIdentifiers)) {
-        return("No ISBN Available")  # No ISBN available
-    }
-    identifiers <- volume_info$industryIdentifiers
-
-    isbn <- NA
-    for (id in identifiers) {
-        if (id$type == "ISBN_13") {
-            isbn <- id$identifier
-            break
-        } else if (id$type == "ISBN_10") {
-            isbn <- id$identifier
-        }
-    }
-    return(isbn)
-}
-
-# function test
-isbn_example <- get_isbn_google("Slaughterhouse-Five")
-print(isbn_example)
-
-```
 
 ### Gutenberg Search - Pt. 2
 
@@ -312,8 +268,8 @@ Now I am attempting to download the balance of books from the gutenberg website 
 load_gutenberg_text <- function(book_id) {
     url <- paste0("https://www.gutenberg.org/files/", book_id, "/", book_id, "-0.txt")
     response <- httr::GET(url)
-    if (status_code(response) == 200) {
-        text <- content(response, "text", encoding = "UTF-8")
+    if (httr::status_code(response) == 200) {
+        text <- httr::content(response, "text", encoding = "UTF-8")
         return(text)
     } else {
         message(paste("Book ID", book_id, "could not be loaded."))
@@ -478,6 +434,42 @@ ia_book_texts_df %>% dplyr::left_join(ia_book_metadata, by = "title") -> ia_book
 
 ```
 
+
+### Data Collection for Books Not Banned
+
+```{r books not banned}
+
+books_not_banned <- data.frame(
+  gutenberg_id = c(13996, 56415, 145, 5200, 1342, 2554, 4300, 219, 730, 161, 55, 1399, 1080, 1661, 514, 23, 50150, 408, 26184, 1513), 
+  title = c("The Divine Fire", "Making the Nine", "Middlemarch", "Metamorphosis", "Pride and Prejudice",
+  "Crime and Punishment", "Ulysses", "Heart of Darkness", "Oliver Twist", "Sense and Sensibility", "The Wonderful Wizard of Oz", "Anna Karenina",
+  "A Modest Proposal", "The Adventures of Sherlock Holmes", "Little Women", "Narrative of the Life of Frederick Douglass, an American Slave",
+  "The Devil is an Ass", "The Souls of Black Folk", "Simple Sabotage Field Manual", "Romeo and Juliet"),
+  author = c("May Sinclair", "Albertus T. Dudley", "George Eliot", "Franz Kafka", "Jane Austen", "Fyodor Dostoyevsky", "James Joyce", "Joseph Conrad",
+  "Charles Dickens", "Jane Austen", "L. Frank Baum", "Leon Tolstoy", "Jonathan Swift", "Arthur Conan Doyle", "Louisa May Alcott", "Frederick Douglass",
+  "Ben Johnson", "W. E. B. Du Bois", "United States Office of Strategic Services", "William Shakespeare"),
+  stringsAsFactors = FALSE
+)
+
+books_not_banned$text <- sapply(books_not_banned$gutenberg_id, load_gutenberg_text)
+
+# adding metadata from google books
+books_not_banned_metadata <- readr::read_csv("Project/data/books_not_banned_metadata.csv")
+
+books_not_banned_metadata <- books_not_banned_metadata %>% 
+  dplyr::rename( 
+    title = Title,
+    subject = Subject,
+    description = Description
+  )
+
+books_not_banned_df <- books_not_banned %>% 
+  dplyr::left_join(., books_not_banned_metadata, by = "title")
+
+#readr::write_csv(books_not_banned_df, "Project/data/books_not_banned_df.csv")
+
+```
+
 ## Data Preprocessing
 
 During the data preprocessing phase I will take all the text data and pass it through a function to:
@@ -500,14 +492,10 @@ Normally, I would structure this as a package and these functions would be in a 
 
 ```{r preprocessing function}
 
-clean_text <- function(text_vector) {
-  text_vector <- iconv(text_vector, to = "UTF-8")
-  text_vector <- gutenbergr::gutenberg_strip(text_vector)
-  chapter_pattern <- "^(chapter [\\dIVXLC]|[\\dIVXLC]+\\.)"
-  chapter_indices <- grep(chapter_pattern, text_vector, ignore.case = TRUE)
-  if (length(chapter_indices) > 0) {
-    text_vector <- text_vector[chapter_indices[1]:chapter_indices[length(chapter_indices)]]
-  }
+clean_text <- function(text_input) {
+  text_vector <- as.character(text_input)
+  text_vector <- stringr::str_remove(text_vector, "^\\*\\*\\* START OF THE PROJECT GUTENBERG EBOOK \\d+ \\*\\*\\*")
+  text_vector <- stringr::str_replace_all(text_vector, "\\r\\n", " ")
   text_vector <- tolower(text_vector)
   text_vector <- stringr::str_replace_all(text_vector, "[“”]", "\"")
   text_vector <- stringr::str_replace_all(text_vector, "[‘’]", "'")
@@ -516,7 +504,6 @@ clean_text <- function(text_vector) {
   text_vector <- stringr::str_remove_all(text_vector, "\\d+")
   text_vector <- stringr::str_replace_all(text_vector, "[^a-zA-Z\\s]", "")
   text_vector <- stringr::str_squish(text_vector)
-  text_vector <- text_vector[text_vector != ""]
   text_vector <- tm::removeWords(text_vector, tm::stopwords("en"))
   text_vector <- stringr::str_remove_all(text_vector, "\\b[a-zA-Z]\\b")
   text_vector <- tokenizers::tokenize_sentences(text_vector)
@@ -1231,8 +1218,8 @@ theme_dictionary_long <- list(
     "anti-terrorism policies", "domestic terrorism designations",
     "political violence discourse", "protest-related violence",
     "riot control measures", "public safety funding", "gun violence", "gun control",
-    "abuse", "physical violence", "murder", "suicide", "assault", "war", "fight", 
-    "bullying", "domestic violence", "relationship violence", "sexual violence"
+    "physical abuse", "physical violence", "murder", "suicide", "violent assault", "bullying", 
+    "domestic violence", "relationship violence", "sexual violence"
   ),
 
   politics = c(
@@ -1311,40 +1298,11 @@ theme_dictionary_long <- list(
 
 ```
 
-```{r short dictionary}
-
-theme_dictionary_short <- list(
-  gender = c("trans", "nonbinary", "gender", "female", "male", "gender identity", "cis", "cisgender", "transgender"),
-  race = c("race", "racism", "black person", "black people", "white person", "white people", "asian people", "latinx", "african american", "ethnicity", "heritage"),
-  sexuality = c("lgbt", "queer", "gay", "lesbian", "bisexual", "homosexual", "transgender", "asexual", "sexuality"),
-  violence = c("abuse", "violence", "murder", "kill", "assault", "trauma", "war", "fight", "weapon", "death"),
-  politics = c("government", "democracy", "election", "law", "rights", "justice", "politics", "civil", "freedom")
-)
-
-```
-
 ```{r theme detect orig}
 
 detect_theme <- function(text, keywords) {
   pattern <- paste0("\\b(", paste(keywords, collapse = "|"), ")\\b")
   stringr::str_detect(tolower(text), pattern)
-}
-
-```
-
-```{r theme detection function}
-
-# theme detection function
-detect_theme <- function(text, keywords) {
-  words <- keywords[nchar(keywords) == nchar(gsub(" ", "", keywords))]  # no spaces = single word
-  phrases <- setdiff(keywords, words)
-
-  pattern <- paste0("\\b(", paste(words, collapse = "|"), ")\\b")
-
-  word_match <- stringr::str_detect(text, pattern)
-  phrase_match <- any(sapply(phrases, function(p) stringr::str_detect(text, stringr::fixed(p))))
-
-  return(word_match | phrase_match)
 }
 
 ```
@@ -1460,7 +1418,7 @@ ggplot2::ggplot(theme_summary, ggplot2::aes(x = theme, y = count, fill = region)
   ggthemes::theme_wsj() +
   ggplot2::geom_col(position = "dodge") +
   ggsci::scale_fill_jama() +
-  ggplot2::scale_y_continuous(labels = scales::number_format(accuracy = 1)) +
+  ggplot2::scale_y_continuous(labels = scales::number_format(accuracy = 1), limits = c(0, 10)) +
   ggplot2::labs(title = "Theme Prevalence in Book Texts by Region",
                 x = "Theme", y = "Number of Books") 
   
@@ -1549,7 +1507,7 @@ description_theme_summary <- description_theme_flags %>%
 ggplot2::ggplot(description_theme_summary, ggplot2::aes(x = theme, y = count, fill = region)) +
   ggthemes::theme_wsj() +
   ggplot2::geom_col(position = "dodge") +
-  ggplot2::scale_y_continuous(labels = scales::number_format(accuracy = 1)) +
+  ggplot2::scale_y_continuous(labels = scales::number_format(accuracy = 1), limits = c(0, 10)) +
   ggsci::scale_fill_jama() +
   ggplot2::labs(
     title = "Theme Prevalence in Book Descriptions by Region",
@@ -1559,15 +1517,58 @@ ggplot2::ggplot(description_theme_summary, ggplot2::aes(x = theme, y = count, fi
 ```
 
 
-
-
-
-Need to finish this section (dictionary)
-
-1. Find a better way to visualize
-
-
 ### Classification Model
+
+
+```{r model}
+
+books_not_banned_df <- readr::read_csv("Project/data/books_not_banned_df.csv")
+
+#  clean text
+books_not_banned_df <- books_not_banned_df %>% 
+  dplyr::mutate(gutenberg_id = as.character(gutenberg_id)) %>% 
+  dplyr::mutate(text = lapply(text, clean_text)) %>% 
+  dplyr::mutate(text = lapply(text, clean_text_headers)) %>% 
+  dplyr::mutate(text = lapply(text, remove_punctuation_custom)) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removeWords(t, enhanced_stopwords))) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removePunctuation(t))) %>% 
+  dplyr::mutate(text = lapply(text, function(t) tm::removeNumbers(t)))
+
+# clean descriptions
+books_not_banned_df <- books_not_banned_df %>%
+  dplyr::mutate(description = lapply(description, clean_descriptions)) %>% 
+  dplyr::mutate(description = lapply(description, remove_punctuation_custom)) %>% 
+  dplyr::mutate(description = lapply(description, function(t) tm::removeWords(t, enhanced_stopwords))) %>% 
+  dplyr::mutate(description = lapply(description, function(t) tm::removePunctuation(t))) %>% 
+  dplyr::mutate(description = lapply(description, function(t) tm::removeNumbers(t)))
+
+# NER
+new_name_candidates <- purrr::map(books_not_banned_df$text, extract_character_names)
+
+name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates, new_name_candidates))))
+readr::write_csv(data.frame(name_stopwords = name_stopwords), "Project/data/name_stopwords.csv")
+name_stopwords <- readr::read_csv("Project/data/name_stopwords.csv")$name_stopwords
+
+# removing additional stopwords from texts
+enhanced_stopwords <- c(
+  stopwords::stopwords("en", source = "stopwords-iso"),
+  quanteda::stopwords("en"),
+  name_stopwords,
+  tidytext::stop_words$word,
+  "the", "and", "but", "gutenberg"
+) %>% unique()
+
+# final cleaning
+
+books_not_banned_text_cleaned_df <- books_not_banned_df %>%
+  tidytext::unnest_tokens(word, text) %>%
+  dplyr::filter(!word %in% enhanced_stopwords) %>%
+  dplyr::group_by(gutenberg_id) %>% 
+  dplyr::summarise(text = paste(word, collapse = " ")) 
+
+readr::write_csv(books_not_banned_text_cleaned_df, "Project/data/books_not_banned_text_cleaned_df.csv")
+
+```
 
 1. build classification model
 
@@ -1584,3 +1585,9 @@ Need to finish this section (dictionary)
 - Need to save all visuals
 - add `ggsci::scale_fill_jama()`to all visuals
 - remove unnecessary code
+
+
+
+
+
+
