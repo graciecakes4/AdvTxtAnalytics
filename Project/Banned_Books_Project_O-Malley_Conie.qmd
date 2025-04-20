@@ -22,7 +22,7 @@ python:
 
 required_packages <- c("jsonlite", "httr", "stringdist", "quanteda", "gutenbergr", "tm", "stringr", "textclean",
                         "tokenizers", "tidytext", "wordcloud", "RColorBrewer", "ggplot2", "ggthemes", "ggraph",
-                        "openNLP")
+                        "openNLP", "ggsci")
 
 # Check if all required packages are installed and install them if not
 for (pkg in required_packages) {
@@ -723,7 +723,8 @@ fl_name_candidates <- purrr::map(fl_book_texts_cleaned_df$text, extract_characte
 ia_name_candidates <- purrr::map(ia_book_texts_cleaned_df$text, extract_character_names)
 
 name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates))))
-readr::write_csv(name_stopwords, name_stopwords )
+#readr::write_csv(data.frame(name_stopwords = name_stopwords), "Project/data/name_stopwords.csv")
+name_stopwords <- readr::read_csv("Project/data/name_stopwords.csv")$name_stopwords
 
 # removing additional stopwords from texts
 enhanced_stopwords <- c(
@@ -1161,29 +1162,151 @@ graphics::legend("topright",
 
 ```{r dictionary creation}
 
-theme_dictionary <- list(
-  gender = c("trans", "nonbinary", "gender", "female", "male", "identity", "cisgender", "transition",
-            "genderfluid", "pronoun", "gender identity", "transphobia", "cis"),
-  race = c("race", "racism", "black", "white", "asian", "latinx", "african american", "ethnicity", "heritage",
-           "people of color", "indigenous", "slavery", "colonialism", "racial", "justice", "segregation"),
-  sexuality = c("lgbt", "queer", "gay", "lesbian", "bisexual", "homosexual", "transgender", "asexual", "sexuality",
-                "coming out", "homophobia", "same-sex", "drag", "gender expression", "mistress", "sex"),
-  violence = c("abuse", "violence", "murder", "kill", "assault", "trauma", "war", "fight", "weapon", "death",
-               "self-harm", "suicide", "domestic violence", "bullying", "gun", "terrorism"),
-  politics = c("government", "democracy", "election", "law", "rights", "justice", "politics", "civil", "freedom",
-               "protest", "activism", "policy", "authoritarian", "legislation", "civil rights"),
-  history = c("slavery", "civil war", "holocaust", "segregation", "reconstruction", "colonialism", "founding fathers",
-              "historical trauma", "revisionism", "slaves", "slave"),
-  religion = c("religion", "christianity", "bible", "faith", "spiritual", "church", "islam", "jewish", "atheist",
-               "religious freedom", "indoctrination", "christian", "catholic", "protestant", "church", "temple", "synagogue"),
-  education = c("school", "teacher", "curriculum", "learning", "classroom", "academic", "students", 
-                "textbook", "critical thinking", "pedagogy", "literacy"),
-  identity = c("identity", "self", "belonging", "expression", "individuality", "personhood", "labels", 
-               "cultural identity", "intersectionality"),
-  anti_intellectualism = c("censorship", "ban", "banned", "ignorance", "indoctrination", "misinformation", 
-                           "truth", "knowledge", "propaganda", "book ban", "thought control"),
-  family = c("family", "parent", "mother", "father", "sibling", "home", "household", "adoption", 
-             "dysfunctional", "foster", "domestic", "upbringing")
+theme_dictionary_long <- list(
+
+  gender = c(
+    "transgender", "gender non-conforming", "genderqueer", "agender", "bigender",
+    "two-spirit", "pronouns", "misgender", "deadname", "transition", "gender dysphoria",
+    "gender expression", "gender roles", "gender norms", "gender variance",
+    "gender identity", "gender fluidity", "gender nonconformity", "gender inclusivity",
+    "gender diversity", "gender equality", "gender equity", "gender justice",
+    "gender mainstreaming", "gender sensitivity", "gender responsiveness",
+    "gender ideology", "biological sex", "trans rights", "women's rights",
+    "gender-critical", "TERF", "gender self-identification",
+    "gender recognition certificate", "single-sex spaces", "bathroom bills",
+    "sports eligibility", "parental rights in education", "puberty blockers",
+    "gender transition in minors", "detransition", "trans", "cis", "cisgender", "agender",
+    "transpbobia", "transphobic", "homophobia", "homophobic"
+  ),
+
+  race = c(
+    "systemic racism", "racial profiling", "racial discrimination",
+    "racial inequality", "racial justice", "racial equity", "racial bias",
+    "racial prejudice", "racial stereotyping", "racial microaggressions",
+    "racial disparities", "racial oppression", "racial segregation",
+    "racial integration", "racial reconciliation", "critical race theory",
+    "white privilege", "black lives matter", "affirmative action", "reparations",
+    "colorism", "intersectionality", "racial identity", "racial consciousness",
+    "racial solidarity", "racial justice movement", "racial equity initiatives",
+    "racial healing", "racial justice advocacy", "racial justice education",
+    "DEI", "anti-racism training", "wokeism", "cancel culture", "CRT bans",
+    "anti-CRT legislation", "racial sensitivity training", "equity audits",
+    "racial equity policies", "race-based admissions", "race-conscious policies",
+    "racial equity mandates", "racial equity impact assessments",
+    "racial equity frameworks", "racial", "racist", "anti racist", "reverse racism",
+    "african american", "black people", "white people", "latinx", "asian american", 
+    "ethnicity", "colonialism", "slavery"
+  ),
+
+  sexuality = c(
+    "pansexual", "demisexual", "aromantic", "intersex", "non-heteronormative",
+    "sexual orientation", "sexual identity", "sexual fluidity", "sexual diversity",
+    "sexual rights", "sexual liberation", "sexual health", "sexual education",
+    "sexual minorities", "sexual stigma", "LGBTQIA+", "pride", "rainbow flag",
+    "queer culture", "queer theory", "queer activism", "queer visibility",
+    "queer representation", "queer inclusion", "queer rights", "queer liberation",
+    "queer community", "queer identity", "queer expression", "queer resilience",
+    "Don't Say Gay", "parental rights in education", "LGBTQ+ curriculum",
+    "drag bans", "trans youth healthcare", "conversion therapy bans",
+    "religious freedom vs. LGBTQ+ rights", "bathroom access debates",
+    "same-sex marriage debates", "LGBTQ+ adoption rights",
+    "LGBTQ+ discrimination laws", "LGBTQ+ hate crimes legislation",
+    "LGBTQ+ military service policies", "LGBTQ+ workplace protections", "same sex",
+    "bisesxual", "asexual", "lgbt", "queer", "gay", "lesbian", "bisexual", "transgender", 
+    "sexuality", "coming out", "gender expression"
+  ),
+
+  violence = c(
+    "mass shooting", "school shooting", "police brutality", "gang violence",
+    "hate crime", "sexual assault", "intimate partner violence", "child abuse",
+    "elder abuse", "human trafficking", "torture", "genocide", "lynching",
+    "mob violence", "vigilante justice", "state violence", "structural violence",
+    "symbolic violence", "cultural violence", "economic violence", "political violence",
+    "institutional violence", "systemic violence", "interpersonal violence",
+    "collective violence", "direct violence", "indirect violence",
+    "psychological violence", "emotional violence", "verbal violence",
+    "Second Amendment rights", "gun control legislation", "red flag laws",
+    "stand your ground laws", "police reform", "defund the police",
+    "law and order rhetoric", "crime wave narratives", "border security measures",
+    "anti-terrorism policies", "domestic terrorism designations",
+    "political violence discourse", "protest-related violence",
+    "riot control measures", "public safety funding", "gun violence", "gun control",
+    "abuse", "physical violence", "murder", "suicide", "assault", "war", "fight", 
+    "bullying", "domestic violence", "relationship violence", "sexual violence"
+  ),
+
+  politics = c(
+    "governance", "political system", "political ideology", "political party",
+    "political campaign", "political debate", "political discourse",
+    "political participation", "political engagement", "political representation",
+    "political accountability", "political transparency", "political corruption",
+    "political reform", "political polarization", "liberalism", "conservatism",
+    "socialism", "communism", "capitalism", "nationalism", "populism",
+    "progressivism", "libertarianism", "centrism", "authoritarianism",
+    "totalitarianism", "democracy", "theocracy", "technocracy",
+    "cancel culture", "wokeism", "culture wars", "identity politics",
+    "political correctness", "deep state", "election fraud claims",
+    "voter suppression", "gerrymandering", "mail-in voting debates",
+    "misinformation", "disinformation", "fake news", "media bias",
+    "political censorship", "political protest", "political unrest", "civil disobedience",
+    "legislation", "legislative", "political activism", "political activist", "civil rights",
+    "authoritarian"
+  ), 
+
+  history = c(
+    "Jim Crow laws", "emancipation", "civil rights movement", "suffrage movement",
+    "abolitionism", "manifest destiny", "trail of tears", "internment camps",
+    "apartheid", "decolonization", "historical memory", "historical revisionism",
+    "historical preservation", "historical reenactment", "historical narratives",
+    "founding fathers", "colonialism", "reconstruction", "slavery", "civil war",
+    "holocaust", "slave trade", "confederacy", "whitewashing history",
+    "curriculum censorship", "monuments debate", "CRT history bans", "segregation", "colonialism", 
+    "reconstruction", "founding fathers", "historical trauma", "revisionism"
+  ),
+
+  religion = c(
+    "religion", "christianity", "islam", "judaism", "atheism", "agnosticism",
+    "buddhism", "hinduism", "spirituality", "interfaith", "evangelical",
+    "religious freedom", "freedom of worship", "religious pluralism",
+    "religious identity", "faith-based", "bible literacy", "church-state separation",
+    "public prayer", "religious exemption", "religious indoctrination",
+    "religious curriculum", "proselytizing", "religious liberty", "blasphemy laws"
+  ),
+
+  education = c(
+    "curriculum", "textbook", "critical thinking", "pedagogy", "literacy",
+    "academic freedom", "standardized testing", "education equity", "school choice",
+    "public education", "private education", "charter schools", "homeschooling",
+    "banned books", "reading lists", "civics education", "parental rights in education",
+    "education reform", "education censorship", "divisive concepts", "teacher unions",
+    "educational standards", "learning loss", "educational indoctrination", "curriculum"
+  ),
+
+  identity = c(
+    "cultural identity", "gender identity", "intersectionality", "individuality",
+    "self expression", "social identity", "collective identity", "personal identity",
+    "lived experience", "marginalized identity", "oppressed identity",
+    "labeling", "identity politics", "identity suppression", "identity conflict",
+    "identity negotiation", "identity-based censorship"
+  ),
+
+  anti_intellectualism = c(
+    "censorship", "banned books", "book ban", "indoctrination", "misinformation",
+    "propaganda", "thought control", "anti-science", "truth suppression",
+    "curriculum sanitization", "knowledge control", "epistemic injustice",
+    "disinformation", "anti-expert sentiment", "deplatforming", "cancel culture",
+    "ideological indoctrination", "educational gag orders", "viewpoint discrimination"
+  ),
+
+  family = c(
+    "nuclear family", "chosen family", "foster family", "adoptive family",
+    "parental rights", "parenthood", "domestic life", "family values", "family structure",
+    "family unit", "intergenerational family", "nontraditional family",
+    "same-sex parenting", "single parent household", "broken home",
+    "child-rearing", "upbringing", "home environment", "parental involvement",
+    "family-friendly curriculum", "family identity", "familial support"
+  )
+
 )
 
 ```
@@ -1191,8 +1314,8 @@ theme_dictionary <- list(
 ```{r short dictionary}
 
 theme_dictionary_short <- list(
-  gender = c("woman", "man", "trans", "nonbinary", "gender", "female", "male", "girls", "boys", "identity"),
-  race = c("race", "racism", "black", "white", "asian", "latinx", "african american", "ethnicity", "heritage"),
+  gender = c("trans", "nonbinary", "gender", "female", "male", "gender identity", "cis", "cisgender", "transgender"),
+  race = c("race", "racism", "black person", "black people", "white person", "white people", "asian people", "latinx", "african american", "ethnicity", "heritage"),
   sexuality = c("lgbt", "queer", "gay", "lesbian", "bisexual", "homosexual", "transgender", "asexual", "sexuality"),
   violence = c("abuse", "violence", "murder", "kill", "assault", "trauma", "war", "fight", "weapon", "death"),
   politics = c("government", "democracy", "election", "law", "rights", "justice", "politics", "civil", "freedom")
@@ -1243,11 +1366,17 @@ fl_theme_flags <- fl_book_texts_cleaned_df %>%
     )
   ) %>%
   dplyr::mutate(
-    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$gender)),
-    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$race)),
-    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$sexuality)),
-    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$violence)),
-    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$politics))
+    has_gender = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$gender)),
+    has_race = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$race)),
+    has_sexuality = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$sexuality)),
+    has_violence = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$violence)),
+    has_politics = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$politics)),
+    has_history = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$history)),
+    has_religion = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$religion)),
+    has_identity = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$identity)),
+    has_anti_intellectualism = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$anti_intellectualism)),
+    has_family = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$family)),
+    has_education = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$education))
   )
 
 ```
@@ -1269,12 +1398,37 @@ ia_theme_flags <- ia_book_texts_cleaned_df %>%
     )
   ) %>%
   dplyr::mutate(
-    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$gender)),
-    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$race)),
-    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$sexuality)),
-    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$violence)),
-    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$politics))
+    has_gender = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$gender)),
+    has_race = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$race)),
+    has_sexuality = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$sexuality)),
+    has_violence = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$violence)),
+    has_politics = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$politics)),
+    has_history = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$history)),
+    has_religion = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$religion)),
+    has_identity = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$identity)),
+    has_anti_intellectualism = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$anti_intellectualism)),
+    has_family = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$family)),
+    has_education = purrr::map_lgl(text, ~ detect_theme(.x, theme_dictionary_long$education))
   )
+
+```
+
+```{r theme label mapping}
+
+# created mapping labels for visualizations
+theme_label_map <- c(
+  has_gender = "Gender",
+  has_race = "Race",
+  has_sexuality = "Sexuality",
+  has_violence = "Violence",
+  has_politics = "Politics",
+  has_history = "History",
+  has_religion = "Religion",
+  has_identity = "Identity",
+  has_anti_intellectualism = "Anti-Intellectualism",
+  has_family = "Family",
+  has_education = "Education"
+)
 
 ```
 
@@ -1298,12 +1452,15 @@ fl_ia_theme_counts <- dplyr::bind_rows(
 theme_summary <- fl_ia_theme_counts %>%
   tidyr::pivot_longer(cols = dplyr::starts_with("has_"), names_to = "theme", values_to = "present") %>%
   dplyr::group_by(region, theme) %>%
-  dplyr::summarise(count = sum(present), .groups = "drop")
+  dplyr::summarise(count = sum(present), .groups = "drop")%>% 
+  dplyr::mutate(theme = theme_label_map[theme])
 
 # plot
 ggplot2::ggplot(theme_summary, ggplot2::aes(x = theme, y = count, fill = region)) +
   ggthemes::theme_wsj() +
   ggplot2::geom_col(position = "dodge") +
+  ggsci::scale_fill_jama() +
+  ggplot2::scale_y_continuous(labels = scales::number_format(accuracy = 1)) +
   ggplot2::labs(title = "Theme Prevalence in Book Texts by Region",
                 x = "Theme", y = "Number of Books") 
   
@@ -1321,11 +1478,17 @@ fl_description_theme_flags <- fl_book_texts_cleaned_df %>%
     across(dplyr::everything(), stringr::str_to_lower)
   ) %>%
   dplyr::mutate(
-    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$gender)),
-    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$race)),
-    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$sexuality)),
-    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$violence)),
-    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$politics))
+    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$gender)),
+    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$race)),
+    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$sexuality)),
+    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$violence)),
+    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$politics)),
+    has_history = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$history)),
+    has_religion = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$religion)),
+    has_identity = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$identity)),
+    has_anti_intellectualism = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$anti_intellectualism)),
+    has_family = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$family)),
+    has_education = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$education))
   )
 
 ```
@@ -1341,16 +1504,22 @@ ia_description_theme_flags <- ia_book_texts_cleaned_df %>%
     across(dplyr::everything(), stringr::str_to_lower)
   ) %>%
   dplyr::mutate(
-    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$gender)),
-    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$race)),
-    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$sexuality)),
-    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$violence)),
-    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_short$politics))
+    has_gender = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$gender)),
+    has_race = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$race)),
+    has_sexuality = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$sexuality)),
+    has_violence = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$violence)),
+    has_politics = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$politics)),
+    has_history = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$history)),
+    has_religion = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$religion)),
+    has_identity = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$identity)),
+    has_anti_intellectualism = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$anti_intellectualism)),
+    has_family = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$family)),
+    has_education = purrr::map_lgl(description, ~ detect_theme(.x, theme_dictionary_long$education))
   )
 
 ```
 
-```{r}
+```{r description theme prevalence}
 
 # standardize column type
 fl_description_theme_flags <- fl_description_theme_flags %>%
@@ -1373,12 +1542,15 @@ description_theme_summary <- description_theme_flags %>%
     values_to = "present"
   ) %>%
   dplyr::group_by(region, theme) %>%
-  dplyr::summarise(count = sum(present), .groups = "drop")
+  dplyr::summarise(count = sum(present), .groups = "drop") %>% 
+  dplyr::mutate(theme = theme_label_map[theme])
 
 # plot
 ggplot2::ggplot(description_theme_summary, ggplot2::aes(x = theme, y = count, fill = region)) +
   ggthemes::theme_wsj() +
   ggplot2::geom_col(position = "dodge") +
+  ggplot2::scale_y_continuous(labels = scales::number_format(accuracy = 1)) +
+  ggsci::scale_fill_jama() +
   ggplot2::labs(
     title = "Theme Prevalence in Book Descriptions by Region",
     x = "Theme", y = "Number of Books"
@@ -1392,7 +1564,7 @@ ggplot2::ggplot(description_theme_summary, ggplot2::aes(x = theme, y = count, fi
 
 Need to finish this section (dictionary)
 
-1. compare themes from google themes to themes I've detected
+1. Find a better way to visualize
 
 
 ### Classification Model
@@ -1402,7 +1574,13 @@ Need to finish this section (dictionary)
 
 ## Findings
 
+1. Write
+  - conclusions
+  - limitations
+  - way forward
 
 ## Conclusion
 
-Need to save all visuals
+- Need to save all visuals
+- add `ggsci::scale_fill_jama()`to all visuals
+- remove unnecessary code
