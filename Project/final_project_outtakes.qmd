@@ -1,0 +1,104 @@
+---
+title: "Final Project Outtakes"
+author: "Grace O'Malley"
+date: "`r Sys.Date()`"
+format: 
+  pdf: 
+    titlepage: true
+    toc: true
+    toc-depth: 2
+    code-block-wrap: true
+    number-sections: true
+execute:
+  echo: true
+  freeze: false
+  error: false
+  jupyter: python3
+python:
+  version: /Users/coniecakes/anaconda3/envs/datascience/bin/python
+---
+
+
+## Appendices - unused
+
+### ISBN Search
+
+```{r isbn search function}
+
+# create isbn search function
+get_isbn_google <- function(title) {
+    search_url <- paste0("https://www.googleapis.com/books/v1/volumes?q=intitle:", gsub(" ", "+", title))
+    response <- httr::GET(search_url)
+    if (httr::status_code(response) != 200){
+        return("Search unsuccessful")
+    }
+    book_data <- tryCatch({
+        httr::content(response, "text", encoding = "UTF-8") %>% jsonlite::fromJSON()
+    }, error = function(e) return(NA))
+    if (!"items" %in% names(book_data) || length(book_data$items) == 0) {
+        return("No Results Found")
+    }
+    if (!"items" %in% names(book_data) || !is.list(book_data$items) || length(book_data$items) == 0) {
+        return("No Item Exists")
+    }
+    first_item <- book_data$items[[1]]
+
+    if (!"volumeInfo" %in% names(first_item) || !is.list(first_item$volumeInfo)) {
+        return("No Volume Exists")
+    }
+    volume_info <- first_item$volumeInfo
+    if (!"industryIdentifiers" %in% names(volume_info) || !is.list(volume_info$industryIdentifiers)) {
+        return("No ISBN Available")  # No ISBN available
+    }
+    identifiers <- volume_info$industryIdentifiers
+
+    isbn <- NA
+    for (id in identifiers) {
+        if (id$type == "ISBN_13") {
+            isbn <- id$identifier
+            break
+        } else if (id$type == "ISBN_10") {
+            isbn <- id$identifier
+        }
+    }
+    return(isbn)
+}
+
+# function test
+isbn_example <- get_isbn_google("Slaughterhouse-Five")
+print(isbn_example)
+
+```
+
+### Original Dictionary
+
+```{r short dictionary}
+
+theme_dictionary_short <- list(
+  gender = c("trans", "nonbinary", "gender", "female", "male", "gender identity", "cis", "cisgender", "transgender"),
+  race = c("race", "racism", "black person", "black people", "white person", "white people", "asian people", "latinx", "african american", "ethnicity", "heritage"),
+  sexuality = c("lgbt", "queer", "gay", "lesbian", "bisexual", "homosexual", "transgender", "asexual", "sexuality"),
+  violence = c("abuse", "violence", "murder", "kill", "assault", "trauma", "war", "fight", "weapon", "death"),
+  politics = c("government", "democracy", "election", "law", "rights", "justice", "politics", "civil", "freedom")
+)
+
+```
+
+### Original Theme Detection Function
+
+```{r theme detection function}
+
+# theme detection function
+detect_theme <- function(text, keywords) {
+  words <- keywords[nchar(keywords) == nchar(gsub(" ", "", keywords))]  # no spaces = single word
+  phrases <- setdiff(keywords, words)
+
+  pattern <- paste0("\\b(", paste(words, collapse = "|"), ")\\b")
+
+  word_match <- stringr::str_detect(text, pattern)
+  phrase_match <- any(sapply(phrases, function(p) stringr::str_detect(text, stringr::fixed(p))))
+
+  return(word_match | phrase_match)
+}
+
+```
