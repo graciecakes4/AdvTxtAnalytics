@@ -495,7 +495,11 @@ labeled_test_data <- data.frame(
 
 labeled_test_data$text <- sapply(labeled_test_data$gutenberg_id, load_gutenberg_text)
 
-test_data_metadata <- readr::read_csv("Project/data/test_data_metadata.csv")
+```
+
+```{r load test metadata}
+
+test_data_metadata <- readr::read_csv(here::here("Project/data/test_data_metadata.csv"))
 
 labeled_test_data <- labeled_test_data %>% 
   dplyr::left_join(., test_data_metadata, by = "title")
@@ -707,12 +711,12 @@ ia_book_texts_df <- ia_book_texts_df %>%
 ```{r load preprocessed data}
 
 # load cleaned text
-fl_book_texts_cleaned_df <- readr::read_csv("Project/data/fl_book_texts_cleaned.csv") 
+fl_book_texts_cleaned_df <- readr::read_csv(here::here("Project/data/fl_book_texts_cleaned.csv"))
 fl_book_texts_cleaned_df <- fl_book_texts_cleaned_df %>%
   dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
   dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
 
-ia_book_texts_cleaned_df <- readr::read_csv("Project/data/ia_book_texts_cleaned.csv")
+ia_book_texts_cleaned_df <- readr::read_csv(here::here("Project/data/ia_book_texts_cleaned.csv"))
 ia_book_texts_cleaned_df <- ia_book_texts_cleaned_df %>%
   dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
   dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
@@ -725,7 +729,7 @@ After running my initial analysis, I realized that names were heavily skewing my
 
 ```{r NER Function}
 
-cleanNLP::cnlp_init_udpipe(model_path = "Project/english-ud-2.1-20180111.udpipe")
+cleanNLP::cnlp_init_udpipe(model_path = here::here("Project/english-ud-2.1-20180111.udpipe"))
 
 extract_character_names <- function(text) {
   annotations <- cleanNLP::cnlp_annotate(text)
@@ -758,7 +762,8 @@ name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates
 *Note - This is another save point. The `name_stopwords` list was expansive so I wrote it to a csv. Here it is read back in for convenience.*
 
 ```{r ner read in}
-name_stopwords <- readr::read_csv("Project/data/name_stopwords.csv")$name_stopwords
+name_stopwords <- readr::read_csv(here::here("Project/data/name_stopwords.csv"))
+name_stopwords <- name_stopwords$name_stopwords
 
 # removing additional stopwords from texts
 enhanced_stopwords <- c(
@@ -777,7 +782,7 @@ enhanced_stopwords <- c(
 
 ```{r data preprocessing not banned, eval=FALSE}
 
-books_not_banned_df <- readr::read_csv("Project/data/books_not_banned_df.csv")
+books_not_banned_df <- readr::read_csv(here::here("Project/data/books_not_banned_df.csv"))
 
 #  clean text
 books_not_banned_df <- books_not_banned_df %>% 
@@ -801,7 +806,7 @@ books_not_banned_df <- books_not_banned_df %>%
 new_name_candidates <- purrr::map(books_not_banned_df$text, extract_character_names)
 
 name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates, new_name_candidates))))
-readr::write_csv(data.frame(name_stopwords = name_stopwords), "Project/data/name_stopwords.csv")
+#readr::write_csv(data.frame(name_stopwords = name_stopwords), "Project/data/name_stopwords.csv")
 name_stopwords <- readr::read_csv("Project/data/name_stopwords.csv")$name_stopwords
 
 # removing additional stopwords from texts
@@ -831,20 +836,20 @@ books_not_banned_text_cleaned_df <- books_not_banned_text_cleaned_df %>%
 
 *Note - this is the final point where I will read in data directly to variables. From here on out, code can be run without having to change any eval=FALSE flags.*
 
-```{r load preprocessed data}
+```{r re load data}
 
 # load cleaned text
-fl_book_texts_cleaned_df <- readr::read_csv("Project/data/fl_book_texts_cleaned.csv") 
+fl_book_texts_cleaned_df <- readr::read_csv(here::here("Project/data/fl_book_texts_cleaned.csv"))
 fl_book_texts_cleaned_df <- fl_book_texts_cleaned_df %>%
   dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
   dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
 
-ia_book_texts_cleaned_df <- readr::read_csv("Project/data/ia_book_texts_cleaned.csv")
+ia_book_texts_cleaned_df <- readr::read_csv(here::here("Project/data/ia_book_texts_cleaned.csv"))
 ia_book_texts_cleaned_df <- ia_book_texts_cleaned_df %>%
   dplyr::mutate(text = purrr::map(text, ~ .x)) %>%
   dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
 
-books_not_banned_text_cleaned_df <- readr::read_csv("Project/data/books_not_banned_text_cleaned_df.csv") 
+books_not_banned_text_cleaned_df <- readr::read_csv(here::here("Project/data/books_not_banned_text_cleaned_df.csv"))
 books_not_banned_text_cleaned_df <- books_not_banned_text_cleaned_df %>%
   dplyr::mutate(text = purrr::map(text, ~ .x)) %>% 
   dplyr::mutate(gutenberg_id = as.character(gutenberg_id))
@@ -875,7 +880,7 @@ complete_book_texts_cleaned_df <- dplyr::bind_rows(fl_books_labeled, ia_books_la
 
 ```{r full data set read in}
 
-complete_book_texts_cleaned_df <- readr::read_csv("Project/data/complete_book_texts_cleaned_df.csv")
+complete_book_texts_cleaned_df <- readr::read_csv(here::here("Project/data/complete_book_texts_cleaned_df.csv"))
 
 ```
 
@@ -1741,7 +1746,7 @@ feature_matrix <- complete_book_texts_cleaned_df %>%
 
 ```{r feature matrix read in}
 
-feature_matrix <- readr::read_csv("Project/data/feature_matrix.csv")
+feature_matrix <- readr::read_csv(here::here("Project/data/feature_matrix.csv"))
 
 ```
 
@@ -2036,7 +2041,7 @@ Now the model will be tested against new data.
 
 ```{r test data read in}
 
-labeled_test_data <- readr::read_csv("Project/data/labeled_test_data.csv")
+labeled_test_data <- readr::read_csv(here::here("Project/data/labeled_test_data.csv"))
 
 labeled_test_data <- labeled_test_data %>%
   dplyr::mutate(label = ifelse(label == "banned", 1, 0))
@@ -2114,7 +2119,7 @@ run_model_on_test_data <- function(test_df, ridge_model, xgb_model) {
 ```{r oh girl here we go}
 
 test_results <- run_model_on_test_data(labeled_test_data, ridge_model, xgb_model)
-View(test_results)
+#View(test_results)
 
 ```
 
