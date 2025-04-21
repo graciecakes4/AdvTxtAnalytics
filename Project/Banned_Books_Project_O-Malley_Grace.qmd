@@ -17,7 +17,7 @@ execute:
 
 # Introduction
 
-All code chunks that are part of preprocessing have been marked as 'eval=FALSE' for rendering purposes. Any data that is included will be read in with readr::read_csv for rendering. I have noted the save points where data is read into the document for your convenience. If you wish to test any of the code, simply remove the 'eval=FALSE' tag and run the chunk. This is very linear in terms of how it's set up, but it allows for a lot of flexibility in terms of what can be done with the data, but bear that in mind if you are trying to test code that relies on previous steps being completed.
+All code chunks that are part of preprocessing have been marked as 'eval=FALSE' for rendering purposes. Any data that is included will be read in with readr::read_csv for rendering. I have noted the save points where data is read into the document for your convenience. If you wish to test any of the data preprocessing code, simply remove the 'eval=FALSE' tag and run the chunk. This is very linear in terms of how it's set up, but it allows for a lot of flexibility in terms of what can be done with the data, but bear that in mind if you are trying to test code that relies on previous steps being completed. To view any visuals not included in my final paper, run all chunks linearly from
 
 ## Required Packages
 
@@ -27,7 +27,7 @@ This is the listing of required packages to run the code below. There is a for l
 
 required_packages <- c("jsonlite", "httr", "stringdist", "quanteda", "gutenbergr", "tm", "stringr", "textclean",
                         "tokenizers", "tidytext", "wordcloud", "RColorBrewer", "ggplot2", "ggthemes", "ggraph",
-                        "openNLP", "ggsci", "glmnet", "xgboost", "yardstick", "pROC")
+                        "openNLP", "ggsci", "glmnet", "xgboost", "yardstick", "pROC", "gt", "kableExtra")
 
 # Check if all required packages are installed and install them if not
 for (pkg in required_packages) {
@@ -1955,6 +1955,32 @@ summary_table <- dplyr::bind_rows(
   cbind(Model = "Ridge", ridge_metrics_wide),
   cbind(Model = "XGBoost", xgb_metrics_wide)
 )
+  
+train_data_output_metrics <- data.frame(
+  Model = c("Ridge", "XGBoost"),
+  AUC = c(0.890, 0.859),
+  Accuracy = c(0.775, 0.750),
+  Sensitivity = c(0.750, 0.700),
+  Specificity = c(0.800, 0.800),
+  F1_Score = c(0.769, 0.737)
+)
+
+training_table <- gt::gt(train_data_output_metrics) %>%
+  gt::tab_header(
+    title = "Model Training Comparison Summary Table"
+  ) %>%
+  gt::fmt_number(
+    columns = 2:6, decimals = 3
+  ) %>%
+  gt::data_color(
+    columns = 2:6,
+    colors = scales::col_numeric(
+      palette = c("white", "#737373"),
+      domain = c(0.7, 0.9) 
+    )
+  )
+
+training_table
 
 ```
 
@@ -2134,6 +2160,32 @@ test_roc_xgb   <- pROC::roc(test_eval_df$truth, test_results$xgb_prob)
 
 test_auc_ridge <- pROC::auc(test_roc_ridge)
 test_auc_xgb   <- pROC::auc(test_roc_xgb)
+
+test_data_output_metrics <- data.frame(
+  Model = c("Ridge", "XGBoost"),
+  AUC = c(0.524, 0.571),
+  Accuracy = c(0.600, 0.700),
+  Sensitivity = c(0.714, 0.857),
+  Specificity = c(0.333, 0.333),
+  F1_Score = c(0.714, 0.800)
+)
+
+testing_table <- gt::gt(test_data_output_metrics) %>%
+  gt::tab_header(
+    title = "Model Testing Comparison Summary Table"
+  ) %>%
+  gt::fmt_number(
+    columns = 2:6, decimals = 3
+  ) %>%
+  gt::data_color(
+    columns = 2:6,
+    colors = scales::col_numeric(
+      palette = c("white", "#737373"),
+      domain = c(0.7, 0.9) 
+    )
+  )
+
+testing_table
 
 ```
 
