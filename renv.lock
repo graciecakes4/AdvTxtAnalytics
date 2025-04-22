@@ -436,6 +436,16 @@
       ],
       "Hash": "543776ae6848fde2f48ff3816d0628bc"
     },
+    "bigD": {
+      "Package": "bigD",
+      "Version": "0.3.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "ad123ab90aa2fc795512f61ff6939c4a"
+    },
     "bit": {
       "Package": "bit",
       "Version": "4.5.0.1",
@@ -460,6 +470,13 @@
         "utils"
       ],
       "Hash": "4f572fbc586294afff277db583b9060f"
+    },
+    "bitops": {
+      "Package": "bitops",
+      "Version": "1.0-9",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "d972ef991d58c19e6efa71b21f5e144b"
     },
     "blob": {
       "Package": "blob",
@@ -1877,6 +1894,36 @@
       ],
       "Hash": "7d7f283939f563670a697165b2cf5560"
     },
+    "gt": {
+      "Package": "gt",
+      "Version": "1.0.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "base64enc",
+        "bigD",
+        "bitops",
+        "cli",
+        "commonmark",
+        "dplyr",
+        "fs",
+        "glue",
+        "htmltools",
+        "htmlwidgets",
+        "juicyjuice",
+        "magrittr",
+        "markdown",
+        "reactable",
+        "rlang",
+        "sass",
+        "scales",
+        "tidyselect",
+        "vctrs",
+        "xml2"
+      ],
+      "Hash": "e4474e7eaf5b0ad21122da23a8155f13"
+    },
     "gtable": {
       "Package": "gtable",
       "Version": "0.3.6",
@@ -2236,6 +2283,16 @@
       ],
       "Hash": "b0776f526d36d8bd4a3344a88fe165c4"
     },
+    "juicyjuice": {
+      "Package": "juicyjuice",
+      "Version": "0.1.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "V8"
+      ],
+      "Hash": "3bcd11943da509341838da9399e18bce"
+    },
     "knitr": {
       "Package": "knitr",
       "Version": "1.50",
@@ -2469,6 +2526,19 @@
         "R"
       ],
       "Hash": "7ce2733a9826b3aeb1775d56fd305472"
+    },
+    "markdown": {
+      "Package": "markdown",
+      "Version": "1.13",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "commonmark",
+        "utils",
+        "xfun"
+      ],
+      "Hash": "074efab766a9d6360865ad39512f2a7e"
     },
     "memoise": {
       "Package": "memoise",
@@ -3267,6 +3337,31 @@
       ],
       "Hash": "8f25ebe2ec38b1f2aef3b0d2ef76f6c4"
     },
+    "reactR": {
+      "Package": "reactR",
+      "Version": "0.6.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "htmltools"
+      ],
+      "Hash": "b8e3d93f508045812f47136c7c44c251"
+    },
+    "reactable": {
+      "Package": "reactable",
+      "Version": "0.4.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "digest",
+        "htmltools",
+        "htmlwidgets",
+        "jsonlite",
+        "reactR"
+      ],
+      "Hash": "6069eb2a6597963eae0605c1875ff14c"
+    },
     "readr": {
       "Package": "readr",
       "Version": "2.1.5",
@@ -3961,17 +4056,6 @@
       ],
       "Hash": "82036936cbed392a250d2e6ee6ef2e53"
     },
-    "stringdist": {
-      "Package": "stringdist",
-      "Version": "0.9.15",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "parallel"
-      ],
-      "Hash": "749b8805a3026202a959edbf790425b0"
-    },
     "stringi": {
       "Package": "stringi",
       "Version": "1.8.4",
@@ -4360,13 +4444,13 @@
     },
     "tinytex": {
       "Package": "tinytex",
-      "Version": "0.56",
+      "Version": "0.57",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "xfun"
       ],
-      "Hash": "68e6032b8c16f33fab8756e40a0dca1a"
+      "Hash": "02d65e0c0415bf36a7ddc0d2ba50a840"
     },
     "tm": {
       "Package": "tm",
@@ -4745,7 +4829,7 @@
     },
     "xfun": {
       "Package": "xfun",
-      "Version": "0.51",
+      "Version": "0.52",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -4754,7 +4838,7 @@
         "stats",
         "tools"
       ],
-      "Hash": "e1a3c06389a46d065c18bd4bbc27c64c"
+      "Hash": "652ce36fe7d57688e6786819b09d9190"
     },
     "xgboost": {
       "Package": "xgboost",
