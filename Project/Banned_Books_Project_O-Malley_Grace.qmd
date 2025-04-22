@@ -3,12 +3,20 @@ title: "Final Project"
 author: "Grace O'Malley"
 date: "`r Sys.Date()`"
 format: 
-  pdf: 
-    titlepage: true
+  html:
     toc: true
-    toc-depth: 2
-    code-block-wrap: true
-    number-sections: true
+    code-fold: true
+    theme: cosmo
+#  pdf: 
+#    documentclass: article
+#    classoption:
+#      - letterpaper
+#      - 12pt
+#    titlepage: true
+#    toc: true
+#    toc-depth: 2
+#    code-block-wrap: true
+#    number-sections: true
 execute:
   echo: true
   freeze: false
@@ -23,7 +31,7 @@ All code chunks that are part of preprocessing have been marked as 'eval=FALSE' 
 
 This is the listing of required packages to run the code below. There is a for loop that can be run to install and library any that are needed.
 
-```{r library chunk}
+```{r library chunk, message=FALSE, warning=FALSE}
 
 required_packages <- c("jsonlite", "httr", "stringdist", "quanteda", "gutenbergr", "tm", "stringr", "textclean",
                         "tokenizers", "tidytext", "wordcloud", "RColorBrewer", "ggplot2", "ggthemes", "ggraph",
@@ -163,7 +171,7 @@ full_gutenberg_search <- function(banned_books, gutenberg_titles) {
 
 I identified titles that I can pull from the Gutenberg library for my project - however I will have to pivot since there are less than 10 books available from the Maryland banned books list. The intended sample size is 10 texts, which are readily available from Florida (53) and a sufficient number from Iowa (16).  After matching the titles, I will see how many I can downloand uncorrupted - if there is any data corruption, I may need to revise my sample numbers or find alternative data sources.
 
-```{r full title search}, eval=FALSE
+```{r full title search, eval=FALSE}
 
 fl_books_titles_cleaned <- fl_banned_books_list %>% # cleaned fl titles list
     dplyr::select(Title) %>% 
@@ -196,7 +204,7 @@ ia_match_list
 
 To maximize my search returns, I created a fuzzy title search function to allow proper title matching and minimizing the effects of grammar differences.
 
-```{r title search function}
+```{r title-search-function, eval=FALSE}
 
 fuzzy_title_search <- function(book_list) {
     gutenberg_metadata <- gutenbergr::gutenberg_works()
@@ -482,7 +490,7 @@ books_not_banned_df <- books_not_banned %>%
 
 After selecting the training data, we will select a subset of books for testing our model.
 
-```{r test data}
+```{r test data, message=FALSE, warning=FALSE}
 
 labeled_test_data <- data.frame(
   gutenberg_id = c(2759, 67138, 20, 40539, 23005, 42914, 48258, 49745, 4497, 25060),
@@ -708,7 +716,7 @@ ia_book_texts_df <- ia_book_texts_df %>%
 
 *Note - This is another save point. After preprocessing, I save the text to csv's for easy access later on - after this point they will be read in*
 
-```{r load preprocessed data}
+```{r load preprocessed data, message=FALSE, warning=FALSE}
 
 # load cleaned text
 fl_book_texts_cleaned_df <- readr::read_csv(here::here("Project/data/fl_book_texts_cleaned.csv"))
@@ -761,7 +769,7 @@ name_stopwords <- tolower(unique(unlist(c(fl_name_candidates, ia_name_candidates
 
 *Note - This is another save point. The `name_stopwords` list was expansive so I wrote it to a csv. Here it is read back in for convenience.*
 
-```{r ner read in}
+```{r ner read in, message=FALSE, warning=FALSE}
 name_stopwords <- readr::read_csv(here::here("Project/data/name_stopwords.csv"))
 name_stopwords <- name_stopwords$name_stopwords
 
@@ -836,7 +844,7 @@ books_not_banned_text_cleaned_df <- books_not_banned_text_cleaned_df %>%
 
 *Note - this is the final point where I will read in data directly to variables. From here on out, code can be run without having to change any eval=FALSE flags.*
 
-```{r re load data}
+```{r re load data, message=FALSE, warning=FALSE}
 
 # load cleaned text
 fl_book_texts_cleaned_df <- readr::read_csv(here::here("Project/data/fl_book_texts_cleaned.csv"))
@@ -878,7 +886,7 @@ complete_book_texts_cleaned_df <- dplyr::bind_rows(fl_books_labeled, ia_books_la
 
 ## Data Analysis and Visualization
 
-```{r full data set read in}
+```{r full data set read in, message=FALSE, warning=FALSE}
 
 complete_book_texts_cleaned_df <- readr::read_csv(here::here("Project/data/complete_book_texts_cleaned_df.csv"))
 
@@ -936,6 +944,11 @@ ggplot2::ggplot(fl_tf_heatmap, ggplot2::aes(x = word, y = title, fill = freq)) +
   ggplot2::scale_fill_viridis_c() +
   ggplot2::labs(title = "Florida: Heatmap of Top Term Frequencies",
                 x = "Term", y = "Book Title") +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)) +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0, , size = rel(0.8))
+  ) +
   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 
 ```
@@ -975,7 +988,12 @@ ggplot2::ggplot(fl_top_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf
   ggplot2::facet_wrap(~ title, scales = "free_y") +
   ggplot2::coord_flip() +
   ggplot2::labs(title = "Top 10 TF-IDF Terms per Florida Document",
-                x = "Term", y = "TF-IDF Score")
+                x = "Term", y = "TF-IDF Score") +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0, , size = rel(0.8))
+  ) +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
                 
 ```
 
@@ -1028,7 +1046,12 @@ ggplot2::ggplot(ia_tf_heatmap, ggplot2::aes(x = word, y = title, fill = freq)) +
   ggplot2::scale_fill_viridis_c() +
   ggplot2::labs(title = "Iowa: Heatmap of Top Term Frequencies",
                 x = "Term", y = "Book Title") +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))+
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0, , size = rel(0.8))
+  )
+
 ```
 
 **Iowa of Term Frequencies**
@@ -1067,9 +1090,21 @@ ggplot2::ggplot(top_ia_tfidf, ggplot2::aes(x = reorder(word, tf_idf), y = tf_idf
   ggplot2::labs(
     title = "Top 10 TF-IDF Terms per Iowa Book",
     x = "Term", y = "TF-IDF Score"
-  )
+  ) +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0, , size = rel(0.8))
+  ) +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 
 ```
+
+
+After reviewing the TF heatmaps and wordclouds, we can already begin to see a divergence in patterns between Florida and Iowa. The texts of the Florida banned books list appear to be more emotionally focused, see high frequency words like heart, cried, and care - while the texts of the Iowa banned books list appears to be more historically / technically focused, seeing frequent words like platoon, engraved, and enamelled. 
+
+
+The TF-IDF charts confirm this divergence. Florida's High Signal words include more identity, family, and conflict markers where Iowa still has a concentration of historical and technical markers.
+
 
 ### Phrase Frequency Analysis
 
@@ -1127,7 +1162,11 @@ ggraph::ggraph(fl_bigram_graph, layout = "fr") +
   ggraph::geom_edge_link(ggplot2::aes(edge_alpha = n), show.legend = FALSE) +
   ggraph::geom_node_point(color = "lightblue", size = 5) +
   ggraph::geom_node_text(ggplot2::aes(label = name), vjust = 1, hjust = 1) +
-  ggplot2::labs(title = "Bigram Word Network (TF ≥ 7)")
+  ggplot2::labs(title = "Bigram Word Network (TF ≥ 7)") +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0)
+  )
 
 ```
 
@@ -1183,9 +1222,17 @@ ggraph::ggraph(ia_bigram_graph, layout = "fr") +
   ggraph::geom_edge_link(ggplot2::aes(edge_alpha = n), show.legend = FALSE) +
   ggraph::geom_node_point(color = "lightblue", size = 5) +
   ggraph::geom_node_text(ggplot2::aes(label = name), vjust = 1, hjust = 1) +
-  ggplot2::labs(title = "Bigram Word Network (TF ≥ 7)")
+  ggplot2::labs(title = "Bigram Word Network (TF ≥ 7)") +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0)
+  )
 
 ```
+
+
+After reviewing the Bigram Co-occurence Networks, we continue to see this lexical divergence between Florida and Iowa. Florida continues to exhibit phrasing pairs consistent with emotional and interpersonal issues - shrugged + shoulders, eyes + raised, eyes + closed, loving + service. Iowa shows further technical and historical tones - rare + specimens, rare + examples, Phoenician + Coast, Spanish + Netherlands.
+
 
 ### Subgroup Comparisons
 
@@ -1208,7 +1255,11 @@ summary_df <- tibble::tibble(
 ggplot2::ggplot(summary_df, ggplot2::aes(x = Category, y = Count, fill = Category)) +
   ggthemes::theme_wsj() +
   ggplot2::geom_col(show.legend = FALSE) +
-  ggplot2::labs(title = "Vocabulary Overlap Between Florida and Iowa Books")
+  ggplot2::labs(title = "Vocabulary Overlap Between Florida and Iowa Books") +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0, , size = rel(0.8))
+  )
 
 ```
 
@@ -1249,6 +1300,10 @@ wordcloud::comparison.cloud(
 
 ```
 
+
+The bar chart shows there are a large number of shared words between the two states banned books texts ~40% of the words are shared - however the shared words are not necessarily significant words or we would see more overlap in the TF and TF-IDF analysis. The comparison cloud confirms there is marginal overlap in important words between the two sides. Florida still squarely in the emotional, interpersonal, identity corner while Iowa resides in the technical and historical corner. 
+
+
 ```{r thematic analysis}
 
 # combine subject fields from both datasets
@@ -1269,7 +1324,7 @@ print(subject_terms)
 
 **Thematic Emphasis Radar Plot (Google Books Themes)**
 
-```{r radar plot}
+```{r radar plot, message=FALSE, warning=FALSE}
 
 # create subjects list
 fl_subjects <- fl_book_texts_cleaned_df %>% 
@@ -1330,9 +1385,15 @@ graphics::legend("topright",
 
 ```
 
+
+This radar chart pulls from the Google Books metadata themes (subjects). We can see here that there is a heavy skew for both states towards fiction. While this chart does not further an analytical divergence beyond what we have seen, the importance of this chart will be seen later as we analyze the stark differences between the Google Book themes and the deduced themes from the book texts.
+
+
 ### Dictionary-Based Analysis
 
+
 Next is dictionary based analysis. I spent an extensive amount of time researching terms and fine tuning this dictionary (all references are in my paper references section). This part was tricky because I could not include certain terms that appeared in books for benign purposes. For example, if I tried to use "race" as a term in the dictionary as a keyword indicator of race being involved in the book as a theme, then a book about horseracing may feature prominently in the "race" category, when, in fact, it was not at all about race.
+
 
 ```{r dictionary creation}
 
@@ -1611,9 +1672,12 @@ ggplot2::ggplot(theme_summary, ggplot2::aes(x = theme, y = count, fill = region)
   ggsci::scale_fill_jama() +
   ggplot2::scale_y_continuous(labels = scales::number_format(accuracy = 1), limits = c(0, 10)) +
   ggplot2::labs(title = "Theme Prevalence in Book Texts by Region",
-                x = "Theme", y = "Number of Books")
-
-  
+                x = "Theme", y = "Number of Books") +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0, , size = rel(0.8))
+  ) +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 
 ```
 
@@ -1707,9 +1771,23 @@ ggplot2::ggplot(description_theme_summary, ggplot2::aes(x = theme, y = count, fi
   ggplot2::labs(
     title = "Theme Prevalence in Book Descriptions by Region",
     x = "Theme", y = "Number of Books"
-  )
+  ) +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0, size = rel(0.8))
+  ) +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
   
 ```
+
+
+When we compare the themes side by side, we see a startling revalation - the Google Book themes cover almost none of the themes that come from textual analysis. Through careful dictionary based analysis, we can see a number of these books include topics that are controversial and likely cause them to be banned, however these themes do not appear in any of the Google Books themes. This leads us to two possible conclusions:
+
+1. Publishers are actively hiding controversial themes to shield books from potential harm or backlash
+2. Publishers are actively hiding controversial themes to suppress opposing or underrepresented view points on those issues.
+
+Regardless of the motive, there is a clear incongruence between what is on the digital cover and what is between the digital book covers.
+
 
 ### Classification Model
 
@@ -1744,7 +1822,7 @@ feature_matrix <- complete_book_texts_cleaned_df %>%
 
 *Note - here is a save point for the feature matrix created above for convenience*
 
-```{r feature matrix read in}
+```{r feature matrix read in, message=FALSE, warning=FALSE}
 
 feature_matrix <- readr::read_csv(here::here("Project/data/feature_matrix.csv"))
 
@@ -1788,7 +1866,7 @@ predict_ban_risk <- function(title, author, text, description, published_themes)
 
 **Ridge Model**
 
-```{r ridge model}
+```{r ridge model, message=FALSE, warning=FALSE}
 
 # create input matrix
 X <- feature_matrix %>%
@@ -1881,9 +1959,6 @@ category_theme_label_map <- c(
   description_has_education = "Description Contains Education Themes"
 )
 
-xgboost::xgb.importance(model = xgb_model) %>%
-  xgboost::xgb.plot.importance(top_n = 20)
-
 importance_df <- xgboost::xgb.importance(model = xgb_model)
 
 importance_df$Feature <- recode(importance_df$Feature, !!!category_theme_label_map)
@@ -1905,17 +1980,25 @@ ggplot2::ggplot(data = importance_df, ggplot2::aes(x = Feature, y = Gain)) +
   ggthemes::theme_wsj() +
   ggplot2::geom_bar(stat = "identity") +
   ggplot2::coord_flip() +
-  ggplot2::scale_y_continuous("Gain", expand = c(0, 0), limits = c(0, 0.28)) +
+  ggplot2::scale_y_continuous("Gain", expand = c(0, 0), limits = c(0, 0.30)) +
   ggplot2::labs(title = "Feature Importance",
        x = "Features",
        y = "Importance Score") +
   ggplot2::geom_text(ggplot2::aes(label = round(Gain, 2)), 
                 hjust = 1.25, 
-                size = 3)
+                size = 3) +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0)
+  )
 
 ```
 
-```{r model comparison}
+
+After our inital modeling, we can see that themes within texts dominate the variable feature importance extraction. The descriptions do not contain any significant markers and this is likely due to the incongruence that was exhibited between Google Books themes and deduced textual themes.
+
+
+```{r model comparison, message=FALSE, warning=FALSE}
 
 # calculate prediction probabilities 
 ridge_probs <- stats::predict(ridge_model, newx = X, s = "lambda.min", type = "response")
@@ -1996,9 +2079,9 @@ training_table
 
 : Model Comparison Summary Table
 
-The ridge model outperforms the XGBoost model. The simplicity and interpretability of the ridge model also support choosing this model for our testing analysis.
+The ridge model slightly outperforms the XGBoost model, although both models perform very well on the training data. 
 
-```{r roc curves}
+```{r roc curves, message=FALSE, warning=FALSE}
 
 roc_ridge <- pROC::roc(eval_df$truth, eval_df$ridge)
 roc_xgb   <- pROC::roc(eval_df$truth, eval_df$xgb)
@@ -2029,6 +2112,11 @@ roc_comparison <- ggplot2::ggplot(roc_data, ggplot2::aes(x = tpr, y = fpr, color
     x = "False Positive Rate (1 - Specificity)",
     y = "True Positive Rate (Sensitivity)",
     color = "Model"
+  ) +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0),
+    plot.subtitle = ggplot2::element_text(hjust = 0, size = rel(0.8))
   )
   
 roc_comparison
@@ -2039,7 +2127,7 @@ roc_comparison
 
 Now the model will be tested against new data.
 
-```{r test data read in}
+```{r test data read in, message=FALSE, warning=FALSE}
 
 labeled_test_data <- readr::read_csv(here::here("Project/data/labeled_test_data.csv"))
 
@@ -2123,7 +2211,7 @@ test_results <- run_model_on_test_data(labeled_test_data, ridge_model, xgb_model
 
 ```
 
-```{r testing evaluation}
+```{r testing evaluation, message=FALSE, warning=FALSE}
 
 test_eval_df <- test_results %>%
   dplyr::mutate(
@@ -2202,6 +2290,9 @@ testing_table
 : Model Comparison Summary Table
 
 
+With the introduction of new testing data, we see a drastic decrease in model performance. This is indicative of overfitting during the training phase. This model is an improvement over strictly guessing, but in spite of this, we have discovered themes that are clearly present in the texts of the books that are being banned. Through future training iterations, variable refinement and parameter tuning will be crucial to enhancing this model to be an effective prediciton tool. 
+
+
 ```{r test roc curves}
 
 test_ridge_df <- data.frame(
@@ -2230,8 +2321,15 @@ test_roc_comparison <- ggplot2::ggplot(test_roc_data, ggplot2::aes(x = tpr, y = 
     x = "False Positive Rate (1 - Specificity)",
     y = "True Positive Rate (Sensitivity)",
     color = "Model"
+  ) +
+  ggplot2::theme(
+    plot.title.position = "plot",
+    plot.title = ggplot2::element_text(hjust = 0),
+    plot.subtitle = ggplot2::element_text(hjust = 0, size = rel(0.8))
   )
   
 test_roc_comparison
 
 ```
+
+
