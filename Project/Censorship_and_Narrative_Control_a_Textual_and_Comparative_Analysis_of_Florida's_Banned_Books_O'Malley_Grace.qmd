@@ -1,26 +1,28 @@
 ---
-title: "Final Project"
+title: "Censorship and Narrative Control: A Textual and Comparative Analysis of Florida's and Iowa's Banned Books"
 author: "Grace O'Malley"
 date: "`r Sys.Date()`"
 format: 
-  html:
-    toc: true
-    code-fold: true
-    theme: cosmo
-#  pdf: 
-#    documentclass: article
-#    classoption:
-#      - letterpaper
-#      - 12pt
-#    titlepage: true
+#  html:
 #    toc: true
-#    toc-depth: 2
-#    code-block-wrap: true
-#    number-sections: true
+#    code-fold: true
+#    theme: cosmo
+  pdf: 
+    documentclass: article
+    classoption:
+      - letterpaper
+      - 12pt
+    titlepage: true
+    toc: true
+    toc-depth: 2
+    code-block-wrap: true
+    number-sections: true
 execute:
   echo: true
   freeze: false
   error: false
+  warning: false
+  message: false
 ---
 
 # Introduction
