@@ -53,3 +53,6 @@ Thumbs.db
 
 # --- Data Files ---
 /data_files/
+
+# --- Labs ---
+Lab_*/
